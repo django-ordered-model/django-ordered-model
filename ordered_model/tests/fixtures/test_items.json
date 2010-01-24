@@ -1,0 +1,34 @@
+[
+  {
+    "pk": 1, 
+    "model": "tests.item", 
+    "fields": {
+      "name": "1", 
+      "order": 0
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "tests.item", 
+    "fields": {
+      "name": "2", 
+      "order": 1
+    }
+  },
+  {
+    "pk": 3, 
+    "model": "tests.item", 
+    "fields": {
+      "name": "3", 
+      "order": 5
+    }
+  },
+  {
+    "pk": 4, 
+    "model": "tests.item", 
+    "fields": {
+      "name": "4", 
+      "order": 6
+    }
+  }
+]
