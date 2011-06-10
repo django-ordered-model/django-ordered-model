@@ -39,3 +39,9 @@ To add arrows in the admin change list page to do reordering, you can use the
     
     admin.site.register(Item, ItemAdmin)
 
+
+Test suite
+----------
+
+    $ ./run_tests.sh
+
