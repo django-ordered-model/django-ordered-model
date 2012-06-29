@@ -19,6 +19,8 @@ Installation
 Usage
 -----
 
+Add `ordered_model` to your `SETTINGS.INSTALLED_APPS`.
+
 Inherit your model from `OrderedModel` to make it ordered:
     
     from django.db import models
