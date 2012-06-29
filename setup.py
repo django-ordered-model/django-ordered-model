@@ -22,5 +22,7 @@ setup(
         'Programming Language :: Python',
     ],
     package_data={'ordered_model': ['static/ordered_model/arrow-up.gif',
-                                    'static/ordered_model/arrow-down.gif']}
+                                    'static/ordered_model/arrow-down.gif',
+                                    'locale/de/LC_MESSAGES/django.po',
+                                    'locale/de/LC_MESSAGES/django.mo']}
 )
