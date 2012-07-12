@@ -32,11 +32,11 @@ class OrderedModelAdmin(admin.ModelAdmin):
         return HttpResponseRedirect('../../')
     
     def move_up_down_links(self, obj):
-        return '<a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-up/"><img src="%(ADMIN_MEDIA_PREFIX)simg/admin/arrow-up.gif" alt="Move up" /></a> <a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-down/"><img src="%(ADMIN_MEDIA_PREFIX)simg/admin/arrow-down.gif" alt="Move up" /></a>' % {
+        return '<a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-up/">&#x25B2;</a>&nbsp;&nbsp;&nbsp;<a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-down/">&#x25BC;</a>' % {
             'app_label': self.model._meta.app_label,
             'module_name': self.model._meta.module_name,
             'object_id': obj.id,
-            'ADMIN_MEDIA_PREFIX': settings.ADMIN_MEDIA_PREFIX,
+
         }
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = 'Move'
