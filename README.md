@@ -9,7 +9,7 @@ http://www.djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django 1.1
+  * Django 1.4
 
 Installation
 ------------
