@@ -30,7 +30,14 @@ Inherit your model from `OrderedModel` to make it ordered:
 
     class Item(OrderedModel):
         name = models.CharField(max_length=100)
-    
+
+If you have a manytomany relationship derive the `through` model from OrderedModel 
+and set group_m2m_by to the field name by which to group the entries:
+
+    class ThroughModel(OrderedModel):
+        name = models.CharField(max_length=100)
+        group_m2m_by = 'field_name'
+
 Model instances now have `move_up()` and `move_down()` methods to move them 
 relative to each other.
 

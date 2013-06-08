@@ -50,4 +50,53 @@ class OrderedModelAdmin(admin.ModelAdmin):
         }
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
+
+
+class OrderedTabularInline(admin.TabularInline):
+    @classmethod
+    def get_urls(cls, model_admin):
+        from django.conf.urls.defaults import patterns, url
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return model_admin.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
     
+        my_urls = patterns('',
+            url(r'^\d+/' + cls.model._meta.module_name + '/(?P<object_id>\d+)/move-(?P<direction>up)/$',
+                wrap(cls.move_view),
+                {'model': cls.model},
+                name='move_up'),
+            url(r'^\d+/' + cls.model._meta.module_name + '/(?P<object_id>\d+)/move-(?P<direction>down)/$',
+                wrap(cls.move_view),
+                {'model': cls.model},
+                name='move_down'),
+        )
+        return my_urls
+
+    @staticmethod
+    def move_view(request, object_id, direction, model ):
+        obj = get_object_or_404(model, pk=unquote(object_id))
+        if direction == 'up':
+            obj.move_up()
+        else:
+            obj.move_down()
+        return HttpResponseRedirect('../../../')
+
+    link_html = short("""
+        <a href="%(module_name)s/%(object_id)s/move-up/">
+            <img src="%(STATIC_URL)sordered_model/arrow-up.gif" alt="Move up" />
+        </a>
+        <a href="%(module_name)s/%(object_id)s/move-down/">
+            <img src="%(STATIC_URL)sordered_model/arrow-down.gif" alt="Move down" />
+        </a>""")
+
+    def move_up_down_links(self, obj):
+        return self.link_html % {
+            'app_label': self.model._meta.app_label,
+            'module_name': self.model._meta.module_name,
+            'object_id': obj.id,
+            'STATIC_URL': settings.STATIC_URL,
+        }
+    move_up_down_links.allow_tags = True
+    move_up_down_links.short_description = _(u'Move')
+

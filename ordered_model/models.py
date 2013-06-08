@@ -7,7 +7,6 @@ class OrderedModel(models.Model):
     An abstract model that allows objects to be ordered relative to each other.
     Provides an ``order`` field.
     """
-    
     order = models.PositiveIntegerField(editable=False)
     
     class Meta:
@@ -17,14 +16,20 @@ class OrderedModel(models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             qs = self.__class__.objects.order_by('-order')
+            if self.group_m2m_by:
+                f_id = getattr(self, self.group_m2m_by + '_id')
+                qs = qs.filter( (self.group_m2m_by + '__id', f_id) )
             try:
                 self.order = qs[0].order + 1
             except IndexError:
                 self.order = 0
         super(OrderedModel, self).save(*args, **kwargs)
-    
+        
     def _move(self, up):
         qs = self.__class__._default_manager
+        if self.group_m2m_by:
+            f_id = getattr(self, self.group_m2m_by + '_id')
+            qs = qs.filter( (self.group_m2m_by + '__id', f_id) )
         if up:
             qs = qs.order_by('-order').filter(order__lt=self.order)
         else:
@@ -37,7 +42,7 @@ class OrderedModel(models.Model):
         self.order, replacement.order = replacement.order, self.order
         self.save()
         replacement.save()
-    
+        
     def move_down(self):
         """
         Move this object down one position.
