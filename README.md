@@ -42,8 +42,24 @@ and set group_m2m_by to the field name by which to group the entries:
         item = models.ForeignKey(Item)
         other_item = models.ForeignKey(OtherItem)
         group_m2m_by = 'item'
-        
-And add the following to the admin.py:
+
+Model instances now have `move_up()` and `move_down()` methods to move them
+relative to each other. In case of a manytomany relationship the `through` model
+instances now have the `move_up` and `move_down` methods.
+
+To add arrows in the admin change list page to do reordering, you can use the
+`OrderedModelAdmin` and the `move_up_down_links` field:
+
+    from django.contrib import admin
+    from ordered_model.admin import OrderedModelAdmin
+    from models import Item
+
+    class ItemAdmin(OrderedModelAdmin):
+        list_display = ('name', 'move_up_down_links')
+
+    admin.site.register(Item, ItemAdmin)
+
+In case of the manytomany relationship add the following to the admin.py:
 
     class ThroughModelInline(OrderedTabularInline):
         model = ThroughModel
@@ -60,21 +76,7 @@ And add the following to the admin.py:
             urls = super(ItemAdmin, self).get_urls()
             return ThroughModelInline.get_urls(self) + urls
 
-Model instances now have `move_up()` and `move_down()` methods to move them 
-relative to each other.
-
-To add arrows in the admin change list page to do reordering, you can use the 
-`OrderedModelAdmin` and the `move_up_down_links` field:
-    
-    from django.contrib import admin
-    from ordered_model.admin import OrderedModelAdmin
-    from models import Item
-    
-    class ItemAdmin(OrderedModelAdmin):
-        list_display = ('name', 'move_up_down_links')
-    
     admin.site.register(Item, ItemAdmin)
-
 
 Test suite
 ----------

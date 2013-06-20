@@ -30,5 +30,147 @@
       "name": "4", 
       "order": 6
     }
+  },
+  {
+    "pk": 1, 
+    "model": "tests.itemleft", 
+    "fields": {
+      "name": "1"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "tests.itemleft", 
+    "fields": {
+      "name": "2"
+    }
+  },
+  {
+    "pk": 1, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "1"
+    }
+  },
+  {
+    "pk": 2, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "2"
+    }
+  },
+  {
+    "pk": 3, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "3"
+    }
+  },
+  {
+    "pk": 4, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "4"
+    }
+  },
+  {
+    "pk": 5, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "5"
+    }
+  },
+  {
+    "pk": 6, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "6"
+    }
+  },
+  {
+    "pk": 7, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "7"
+    }
+  },
+  {
+    "pk": 8, 
+    "model": "tests.itemright", 
+    "fields": {
+      "name": "8"
+    }
+  },
+  {
+    "pk": 1, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "1",
+      "item_right": "1",
+      "order": 0
+    }
+  },
+  {
+    "pk": 2, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "1",
+      "item_right": "2",
+      "order": 1
+    }
+  },
+  {
+    "pk": 3, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "1",
+      "item_right": "3",
+      "order": 3
+    }
+  },
+  {
+    "pk": 4, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "1",
+      "item_right": "4",
+      "order": 4
+    }
+  },
+  {
+    "pk": 5, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "2",
+      "item_right": "5",
+      "order": 0
+    }
+  },
+  {
+    "pk": 6, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "2",
+      "item_right": "6",
+      "order": 1
+    }
+  },
+  {
+    "pk": 7, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "2",
+      "item_right": "7",
+      "order": 3
+    }
+  },
+  {
+    "pk": 8, 
+    "model": "tests.itemsleftright", 
+    "fields": {
+      "item_left": "2",
+      "item_right": "8",
+      "order": 4
+    }
   }
 ]
