@@ -30,7 +30,10 @@ Inherit your model from `OrderedModel` to make it ordered:
 
     class Item(OrderedModel):
         name = models.CharField(max_length=100)
-    
+
+        class Meta(OrderedModel.Meta):
+            pass
+
 Model instances now have `move_up()` and `move_down()` methods to move them 
 relative to each other.
 

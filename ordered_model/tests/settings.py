@@ -11,3 +11,4 @@ INSTALLED_APPS = [
     'ordered_model',
     'ordered_model.tests',
 ]
+SECRET_KEY = 'topsecret'
