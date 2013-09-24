@@ -66,6 +66,7 @@ In case of the manytomany relationship add the following to the admin.py:
         fields = ('item', 'other_item', 'order', 'move_up_down_links', )
         readonly_fields = ('order', 'move_up_down_links',)
         extra = 1
+        ordering = ('order',)
 
     class ItemAdmin(admin.ModelAdmin):
         list_display = ('name', )
