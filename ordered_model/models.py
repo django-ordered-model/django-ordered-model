@@ -9,7 +9,7 @@ class OrderedModel(models.Model):
     Provides an ``order`` field.
     """
 
-    order = models.PositiveIntegerField(editable=False)
+    order = models.PositiveIntegerField(editable=False, db_index=True)
 
     class Meta:
         abstract = True
