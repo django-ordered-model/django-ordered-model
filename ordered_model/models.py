@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Max
 
 
 class OrderedModel(models.Model):
@@ -9,7 +10,7 @@ class OrderedModel(models.Model):
     Provides an ``order`` field.
     """
 
-    order = models.PositiveIntegerField(editable=False)
+    order = models.PositiveIntegerField(editable=False, db_index=True)
 
     class Meta:
         abstract = True
@@ -17,11 +18,8 @@ class OrderedModel(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.id:
-            qs = self.__class__.objects.order_by('-order')
-            try:
-                self.order = qs[0].order + 1
-            except IndexError:
-                self.order = 0
+            c = self.__class__.objects.all().aggregate(Max('order')).get('order__max')
+            self.order = c and c + 1 or 0
         super(OrderedModel, self).save(*args, **kwargs)
 
     def _move(self, up, qs=None):
