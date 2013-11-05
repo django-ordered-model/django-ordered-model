@@ -34,8 +34,61 @@ Inherit your model from `OrderedModel` to make it ordered:
         class Meta(OrderedModel.Meta):
             pass
 
-Model instances now have `move_up()` and `move_down()` methods to move them
-relative to each other.
+Model instances now have a set of methods to move them relative to each other.
+To demonstrate those methods we create two instances of `Item`:
+
+    foo = Item.objects.create(name="Foo")
+    bar = Item.objects.create(name="Bar")
+
+### Swap positions
+
+    foo.swap(bar)
+
+This swaps the position of two objects.
+
+### Move position up on position
+
+    foo.up()
+    foo.down()
+
+Moving an object up or down just makes it swap its position with the neighouring
+object directly above of below depending on the direction.
+
+### Move to arbitrary position
+
+    foo.to(12)
+    bar.to(13)
+
+Move the object to an arbitrary position in the stack. This essentially sets the
+order value to the specified integer. Objects between the original and the new
+position get their order value increased or decreased according to the direction
+of the move.
+
+### Move object above or below reference
+
+    foo.above(bar)
+    foo.below(bar)
+
+Move the object directly above or below the reference object, increasing or
+decreasing the order value for all objects between the two, depending on the
+direction of the move.
+
+### Move to top of stack
+
+    foo.top()
+
+This sets the order value to the lowest value found in the stack and increases
+the order value of all objects that were above the moved object by one.
+
+### Move to bottom of stack
+
+    foo.bottom()
+
+This sets the order value to the highest value found in the stack and decreases
+the order value of all objects that were below the moved object by one.
+
+Admin integration
+-----------------
 
 To add arrows in the admin change list page to do reordering, you can use the
 `OrderedModelAdmin` and the `move_up_down_links` field:
