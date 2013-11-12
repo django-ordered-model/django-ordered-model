@@ -14,6 +14,10 @@ from django.contrib.admin.views.main import ChangeList
 
 class OrderedModelAdmin(admin.ModelAdmin):
 
+    def get_model_info(self):
+        return dict(app=self.model._meta.app_label,
+                    model=self.model._meta.module_name)
+
     def get_urls(self):
         from django.conf.urls import patterns, url
 
@@ -21,14 +25,12 @@ class OrderedModelAdmin(admin.ModelAdmin):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        info = self.model._meta.app_label, self.model._meta.module_name
         return patterns('',
-                        url(r'^(.+)/move-(up)/$',
-                            wrap(self.move_view),
-                            name='%s_%s_move_up' % info),
-                        url(r'^(.+)/move-(down)/$',
-                            wrap(self.move_view),
-                            name='%s_%s_move_down' % info),
+                        url(r'^(.+)/move-(up)/$', wrap(self.move_view),
+                            name='{app}_{model}_order_move_up'.format(**self.get_model_info())),
+
+                        url(r'^(.+)/move-(down)/$', wrap(self.move_view),
+                            name='{app}_{model}_order_move_down'.format(**self.get_model_info())),
                         ) + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
@@ -65,8 +67,8 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': self.model._meta.module_name,
             'object_id': obj.id,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_move_up", args=[obj.id, 'up']),
-                'down': reverse("admin:{app}_order_move_down", args=[obj.id, 'down']),
+                'up': reverse("admin:{app}_{model}_order_move_up".format(**self.get_model_info()), args=[obj.id, 'up']),
+                'down': reverse("admin:{app}_{model}_order_move_down".format(**self.get_model_info()), args=[obj.id, 'down']),
             },
             'query_string': self.request_query_string
         })
