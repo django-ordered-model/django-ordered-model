@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from distutils.core import setup
- 
+# from distutils.core import setup
+from setuptools import setup, find_packages
+
 setup(
     name='django-ordered-model',
     version='0.3.0',
@@ -9,10 +10,8 @@ setup(
     author='Ben Firshman',
     author_email='ben@firshman.co.uk',
     url='http://github.com/bfirsh/django-ordered-model/',
-    packages=[
-        'ordered_model',
-        'ordered_model.tests',
-    ],
+    packages=find_packages(),
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Framework :: Django',
@@ -20,11 +19,5 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-    ],
-    package_data={'ordered_model': ['static/ordered_model/arrow-up.gif',
-                                    'static/ordered_model/arrow-down.gif',
-                                    'locale/de/LC_MESSAGES/django.po',
-                                    'locale/de/LC_MESSAGES/django.mo',
-                                    'locale/pl/LC_MESSAGES/django.po',
-                                    'locale/pl/LC_MESSAGES/django.mo']}
+    ]
 )
