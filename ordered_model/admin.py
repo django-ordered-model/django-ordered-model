@@ -27,10 +27,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
             return update_wrapper(wrapper, view)
         return patterns('',
                         url(r'^(.+)/move-(up)/$', wrap(self.move_view),
-                            name='{app}_{model}_order_move_up'.format(**self.get_model_info())),
+                            name='{app}_{model}_order_up'.format(**self.get_model_info())),
 
                         url(r'^(.+)/move-(down)/$', wrap(self.move_view),
-                            name='{app}_{model}_order_move_down'.format(**self.get_model_info())),
+                            name='{app}_{model}_order_down'.format(**self.get_model_info())),
                         ) + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
@@ -67,8 +67,8 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': self.model._meta.module_name,
             'object_id': obj.id,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_move_up".format(**self.get_model_info()), args=[obj.id, 'up']),
-                'down': reverse("admin:{app}_{model}_order_move_down".format(**self.get_model_info()), args=[obj.id, 'down']),
+                'up': reverse("admin:{app}_{model}_order_up".format(**self.get_model_info()), args=[obj.id, 'up']),
+                'down': reverse("admin:{app}_{model}_order_down".format(**self.get_model_info()), args=[obj.id, 'down']),
             },
             'query_string': self.request_query_string
         })
