@@ -1,13 +1,15 @@
 from functools import update_wrapper
 
-from django.conf import settings
+# from django.conf import settings
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+# from django.utils.html import strip_spaces_between_tags as short
+from django.utils.translation import ugettext_lazy as _
+from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.contrib.admin.views.main import ChangeList
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
-from django.utils.html import strip_spaces_between_tags as short
-from django.utils.translation import ugettext_lazy as _
 
 
 class OrderedModelAdmin(admin.ModelAdmin):
@@ -58,20 +60,15 @@ class OrderedModelAdmin(admin.ModelAdmin):
         return HttpResponseRedirect('../../%s' % self.request_query_string)
 
     def move_up_down_links(self, obj):
-        link_html = short("""
-            <a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-up/%(query_string)s">
-                <img src="%(STATIC_URL)sordered_model/arrow-up.gif" alt="Move up" />
-            </a>
-            <a href="../../%(app_label)s/%(module_name)s/%(object_id)s/move-down/%(query_string)s">
-                <img src="%(STATIC_URL)sordered_model/arrow-down.gif" alt="Move down" />
-            </a>""")
-
-        return link_html % {
+        return render_to_string("ordered_model/admin/order_controls.html", {
             'app_label': self.model._meta.app_label,
             'module_name': self.model._meta.module_name,
             'object_id': obj.id,
-            'STATIC_URL': settings.STATIC_URL,
+            'urls': {
+                'up': reverse("admin:{app}_{model}_order_move_up", args=[obj.id, 'up']),
+                'down': reverse("admin:{app}_order_move_down", args=[obj.id, 'down']),
+            },
             'query_string': self.request_query_string
-        }
+        })
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
