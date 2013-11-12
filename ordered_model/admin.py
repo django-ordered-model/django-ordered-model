@@ -1,11 +1,11 @@
+from functools import update_wrapper
+
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.util import unquote
 from django.contrib.admin.views.main import ChangeList
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from functools import update_wrapper
 from django.utils.html import strip_spaces_between_tags as short
 from django.utils.translation import ugettext_lazy as _
 
