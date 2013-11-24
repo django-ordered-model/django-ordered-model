@@ -21,7 +21,7 @@ class OrderedModel(models.Model):
     def save(self, *args, **kwargs):
         if not self.id:
             c = self.__class__.objects.all().aggregate(Max('order')).get('order__max')
-            self.order = c and c + 1 or 0
+            self.order = 0 if c is None else c + 1
         super(OrderedModel, self).save(*args, **kwargs)
 
     def _move(self, up, qs=None):
