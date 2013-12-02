@@ -6,17 +6,24 @@ from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
 
 
-class OrderedModel(models.Model):
+class OrderedModel(models.Model, OrderedModelMixin):
     """
     An abstract model that allows objects to be ordered relative to each other.
     Provides an ``order`` field.
     """
-
-    order = models.PositiveIntegerField(editable=False, db_index=True)
-
+    
     class Meta:
         abstract = True
         ordering = ('order',)
+
+
+class OrderedModel(models.Model):
+    """
+    A model mixin that allows objects to be ordered relative to each other.
+    Provides an ``order`` field.
+    """
+
+    order = models.PositiveIntegerField(editable=False, db_index=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
