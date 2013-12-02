@@ -6,17 +6,6 @@ from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
 
 
-class OrderedModel(models.Model, OrderedModelMixin):
-    """
-    An abstract model that allows objects to be ordered relative to each other.
-    Provides an ``order`` field.
-    """
-    
-    class Meta:
-        abstract = True
-        ordering = ('order',)
-
-
 class OrderedModelMixin(object):
     """
     A model mixin that allows objects to be ordered relative to each other.
@@ -154,3 +143,14 @@ class OrderedModelMixin(object):
         """
         o = self.__class__.objects.all().aggregate(Max('order')).get('order__max')
         self.to(o)
+
+
+class OrderedModel(models.Model, OrderedModelMixin):
+    """
+    An abstract model that allows objects to be ordered relative to each other.
+    Provides an ``order`` field.
+    """
+    
+    class Meta:
+        abstract = True
+        ordering = ('order',)
