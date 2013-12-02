@@ -17,7 +17,7 @@ class OrderedModel(models.Model, OrderedModelMixin):
         ordering = ('order',)
 
 
-class OrderedModel(models.Model):
+class OrderedModelMixin(object):
     """
     A model mixin that allows objects to be ordered relative to each other.
     Provides an ``order`` field.
