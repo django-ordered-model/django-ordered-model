@@ -1,5 +1,5 @@
 from django.test import TestCase
-from ordered_model.tests.models import Item
+from ordered_model.tests.models import Answer, Item, Question
 
 
 class OrderGenerationTests(TestCase):
@@ -90,3 +90,83 @@ class ModelTestCase(TestCase):
         Item.objects.get(pk=3).up()
         self.assertNames([('3', 0), ('1', 5), ('4', 6)])
 
+
+class OrderWithRespectToTests(TestCase):
+    def setUp(self):
+        q1 = Question.objects.create()
+        q2 = Question.objects.create()
+        self.q1_a1 = q1.answers.create()
+        self.q2_a1 = q2.answers.create()
+        self.q1_a2 = q1.answers.create()
+        self.q2_a2 = q2.answers.create()
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
+
+    def test_swap(self):
+        with self.assertRaises(ValueError):
+            self.q1_a1.swap([self.q2_a1])
+
+    def test_up(self):
+        self.q1_a2.up()
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a2.pk, 0), (self.q1_a1.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
+
+    def test_down(self):
+        self.q2_a1.down()
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
+            (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
+        ])
+
+    def test_to(self):
+        self.q2_a1.to(1)
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
+            (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
+        ])
+
+    def test_above(self):
+        with self.assertRaises(ValueError):
+            self.q1_a2.above(self.q2_a1)
+        self.q1_a2.above(self.q1_a1)
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a2.pk, 0), (self.q1_a1.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
+
+    def test_below(self):
+        with self.assertRaises(ValueError):
+            self.q2_a1.below(self.q1_a2)
+        self.q2_a1.below(self.q2_a2)
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
+            (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
+        ])
+
+    def test_top(self):
+        self.q1_a2.top()
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a2.pk, 0), (self.q1_a1.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
+
+    def test_bottom(self):
+        self.q2_a1.bottom()
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
+            (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
+        ])
