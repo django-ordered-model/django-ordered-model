@@ -74,3 +74,71 @@ class OrderedModelAdmin(admin.ModelAdmin):
         })
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
+
+
+class OrderedTabularInline(admin.TabularInline):
+
+    @classmethod
+    def get_model_info(cls):
+        return dict(app=cls.model._meta.app_label,
+                    model=cls.model._meta.module_name)
+    @classmethod
+    def get_urls(cls, model_admin):
+        from django.conf.urls import patterns, url
+
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return model_admin.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
+        return patterns('',
+                        url(r'^(.+)/move-(up)/$', wrap(cls.move_view),
+                            name='{app}_{model}_order_up'.format(**cls.get_model_info())),
+
+                        url(r'^(.+)/move-(down)/$', wrap(cls.move_view),
+                            name='{app}_{model}_order_down'.format(**cls.get_model_info())),
+                        ) # + super(OrderedTabularInline, cls).get_urls()
+
+    @classmethod
+    def _get_changelist(cls, request):
+        list_display = cls.get_list_display(request)
+        list_display_links = cls.get_list_display_links(request, list_display)
+
+        cl = ChangeList(request, cls.model, list_display,
+                        list_display_links, cls.list_filter, cls.date_hierarchy,
+                        cls.search_fields, cls.list_select_related,
+                        cls.list_per_page, cls.list_max_show_all, cls.list_editable,
+                        cls)
+
+        return cl
+
+    request_query_string = ''
+
+    @classmethod
+    def changelist_view(cls, request, extra_context=None):
+        cl = cls._get_changelist(request)
+        cls.request_query_string = cl.get_query_string()
+        return super(OrderedTabularInline, cls).changelist_view(request, extra_context)
+
+    @classmethod
+    def move_view(cls, request, object_id, direction):
+        cl = cls._get_changelist(request)
+        qs = cl.get_query_set(request)
+
+        obj = get_object_or_404(cls.model, pk=unquote(object_id))
+        obj.move(direction, qs)
+
+        return HttpResponseRedirect('../../%s' % self.request_query_string)
+
+    def move_up_down_links(self, obj):
+        return render_to_string("ordered_model/admin/order_controls.html", {
+            'app_label': self.model._meta.app_label,
+            'module_name': self.model._meta.module_name,
+            'object_id': obj.id,
+            'urls': {
+                'up': reverse("admin:{app}_{model}_order_up".format(**self.get_model_info()), args=[obj.id, 'up']),
+                'down': reverse("admin:{app}_{model}_order_down".format(**self.get_model_info()), args=[obj.id, 'down']),
+            },
+            'query_string': self.request_query_string
+        })
+    move_up_down_links.allow_tags = True
+    move_up_down_links.short_description = _(u'Move')
