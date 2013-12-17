@@ -87,6 +87,21 @@ the order value of all objects that were above the moved object by one.
 This sets the order value to the highest value found in the stack and decreases
 the order value of all objects that were below the moved object by one.
 
+## Subset Ordering
+
+In some cases, ordering objects is required only on a subset of objects. For example,
+an application that manages contact lists for users, in a many-to-one/many relationship,
+would like to allow each user to order their contacts regardless of how other users
+choose their order. This option is supported via the `order_with_respect_to` parameter.
+
+A simple example might look like so:
+
+    class Contact(OrderedModel):
+        user = models.ForeignKey(User)
+        phone = models.CharField()
+        order_with_respect_to = 'user'
+
+
 Admin integration
 -----------------
 
