@@ -42,7 +42,6 @@ class ModelTestCase(TestCase):
 
     def test_down_with_gap(self):
         Item.objects.get(pk=2).down()
-        self.assertNames([('1', 0), ('3', 1), ('2', 5), ('4', 6)])
         self.assertNames(['1', '3', '2', '4'])
 
     def test_to(self):
@@ -89,7 +88,7 @@ class ModelTestCase(TestCase):
         Item.objects.get(pk=2).delete()
         self.assertNames(['1', '3', '4'])
         Item.objects.get(pk=3).up()
-        self.assertNames(['2', '1', '4'])
+        self.assertNames(['3', '1', '4'])
 
 
 class OrderWithRespectToTests(TestCase):
