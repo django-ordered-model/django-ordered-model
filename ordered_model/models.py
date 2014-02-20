@@ -20,7 +20,12 @@ class OrderedModel(models.Model):
         ordering = ('order',)
 
     def _get_order_with_respect_to(self):
-        return getattr(self, self.order_with_respect_to)
+        owrt_vals = []
+        if type(self.order_with_respect_to) is not tuple:
+            self.order_with_respect_to = (self.order_with_respect_to)
+        for field_name in self.order_with_respect_to:
+            owrt_vals.append((field_name, getattr(self, field_name)))
+        return owrt_vals
 
     def _valid_ordering_reference(self, reference):
         return self.order_with_respect_to is None or (
@@ -31,8 +36,8 @@ class OrderedModel(models.Model):
         qs = qs or self._default_manager.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
-            value = self._get_order_with_respect_to()
-            qs = qs.filter((order_with_respect_to, value))
+            owrt_vals = self._get_order_with_respect_to()
+            qs = qs.filter(*owrt_vals)
         return qs
 
     def save(self, *args, **kwargs):
@@ -98,9 +103,8 @@ class OrderedModel(models.Model):
             return
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
-                "%r can only be swapped with instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
-                    self._get_order_with_respect_to()
+                "%r can only be swapped with instances of %r in which %s." % (
+                    self, self.__class__, " and ".join("'{}' equals '{}'".format(owrt[0], owrt[1]) for owrt in self._get_order_with_respect_to())
                 )
             )
         self.order, replacement.order = replacement.order, self.order
@@ -140,9 +144,8 @@ class OrderedModel(models.Model):
         """
         if not self._valid_ordering_reference(ref):
             raise ValueError(
-                "%r can only be moved above instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
-                    self._get_order_with_respect_to()
+                "%r can only be moved above instances of %r in which %s." % (
+                    self, self.__class__, " and ".join("'{}' equals '{}'".format(owrt[0], owrt[1]) for owrt in self._get_order_with_respect_to())
                 )
             )
         if self.order == ref.order:
@@ -159,9 +162,8 @@ class OrderedModel(models.Model):
         """
         if not self._valid_ordering_reference(ref):
             raise ValueError(
-                "%r can only be moved below instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
-                    self._get_order_with_respect_to()
+                "%r can only be moved below instances of %r in which %s." % (
+                    self, self.__class__, " and ".join("'{}' equals '{}'".format(owrt[0], owrt[1]) for owrt in self._get_order_with_respect_to())
                 )
             )
         if self.order == ref.order:
