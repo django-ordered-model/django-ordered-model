@@ -22,7 +22,7 @@ class OrderedModel(models.Model):
     def _get_order_with_respect_to(self):
         owrt_vals = []
         if type(self.order_with_respect_to) is not tuple:
-            self.order_with_respect_to = (self.order_with_respect_to)
+            self.order_with_respect_to = (self.order_with_respect_to,)
         for field_name in self.order_with_respect_to:
             owrt_vals.append((field_name, getattr(self, field_name)))
         return owrt_vals
