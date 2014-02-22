@@ -106,6 +106,13 @@ A simple example might look like so:
         phone = models.CharField()
         order_with_respect_to = 'user'
 
+If objects are ordered with respect to more than one field, `order_with_respect_to` supports
+tuples to define multiple fields:
+
+    class Model(OrderedModel)
+        # ...
+        order_with_respect_to = ('field_a', 'field_b')
+
 In a many-to-many relationship you need to use a seperate through model which is derived from the OrderedModel.
 For example, an application which manages pizzas with toppings.
 
