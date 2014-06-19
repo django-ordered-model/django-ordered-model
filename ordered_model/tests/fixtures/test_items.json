@@ -20,7 +20,7 @@
     "model": "tests.item", 
     "fields": {
       "name": "3", 
-      "order": 5
+      "order": 2
     }
   },
   {
@@ -28,7 +28,7 @@
     "model": "tests.item", 
     "fields": {
       "name": "4", 
-      "order": 6
+      "order": 3
     }
   }
 ]

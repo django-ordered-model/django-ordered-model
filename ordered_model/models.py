@@ -41,6 +41,11 @@ class OrderedModel(models.Model):
             self.order = 0 if c is None else c + 1
         super(OrderedModel, self).save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        qs = self.get_ordering_queryset()
+        qs.filter(order__gt=self.order).update(order=F('order')-1)
+        super(OrderedModel, self).delete(*args, **kwargs)
+
     def _move(self, up, qs=None):
         qs = self.get_ordering_queryset(qs)
 
