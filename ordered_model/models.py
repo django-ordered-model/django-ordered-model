@@ -36,7 +36,7 @@ class OrderedModel(models.Model):
         return qs
 
     def save(self, *args, **kwargs):
-        if not self.id:
+        if self.order is None:
             c = self.get_ordering_queryset().aggregate(Max('order')).get('order__max')
             self.order = 0 if c is None else c + 1
         super(OrderedModel, self).save(*args, **kwargs)

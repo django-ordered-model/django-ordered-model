@@ -1,6 +1,6 @@
 from django.test import TestCase
-from ordered_model.tests.models import Answer, Item, Question
-
+from ordered_model.tests.models import Answer, Item, Question, CustomItem
+import uuid
 
 class OrderGenerationTests(TestCase):
     def test_second_order_generation(self):
@@ -170,3 +170,21 @@ class OrderWithRespectToTests(TestCase):
             (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
             (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
         ])
+
+
+class CustomPKTest(TestCase):
+    def setUp(self):
+        self.item1 = CustomItem.objects.create(id=str(uuid.uuid4()), name='1')
+        self.item2 = CustomItem.objects.create(id=str(uuid.uuid4()), name='2')
+        self.item3 = CustomItem.objects.create(id=str(uuid.uuid4()), name='3')
+        self.item4 = CustomItem.objects.create(id=str(uuid.uuid4()), name='4')
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order'), [
+                (self.item1.pk, 0),
+                (self.item2.pk, 1),
+                (self.item3.pk, 2),
+                (self.item4.pk, 3)
+            ]
+        )
