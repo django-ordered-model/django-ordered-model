@@ -19,3 +19,8 @@ class Answer(OrderedModel):
 
     def __unicode__(self):
         return u"Answer #%d of question #%d" % (self.order, self.question_id)
+
+
+class CustomItem(OrderedModel):
+    id = models.CharField(max_length=100, primary_key=True)
+    name = models.CharField(max_length=100)
