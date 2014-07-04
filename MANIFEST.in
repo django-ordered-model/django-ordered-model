@@ -1,3 +1,2 @@
 include MANIFEST.in *.md LICENSE *.sh
-recursive-include ordered_model *.json
-
+recursive-include ordered_model *.json *.html
