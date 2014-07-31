@@ -6,8 +6,8 @@ django-ordered-model
 django-ordered-model allows models to be ordered and provides a simple admin
 interface for reordering them.
 
-Based on http://www.djangosnippets.org/snippets/998/ and
-http://www.djangosnippets.org/snippets/259/
+Based on https://djangosnippets.org/snippets/998/ and
+https://djangosnippets.org/snippets/259/
 
 Requires:
 
