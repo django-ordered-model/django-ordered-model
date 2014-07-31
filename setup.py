@@ -26,5 +26,6 @@ setup(
                                     'locale/de/LC_MESSAGES/django.po',
                                     'locale/de/LC_MESSAGES/django.mo',
                                     'locale/pl/LC_MESSAGES/django.po',
-                                    'locale/pl/LC_MESSAGES/django.mo']}
+                                    'locale/pl/LC_MESSAGES/django.mo',
+                                    'templates/ordered_model/admin/order_controls.html']}
 )
