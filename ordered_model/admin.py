@@ -16,7 +16,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
 
     def get_model_info(self):
         return dict(app=self.model._meta.app_label,
-                    model=self.model._meta.module_name)
+                    model=self.model._meta.model_name)
 
     def get_urls(self):
         from django.conf.urls import patterns, url
@@ -64,7 +64,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
     def move_up_down_links(self, obj):
         return render_to_string("ordered_model/admin/order_controls.html", {
             'app_label': self.model._meta.app_label,
-            'module_name': self.model._meta.module_name,
+            'module_name': self.model._meta.model_name,
             'object_id': obj.id,
             'urls': {
                 'up': reverse("admin:{app}_{model}_order_up".format(**self.get_model_info()), args=[obj.id, 'up']),
