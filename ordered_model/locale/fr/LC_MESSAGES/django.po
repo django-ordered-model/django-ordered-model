@@ -1,0 +1,46 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-07-13 08:16+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2)\n"
+
+#: admin.py:76
+msgid "Move"
+msgstr "Déplacer"
+
+#: models.py:67
+msgid ""
+"The method move() is deprecated and will be removed in the next release."
+msgstr ""
+"La méthode move() est dépréciée et sera supprimée dans la prochaine version."
+
+#: models.py:80
+msgid ""
+"The method move_down() is deprecated and will be removed in the next "
+"release. Please use down() instead!"
+msgstr ""
+"La méthode move_down() est dépréciée et sera supprimée dans la prochaine "
+"version. Merci d'utiliser down() à la place !"
+
+#: models.py:90
+msgid ""
+"The method move_up() is deprecated and will be removed in the next release. "
+"Please use up() instead!"
+msgstr ""
+"La méthode move_up() est dépréciée et sera supprimée dans la prochaine "
+"version. Merci d'utiliser up() à la place !"
