@@ -179,6 +179,9 @@ class OrderedModelBase(models.Model):
         """
         Move object to a certain position, updating all affected objects to move accordingly up or down.
         """
+        if type(order).__name__ != 'int':
+            raise TypeError("Order value must be set using an 'int', not using a '%s'." % (type(order).__name__,))
+
         if order is None or getattr(self, self.order_field_name) == order:
             # object is already at desired position
             return
