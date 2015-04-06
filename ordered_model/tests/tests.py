@@ -1,4 +1,6 @@
+from django.contrib import admin
 from django.test import TestCase
+from ordered_model.admin import OrderedModelAdmin
 from ordered_model.tests.models import Answer, Item, Question, CustomItem
 import uuid
 
@@ -188,3 +190,12 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
+
+admin.site.register(Item, OrderedModelAdmin)
+
+class OrderedModelAdminTest(TestCase):
+    def test_move_up_down_links(self):
+        item = Item.objects.create(name='foo')
+        s = admin.site._registry[Item].move_up_down_links(item)
+        self.assertIn('/admin/tests/item/1/move-up/', s)
+        self.assertIn('/admin/tests/item/1/move-down/', s)
