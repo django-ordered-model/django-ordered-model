@@ -18,5 +18,5 @@ matrix:
 install: pip install $DJANGO --use-mirrors
 
 # command to run tests
-script: ./run_tests.sh
+script: script/test-command
 

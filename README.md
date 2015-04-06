@@ -121,5 +121,7 @@ To add arrows in the admin change list page to do reordering, you can use the
 Test suite
 ----------
 
-    $ ./run_tests.sh
+Requires Docker.
+
+    $ script/test
 
