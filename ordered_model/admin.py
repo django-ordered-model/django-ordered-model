@@ -64,10 +64,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
         return render_to_string("ordered_model/admin/order_controls.html", {
             'app_label': model_info['app'],
             'module_name': model_info['model'],
-            'object_id': obj.id,
+            'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.id, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.id, 'down']),
+                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
+                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
