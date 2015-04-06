@@ -1,6 +1,13 @@
 Change log
 ==========
 
+0.4.1 – 2015-04-06
+------------------
+
+ - Add support for Django 1.7 and 1.8.
+ - Fix deprecation warning about module\_name.
+ - Add French translations.
+
 0.4.0 – 2014-07-31
 ------------------
 
