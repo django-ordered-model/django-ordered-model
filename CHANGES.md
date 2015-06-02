@@ -1,6 +1,12 @@
 Change log
 ==========
 
+0.4.2 – 2015-06-02
+------------------
+
+ - Fix admin buttons not working with custom primary keys.
+ - Fix admin using deprecated `get_query_set` method.
+
 0.4.1 – 2015-04-06
 ------------------
 
