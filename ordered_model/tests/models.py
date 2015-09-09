@@ -21,6 +21,15 @@ class Answer(OrderedModel):
         return u"Answer #%d of question #%d" % (self.order, self.question_id)
 
 
+class GroupedAnswer(OrderedModel):
+    group = models.CharField(max_length=10, default='group1')
+    question = models.ForeignKey(Question, related_name='grouped_answers')
+    order_with_respect_to = ('question', 'group')
+
+    class Meta:
+        ordering = ('question', 'group', 'order')
+
+
 class CustomItem(OrderedModel):
     id = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=100)

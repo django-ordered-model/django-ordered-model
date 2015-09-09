@@ -1,3 +1,4 @@
+import six
 import warnings
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
@@ -20,7 +21,11 @@ class OrderedModel(models.Model):
         ordering = ('order',)
 
     def _get_order_with_respect_to(self):
-        return getattr(self, self.order_with_respect_to)
+        if isinstance(self.order_with_respect_to, six.string_types):
+            return [(self.order_with_respect_to, getattr(self, self.order_with_respect_to))]
+
+        filter = [(field, getattr(self, field)) for field in self.order_with_respect_to]
+        return filter
 
     def _valid_ordering_reference(self, reference):
         return self.order_with_respect_to is None or (
@@ -29,10 +34,9 @@ class OrderedModel(models.Model):
 
     def get_ordering_queryset(self, qs=None):
         qs = qs or self.__class__.objects.all()
-        order_with_respect_to = self.order_with_respect_to
-        if order_with_respect_to:
-            value = self._get_order_with_respect_to()
-            qs = qs.filter((order_with_respect_to, value))
+
+        if self.order_with_respect_to:
+            qs = qs.filter(*self._get_order_with_respect_to())
         return qs
 
     def save(self, *args, **kwargs):

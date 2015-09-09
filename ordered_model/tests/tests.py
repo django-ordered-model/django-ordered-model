@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem
+from ordered_model.tests.models import Answer, GroupedAnswer, Item, Question, CustomItem
 import uuid
 
 class OrderGenerationTests(TestCase):
@@ -172,6 +172,68 @@ class OrderWithRespectToTests(TestCase):
             (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
             (self.q2_a2.pk, 0), (self.q2_a1.pk, 1)
         ])
+
+
+class OrderWithCompositeRespectToTests(TestCase):
+    def setUp(self):
+        q1 = Question.objects.create()
+        q2 = Question.objects.create()
+        self.q1_group2_a1 = q1.grouped_answers.create(group='group 2')
+        self.q1_group1_a1 = q1.grouped_answers.create(group='group 1')
+        self.q2_group1_a1 = q2.grouped_answers.create(group='group 1')
+        self.q2_group1_a2 = q2.grouped_answers.create(group='group 1')
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            GroupedAnswer.objects.values_list('pk', 'order'), [
+            (self.q1_group1_a1.pk, 0), (self.q1_group2_a1.pk, 0),
+            (self.q2_group1_a1.pk, 0), (self.q2_group1_a2.pk, 1)
+        ])
+
+    def test_swap(self):
+        with self.assertRaises(ValueError):
+            self.q1_group1_a1.swap([self.q1_group2_a1])
+
+    def _is_right_sequence(self):
+        self.assertSequenceEqual(
+            GroupedAnswer.objects.values_list('pk', 'order'), [
+            (self.q1_group1_a1.pk, 0), (self.q1_group2_a1.pk, 0),
+            (self.q2_group1_a2.pk, 0), (self.q2_group1_a1.pk, 1)
+        ])
+
+    def test_up(self):
+        self.q2_group1_a2.up()
+        self._is_right_sequence()
+
+    def test_down(self):
+        self.q2_group1_a1.down()
+        self._is_right_sequence()
+
+    def test_to(self):
+        self.q2_group1_a1.to(1)
+        self._is_right_sequence()
+
+    def test_above(self):
+        with self.assertRaises(ValueError):
+            self.q1_group1_a1.above(self.q1_group2_a1)
+
+        self.q2_group1_a2.above(self.q2_group1_a1)
+        self._is_right_sequence()
+
+    def test_below(self):
+        with self.assertRaises(ValueError):
+            self.q1_group1_a1.below(self.q1_group2_a1)
+
+        self.q2_group1_a1.below(self.q2_group1_a2)
+        self._is_right_sequence()
+
+    def test_top(self):
+        self.q2_group1_a2.top()
+        self._is_right_sequence()
+
+    def test_bottom(self):
+        self.q2_group1_a1.bottom()
+        self._is_right_sequence()
 
 
 class CustomPKTest(TestCase):
