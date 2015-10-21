@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem
+from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel
 import uuid
 
 class OrderGenerationTests(TestCase):
@@ -190,6 +190,25 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
+
+
+class CustomOrderFieldTest(TestCase):
+    def setUp(self):
+        self.item1 = CustomOrderFieldModel.objects.create(name='1')
+        self.item2 = CustomOrderFieldModel.objects.create(name='2')
+        self.item3 = CustomOrderFieldModel.objects.create(name='3')
+        self.item4 = CustomOrderFieldModel.objects.create(name='4')
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            CustomOrderFieldModel.objects.values_list('pk', CustomOrderFieldModel.order_field_name), [
+                (self.item1.pk, 0),
+                (self.item2.pk, 1),
+                (self.item3.pk, 2),
+                (self.item4.pk, 3)
+            ]
+        )
+
 
 admin.site.register(Item, OrderedModelAdmin)
 
