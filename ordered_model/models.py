@@ -46,22 +46,26 @@ class OrderedModelBase(models.Model):
 
     def delete(self, *args, **kwargs):
         qs = self.get_ordering_queryset()
-        qs.filter(order__gt=getattr(self, self.order_field_name)).update(order=F(self.order_field_name)-1)
+        qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})\
+          .update(**{self.order_field_name: F(self.order_field_name) - 1})
         super(OrderedModelBase, self).delete(*args, **kwargs)
 
     def _move(self, up, qs=None):
         qs = self.get_ordering_queryset(qs)
 
         if up:
-            qs = qs.order_by('-' + self.order_field_name).filter(order__lt=getattr(self, self.order_field_name))
+            qs = qs.order_by('-' + self.order_field_name)\
+                   .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
         else:
-            qs = qs.filter(order__gt=getattr(self, self.order_field_name))
+            qs = qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})
         try:
             replacement = qs[0]
         except IndexError:
             # already first/last
             return
-        self.order, replacement.order = replacement.order, getattr(self, self.order_field_name)
+        order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
+        setattr(self, self.order_field_name, replacement_order)
+        setattr(replacement, self.order_field_name, order)
         self.save()
         replacement.save()
 
@@ -111,7 +115,9 @@ class OrderedModelBase(models.Model):
                     self._get_order_with_respect_to()
                 )
             )
-        self.order, replacement.order = replacement.order, getattr(self, self.order_field_name)
+        order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
+        setattr(self, self.order_field_name, replacement_order)
+        setattr(replacement, self.order_field_name, order)
         self.save()
         replacement.save()
 
@@ -119,13 +125,15 @@ class OrderedModelBase(models.Model):
         """
         Move this object up one position.
         """
-        self.swap(self.get_ordering_queryset().filter(order__lt=getattr(self, self.order_field_name)).order_by('-' + self.order_field_name))
+        self.swap(self.get_ordering_queryset()
+                      .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
+                      .order_by('-' + self.order_field_name))
 
     def down(self):
         """
         Move this object down one position.
         """
-        self.swap(self.get_ordering_queryset().filter(order__gt=getattr(self, self.order_field_name)))
+        self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
 
     def to(self, order):
         """
@@ -136,9 +144,13 @@ class OrderedModelBase(models.Model):
             return
         qs = self.get_ordering_queryset()
         if getattr(self, self.order_field_name) > order:
-            qs.filter(order__lt=getattr(self, self.order_field_name), order__gte=order).update(order=F(self.order_field_name) + 1)
+            qs.filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name),
+                         self.order_field_name + '__gte': order})\
+              .update(**{self.order_field_name: F(self.order_field_name) + 1})
         else:
-            qs.filter(order__gt=getattr(self, self.order_field_name), order__lte=order).update(order=F(self.order_field_name) - 1)
+            qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name),
+                         self.order_field_name + '__lte': order})\
+              .update(**{self.order_field_name: F(self.order_field_name) - 1})
         setattr(self, self.order_field_name, order)
         self.save()
 
@@ -153,12 +165,15 @@ class OrderedModelBase(models.Model):
                     self._get_order_with_respect_to()
                 )
             )
-        if getattr(self, self.order_field_name) == ref.order:
+        if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
-        if getattr(self, self.order_field_name) > ref.order:
-            o = ref.order
+        if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
+            o = getattr(ref, self.order_field_name)
         else:
-            o = self.get_ordering_queryset().filter(order__lt=ref.order).aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max') or 0
+            o = self.get_ordering_queryset()\
+                    .filter(**{self.order_field_name + '__lt': getattr(ref, self.order_field_name)})\
+                    .aggregate(Max(self.order_field_name))\
+                    .get(self.order_field_name + '__max') or 0
         self.to(o)
 
     def below(self, ref):
@@ -172,12 +187,15 @@ class OrderedModelBase(models.Model):
                     self._get_order_with_respect_to()
                 )
             )
-        if getattr(self, self.order_field_name) == ref.order:
+        if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
-        if getattr(self, self.order_field_name) > ref.order:
-            o = self.get_ordering_queryset().filter(order__gt=ref.order).aggregate(Min(self.order_field_name)).get(self.order_field_name + '__min') or 0
+        if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
+            o = self.get_ordering_queryset()\
+                    .filter(**{self.order_field_name + '__gt': getattr(ref, self.order_field_name)})\
+                    .aggregate(Min(self.order_field_name))\
+                    .get(self.order_field_name + '__min') or 0
         else:
-            o = ref.order
+            o = getattr(ref, self.order_field_name)
         self.to(o)
 
     def top(self):

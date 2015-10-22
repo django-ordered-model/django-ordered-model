@@ -30,3 +30,6 @@ class CustomOrderFieldModel(OrderedModelBase):
     sort_order = models.PositiveIntegerField(editable=False, db_index=True)
     name = models.CharField(max_length=100)
     order_field_name = 'sort_order'
+
+    class Meta:
+        ordering = ('sort_order',)
