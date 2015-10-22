@@ -40,7 +40,7 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
-            c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get('{}__max'.format(self.order_field_name))
+            c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
             setattr(self, self.order_field_name, 0 if c is None else c + 1)
         super(OrderedModelBase, self).save(*args, **kwargs)
 
@@ -53,7 +53,7 @@ class OrderedModelBase(models.Model):
         qs = self.get_ordering_queryset(qs)
 
         if up:
-            qs = qs.order_by('-{}'.format(self.order_field_name)).filter(order__lt=getattr(self, self.order_field_name))
+            qs = qs.order_by('-' + self.order_field_name).filter(order__lt=getattr(self, self.order_field_name))
         else:
             qs = qs.filter(order__gt=getattr(self, self.order_field_name))
         try:
@@ -119,7 +119,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object up one position.
         """
-        self.swap(self.get_ordering_queryset().filter(order__lt=getattr(self, self.order_field_name)).order_by('-{}'.format(self.order_field_name)))
+        self.swap(self.get_ordering_queryset().filter(order__lt=getattr(self, self.order_field_name)).order_by('-' + self.order_field_name))
 
     def down(self):
         """
@@ -158,7 +158,7 @@ class OrderedModelBase(models.Model):
         if getattr(self, self.order_field_name) > ref.order:
             o = ref.order
         else:
-            o = self.get_ordering_queryset().filter(order__lt=ref.order).aggregate(Max(self.order_field_name)).get('{}__max'.format(self.order_field_name)) or 0
+            o = self.get_ordering_queryset().filter(order__lt=ref.order).aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max') or 0
         self.to(o)
 
     def below(self, ref):
@@ -175,7 +175,7 @@ class OrderedModelBase(models.Model):
         if getattr(self, self.order_field_name) == ref.order:
             return
         if getattr(self, self.order_field_name) > ref.order:
-            o = self.get_ordering_queryset().filter(order__gt=ref.order).aggregate(Min(self.order_field_name)).get('{}__min'.format(self.order_field_name)) or 0
+            o = self.get_ordering_queryset().filter(order__gt=ref.order).aggregate(Min(self.order_field_name)).get(self.order_field_name + '__min') or 0
         else:
             o = ref.order
         self.to(o)
@@ -184,14 +184,14 @@ class OrderedModelBase(models.Model):
         """
         Move this object to the top of the ordered stack.
         """
-        o = self.get_ordering_queryset().aggregate(Min(self.order_field_name)).get('{}__min'.format(self.order_field_name))
+        o = self.get_ordering_queryset().aggregate(Min(self.order_field_name)).get(self.order_field_name + '__min')
         self.to(o)
 
     def bottom(self):
         """
         Move this object to the bottom of the ordered stack.
         """
-        o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get('{}__max'.format(self.order_field_name))
+        o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
         self.to(o)
 
 
