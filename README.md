@@ -11,7 +11,7 @@ https://djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django >=1.4
+  * Django >=1.5
 
 Installation
 ------------
