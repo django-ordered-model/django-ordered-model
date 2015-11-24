@@ -4,17 +4,17 @@ from distutils.core import setup
  
 setup(
     name='django-ordered-model',
-    version='0.4.2',
+    version='1.0.0',
     description='Allows Django models to be ordered and provides a simple admin interface for reordering them.',
     author='Ben Firshman',
     author_email='ben@firshman.co.uk',
-    url='http://github.com/bfirsh/django-ordered-model/',
+    url='http://github.com/bfirsh/django-ordered-model',
     packages=[
         'ordered_model',
         'ordered_model.tests',
     ],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
