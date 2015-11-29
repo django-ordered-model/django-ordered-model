@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem
+from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel
 import uuid
 
 class OrderGenerationTests(TestCase):
@@ -190,6 +190,88 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
+
+
+class CustomOrderFieldTest(TestCase):
+    fixtures = ['test_items.json']
+
+    def assertNames(self, names):
+        self.assertEqual(list(enumerate(names)), [(i.sort_order, i.name) for i in CustomOrderFieldModel.objects.all()])
+
+    def test_inserting_new_models(self):
+        CustomOrderFieldModel.objects.create(name='Wurble')
+        self.assertNames(['1', '2', '3', '4', 'Wurble'])
+
+    def test_up(self):
+        CustomOrderFieldModel.objects.get(pk=4).up()
+        self.assertNames(['1', '2', '4', '3'])
+
+    def test_up_first(self):
+        CustomOrderFieldModel.objects.get(pk=1).up()
+        self.assertNames(['1', '2', '3', '4'])
+
+    def test_up_with_gap(self):
+        CustomOrderFieldModel.objects.get(pk=3).up()
+        self.assertNames(['1', '3', '2', '4'])
+
+    def test_down(self):
+        CustomOrderFieldModel.objects.get(pk=1).down()
+        self.assertNames(['2', '1', '3', '4'])
+
+    def test_down_last(self):
+        CustomOrderFieldModel.objects.get(pk=4).down()
+        self.assertNames(['1', '2', '3', '4'])
+
+    def test_down_with_gap(self):
+        CustomOrderFieldModel.objects.get(pk=2).down()
+        self.assertNames(['1', '3', '2', '4'])
+
+    def test_to(self):
+        CustomOrderFieldModel.objects.get(pk=4).to(0)
+        self.assertNames(['4', '1', '2', '3'])
+        CustomOrderFieldModel.objects.get(pk=4).to(2)
+        self.assertNames(['1', '2', '4', '3'])
+        CustomOrderFieldModel.objects.get(pk=3).to(1)
+        self.assertNames(['1', '3', '2', '4'])
+
+    def test_top(self):
+        CustomOrderFieldModel.objects.get(pk=4).top()
+        self.assertNames(['4', '1', '2', '3'])
+        CustomOrderFieldModel.objects.get(pk=2).top()
+        self.assertNames(['2', '4', '1', '3'])
+
+    def test_bottom(self):
+        CustomOrderFieldModel.objects.get(pk=1).bottom()
+        self.assertNames(['2', '3', '4', '1'])
+        CustomOrderFieldModel.objects.get(pk=3).bottom()
+        self.assertNames(['2', '4', '1', '3'])
+
+    def test_above(self):
+        CustomOrderFieldModel.objects.get(pk=3).above(CustomOrderFieldModel.objects.get(pk=1))
+        self.assertNames(['3', '1', '2', '4'])
+        CustomOrderFieldModel.objects.get(pk=4).above(CustomOrderFieldModel.objects.get(pk=1))
+        self.assertNames(['3', '4', '1', '2'])
+
+    def test_above_self(self):
+        CustomOrderFieldModel.objects.get(pk=3).above(CustomOrderFieldModel.objects.get(pk=3))
+        self.assertNames(['1', '2', '3', '4'])
+
+    def test_below(self):
+        CustomOrderFieldModel.objects.get(pk=1).below(CustomOrderFieldModel.objects.get(pk=3))
+        self.assertNames(['2', '3', '1', '4'])
+        CustomOrderFieldModel.objects.get(pk=3).below(CustomOrderFieldModel.objects.get(pk=4))
+        self.assertNames(['2', '1', '4', '3'])
+
+    def test_below_self(self):
+        CustomOrderFieldModel.objects.get(pk=2).below(CustomOrderFieldModel.objects.get(pk=2))
+        self.assertNames(['1', '2', '3', '4'])
+
+    def test_delete(self):
+        CustomOrderFieldModel.objects.get(pk=2).delete()
+        self.assertNames(['1', '3', '4'])
+        CustomOrderFieldModel.objects.get(pk=3).up()
+        self.assertNames(['3', '1', '4'])
+
 
 admin.site.register(Item, OrderedModelAdmin)
 
