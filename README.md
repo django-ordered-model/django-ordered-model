@@ -118,6 +118,23 @@ To add arrows in the admin change list page to do reordering, you can use the
     admin.site.register(Item, ItemAdmin)
 
 
+Renumbering Models
+------------------
+
+The admin interface will not renumber entries after deletion. Therefore, to
+sync up the changes, use the Django management command:
+
+    $ ./manage.py renumber <app_name>.<model_name>[:<start_number>] \
+        [<app_name>.<model_name>[:<start_number>] ... ]
+
+The arguments are as follows:
+
+- `<app_name>`: Name of the application for the model.
+- `<model_name>`: Name of the model that's an OrderedModel.
+- `<start_number>`: Optionally, a start number. For example, if the
+  `<start_number>` is `5`, then renumbering will start "5, 6, 7, ..."
+
+
 Test suite
 ----------
 
