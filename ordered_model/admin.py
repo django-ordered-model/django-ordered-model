@@ -105,6 +105,8 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
                     ),
                     args=[obj.pk, 'down']
                 ),
+                'top': reverse("admin:{app}_{model}_order_top".format(**model_info), args=[obj.pk, 'top']),
+                'bottom': reverse("admin:{app}_{model}_order_bottom".format(**model_info), args=[obj.pk, 'bottom']),
             },
             'query_string': self.request_query_string
         })
@@ -141,6 +143,11 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                 wrap(self.move_view),
                 name='{app}_{model}_change_order_inline'.format(**model_info)
             ),
+            url(r'^(.+)/move-(top)/$', wrap(self.move_view),
+                name='{app}_{model}_order_top'.format(**self._get_model_info())),
+
+            url(r'^(.+)/move-(bottom)/$', wrap(self.move_view),
+                name='{app}_{model}_order_bottom'.format(**self._get_model_info())),
         ]
 
     def move_view(self, request, admin_id, object_id, direction):

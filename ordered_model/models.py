@@ -90,6 +90,33 @@ class OrderedModelBase(models.Model):
           .update(**update_kwargs)
         super(OrderedModelBase, self).delete(*args, **kwargs)
 
+    def _move(self, up, qs=None):
+        qs = self.get_ordering_queryset(qs)
+
+        if up:
+            qs = qs.order_by('-' + self.order_field_name)\
+                   .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
+        else:
+            qs = qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})
+        try:
+            replacement = qs[0]
+        except IndexError:
+            # already first/last
+            return
+        order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
+        setattr(self, self.order_field_name, replacement_order)
+        setattr(replacement, self.order_field_name, order)
+        self.save()
+        replacement.save()
+
+    def move(self, direction, qs=None):
+        warnings.warn(
+            _("The method move() is deprecated and will be removed in the next release."),
+            DeprecationWarning
+        )
+        if direction in ['up', 'down', 'top', 'bottom']:
+            getattr(self, direction)()
+
     def swap(self, replacement):
         """
         Swap the position of this object with a replacement object.
