@@ -80,10 +80,8 @@ class OrderedModelBase(models.Model):
             _("The method move() is deprecated and will be removed in the next release."),
             DeprecationWarning
         )
-        if direction == 'up':
-            self.up()
-        else:
-            self.down()
+        if direction in ['up', 'down', 'top', 'bottom']:
+            getattr(self, direction)()
 
     def move_down(self):
         """

@@ -24,6 +24,12 @@ class OrderedModelAdmin(admin.ModelAdmin):
 
             url(r'^(.+)/move-(down)/$', wrap(self.move_view),
                 name='{app}_{model}_order_down'.format(**self._get_model_info())),
+
+            url(r'^(.+)/move-(top)/$', wrap(self.move_view),
+                name='{app}_{model}_order_top'.format(**self._get_model_info())),
+
+            url(r'^(.+)/move-(bottom)/$', wrap(self.move_view),
+                name='{app}_{model}_order_bottom'.format(**self._get_model_info())),
         ] + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
@@ -65,6 +71,8 @@ class OrderedModelAdmin(admin.ModelAdmin):
                     admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
                 'down': reverse("{admin_name}:{app}_{model}_order_down".format(
                     admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
+                'top': reverse("admin:{app}_{model}_order_top".format(**model_info), args=[obj.pk, 'top']),
+                'bottom': reverse("admin:{app}_{model}_order_bottom".format(**model_info), args=[obj.pk, 'bottom']),
             },
             'query_string': self.request_query_string
         })
