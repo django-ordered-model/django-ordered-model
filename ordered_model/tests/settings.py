@@ -8,6 +8,7 @@ DATABASES = {
 }
 ROOT_URLCONF = 'ordered_model.tests.urls'
 INSTALLED_APPS = [
+    'django.contrib.contenttypes',
     'ordered_model',
     'ordered_model.tests',
 ]
