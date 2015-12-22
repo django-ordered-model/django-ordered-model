@@ -12,11 +12,16 @@ https://djangosnippets.org/snippets/259/
 Requires:
 
   * Django >=1.5
+  * Python >=2.6 or >=3.3
 
 Installation
 ------------
 
     $ python setup.py install
+
+You can use Pip:
+
+    $ pip install django-ordered-model
 
 Usage
 -----
