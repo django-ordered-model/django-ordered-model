@@ -11,12 +11,17 @@ https://djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django >=1.4
+  * Django >=1.5
+  * Python >=2.6 or >=3.3
 
 Installation
 ------------
 
     $ python setup.py install
+
+You can use Pip:
+
+    $ pip install django-ordered-model
 
 Usage
 -----
@@ -121,5 +126,7 @@ To add arrows in the admin change list page to do reordering, you can use the
 Test suite
 ----------
 
-    $ ./run_tests.sh
+Requires Docker.
+
+    $ script/test
 

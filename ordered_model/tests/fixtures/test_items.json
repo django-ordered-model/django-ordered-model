@@ -30,5 +30,37 @@
       "name": "4", 
       "order": 3
     }
+  },
+  {
+    "pk": 1,
+    "model": "tests.customorderfieldmodel",
+    "fields": {
+      "name": "1",
+      "sort_order": 0
+    }
+  },
+  {
+    "pk": 2,
+    "model": "tests.customorderfieldmodel",
+    "fields": {
+      "name": "2",
+      "sort_order": 1
+    }
+  },
+  {
+    "pk": 3,
+    "model": "tests.customorderfieldmodel",
+    "fields": {
+      "name": "3",
+      "sort_order": 2
+    }
+  },
+  {
+    "pk": 4,
+    "model": "tests.customorderfieldmodel",
+    "fields": {
+      "name": "4",
+      "sort_order": 3
+    }
   }
 ]
