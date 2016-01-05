@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.test import TestCase
+from ordered_model.management.commands import renumber
 
 from tests.models import (
     Answer,
@@ -720,3 +721,29 @@ class PolymorpicOrderGenerationTests(TestCase):
         self.assertEqual(o2.order, 2)
         m1.refresh_from_db()
         self.assertEqual(m1.order, 3)
+
+class AdminCommandTests(TestCase):
+
+    fixtures = ['test_items.json']
+
+    def assertNames(self, names):
+        self.assertEqual(names, [i.name for i in CustomOrderFieldModel.objects.all()])
+    def assertOrder(self, start, end):
+        self.assertEqual(list(range(start, end)), [i.sort_order for i in CustomOrderFieldModel.objects.all()])
+
+    def test_model_renumber(self):
+        self.assertNames(['1', '2', '3', '4'])
+        CustomOrderFieldModel.objects.get(pk=4).up()
+        CustomOrderFieldModel.objects.get(pk=2).down()
+        CustomOrderFieldModel.objects.get(pk=2).down()
+        self.assertNames(['1', '4', '3', '2'])
+
+        r = renumber.Command()
+        r.handle('tests.CustomOrderFieldModel:1')
+        self.assertNames(['1', '4', '3', '2'])
+        self.assertOrder(1, 5)
+        r.handle('tests.CustomOrderFieldModel:5')
+        self.assertOrder(5, 9)
+
+        r.handle('tests.CustomOrderFieldModel')
+        self.assertOrder(0, 4)
