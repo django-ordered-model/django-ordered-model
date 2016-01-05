@@ -10,6 +10,7 @@ ROOT_URLCONF = 'ordered_model.tests.urls'
 INSTALLED_APPS = [
     'ordered_model',
     'ordered_model.tests',
+    'django.contrib.contenttypes',
 ]
 SECRET_KEY = 'topsecret'
 MIDDLEWARE_CLASSES = (

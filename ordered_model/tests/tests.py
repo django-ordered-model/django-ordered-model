@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
 from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel
+from ordered_model.management.commands import renumber
 import uuid
 
 class OrderGenerationTests(TestCase):
@@ -276,8 +277,37 @@ class CustomOrderFieldTest(TestCase):
 admin.site.register(Item, OrderedModelAdmin)
 
 class OrderedModelAdminTest(TestCase):
+
+    fixtures = ['test_items.json']
+
+    def assertNames(self, names):
+        self.assertEqual(names, [i.name for i in CustomOrderFieldModel.objects.all()])
+
+    def assertOrder(self, start, end):
+        self.assertEqual(list(range(start, end)), [i.sort_order for i in CustomOrderFieldModel.objects.all()])
+
     def test_move_up_down_links(self):
         item = Item.objects.create(name='foo')
         s = admin.site._registry[Item].move_up_down_links(item)
         self.assertIn('/admin/tests/item/1/move-up/', s)
         self.assertIn('/admin/tests/item/1/move-down/', s)
+
+    def test_model_renumber(self):
+        self.assertNames(['1', '2', '3', '4'])
+
+        CustomOrderFieldModel.objects.get(pk=4).up()
+        CustomOrderFieldModel.objects.get(pk=2).down()
+        CustomOrderFieldModel.objects.get(pk=2).down()
+        self.assertNames(['1', '4', '3', '2'])
+
+        r = renumber.Command()
+        r.handle('tests.CustomOrderFieldModel:1')
+        self.assertNames(['1', '4', '3', '2'])
+        self.assertOrder(1, 5)
+
+        r.handle('tests.CustomOrderFieldModel:5')
+        self.assertOrder(5, 9)
+
+        r.handle('tests.CustomOrderFieldModel')
+        self.assertOrder(0, 4)
+
