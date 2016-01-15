@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.1.0 – 2016-01-15
+------------------
+
+ - Add support for many-to-many models.
+ - Add Italian translations.
+
 1.0.0 – 2015-11-24
 ------------------
 
