@@ -106,6 +106,25 @@ A simple example might look like so:
         phone = models.CharField()
         order_with_respect_to = 'user'
 
+In a many-to-many relationship you need to use a seperate through model which is derived from the OrderedModel.
+For example, an application which manages pizzas with toppings.
+
+A simple example might look like so:
+
+    class Topping(models.Model):
+        name = models.CharField(max_length=100)
+
+    class Pizza(models.Model):
+        name = models.CharField(max_length=100)
+        toppings = models.ManyToManyField(Topping, through='PizzaToppingsThroughModel')
+
+    class PizzaToppingsThroughModel(OrderedModel):
+        pizza = models.ForeignKey(Pizza)
+        topping = models.ForeignKey(Topping)
+        order_with_respect_to = 'pizza'
+
+        class Meta:
+            ordering = ('pizza', 'order')
 
 Admin integration
 -----------------
@@ -123,6 +142,32 @@ To add arrows in the admin change list page to do reordering, you can use the
     admin.site.register(Item, ItemAdmin)
 
 
+For a many-to-many relationship you need the following in the admin.py file:
+
+    from django.contrib import admin
+    from ordered_model.admin import OrderedTabularInline
+    from models import Pizza, PizzaToppingsThroughModel
+
+    class PizzaToppingsThroughModelInline(OrderedTabularInline):
+        model = PizzaToppingsThroughModel
+        fields = ('topping', 'order', 'move_up_down_links',)
+        readonly_fields = ('order', 'move_up_down_links',)
+        extra = 1
+        ordering = ('order',)
+
+    class PizzaAdmin(admin.ModelAdmin):
+        list_display = ('name', )
+        inlines = (PizzaToppingsThroughModelInline, )
+
+        def get_urls(self):
+            urls = super(PizzaAdmin, self).get_urls()
+            for inline in self.inlines:
+                if hasattr(inline, 'get_urls'):
+                    urls = inline.get_urls(self) + urls
+            return urls            
+
+    admin.site.register(Pizza, PizzaAdmin)
+            
 Test suite
 ----------
 

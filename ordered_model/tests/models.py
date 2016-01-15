@@ -33,3 +33,22 @@ class CustomOrderFieldModel(OrderedModelBase):
 
     class Meta:
         ordering = ('sort_order',)
+
+
+class Topping(models.Model):
+    name = models.CharField(max_length=100)
+
+
+class Pizza(models.Model):
+    name = models.CharField(max_length=100)
+    toppings = models.ManyToManyField(Topping, through='PizzaToppingsThroughModel')
+
+
+class PizzaToppingsThroughModel(OrderedModel):
+    pizza = models.ForeignKey(Pizza)
+    topping = models.ForeignKey(Topping)
+    order_with_respect_to = 'pizza'
+
+    class Meta:
+        ordering = ('pizza', 'order')
+
