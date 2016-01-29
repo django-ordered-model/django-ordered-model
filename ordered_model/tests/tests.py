@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel
 from ordered_model.management.commands import renumber
+from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel
 import uuid
 
 class OrderGenerationTests(TestCase):
@@ -272,7 +272,7 @@ class CustomOrderFieldTest(TestCase):
         self.assertNames(['1', '3', '4'])
         CustomOrderFieldModel.objects.get(pk=3).up()
         self.assertNames(['3', '1', '4'])
-
+        
 
 admin.site.register(Item, OrderedModelAdmin)
 
@@ -283,14 +283,20 @@ class OrderedModelAdminTest(TestCase):
     def assertNames(self, names):
         self.assertEqual(names, [i.name for i in CustomOrderFieldModel.objects.all()])
 
-    def assertOrder(self, start, end):
-        self.assertEqual(list(range(start, end)), [i.sort_order for i in CustomOrderFieldModel.objects.all()])
-
     def test_move_up_down_links(self):
         item = Item.objects.create(name='foo')
         s = admin.site._registry[Item].move_up_down_links(item)
-        self.assertIn('/admin/tests/item/1/move-up/', s)
-        self.assertIn('/admin/tests/item/1/move-down/', s)
+        self.assertIn('/admin/tests/item/%d/move-up/' % item.pk, s)
+        self.assertIn('/admin/tests/item/%d/move-down/' % item.pk, s)
+
+class TestOrderedModelManagement(TestCase):
+    fixtures = ['test_items.json']
+
+    def assertNames(self, names):
+        self.assertEqual(names, [i.name for i in CustomOrderFieldModel.objects.all()])
+        
+    def assertOrder(self, start, end):
+        self.assertEqual(list(range(start, end)), [i.sort_order for i in CustomOrderFieldModel.objects.all()])
 
     def test_model_renumber(self):
         self.assertNames(['1', '2', '3', '4'])
@@ -310,4 +316,3 @@ class OrderedModelAdminTest(TestCase):
 
         r.handle('tests.CustomOrderFieldModel')
         self.assertOrder(0, 4)
-
