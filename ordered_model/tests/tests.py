@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel, Pizza, Topping, PizzaToppingsThroughModel
+from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel, Pizza, Topping, PizzaToppingsThroughModel, OpenQuestion, MultipleChoiceQuestion
 import uuid
 
 
@@ -379,3 +379,27 @@ class OrderWithRespectToTestsManyToMany(TestCase):
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
             (self.p2_t2.topping.pk, 0), (self.p2_t3.topping.pk, 1), (self.p2_t4.topping.pk, 2), (self.p2_t1.topping.pk, 3)
         ])
+
+class PolymorpicOrderGenerationTests(TestCase):
+    def test_order_of_Baselist(self):
+        o1 = OpenQuestion.objects.create()
+        self.assertEqual(o1.order, 0)
+        o1.save()
+        m1 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m1.order, 1)
+        m1.save()
+        m2 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m2.order, 2)
+        m2.save()
+        o2 = OpenQuestion.objects.create()
+        self.assertEqual(o2.order, 3)
+        o2.save()
+
+        m2.up()
+        self.assertEqual(m2.order, 1)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 2)
+        o2.up()
+        self.assertEqual(o2.order, 2)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 3)
