@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.1.1 - 2016-01-31
+------------------
+
+- Django 1.9 compatible
+- Add support for ordering using a specified base class when using Multi-table inheritance
+
 1.1.0 – 2016-01-15
 ------------------
 

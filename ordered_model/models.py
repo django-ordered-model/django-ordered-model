@@ -5,6 +5,16 @@ from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
 
+"""
+Convert a string containing module.submodule.classname to a Class.
+"""
+def _order_model_get_class( classpath ):
+    parts = classpath.split('.')
+    module = ".".join(parts[:-1])
+    m = __import__( module )
+    for comp in parts[1:]:
+        m = getattr(m, comp)           
+    return m
 
 class OrderedModelBase(models.Model):
     """
@@ -14,13 +24,22 @@ class OrderedModelBase(models.Model):
      - add an indexed ``PositiveIntegerField`` to the model
      - set ``order_field_name`` to the name of that field
      - use the same field name in ``Meta.ordering``
+     [optional]
+     - set ``order_with_respect_to`` to limit order to a subset 
+     - specify ``order_class_path`` in case of polymorpic classes
     """
 
     order_field_name = None
     order_with_respect_to = None
+    order_class_path = None
 
     class Meta:
         abstract = True
+
+    def _get_class_for_ordering_queryset(self):
+        if self.order_class_path:
+            return _order_model_get_class(self.order_class_path)
+        return self.__class__
 
     def _get_order_with_respect_to(self):
         return getattr(self, self.order_with_respect_to)
@@ -31,7 +50,7 @@ class OrderedModelBase(models.Model):
         )
 
     def get_ordering_queryset(self, qs=None):
-        qs = qs or self.__class__.objects.all()
+        qs = qs or self._get_class_for_ordering_queryset().objects.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
             value = self._get_order_with_respect_to()
@@ -111,7 +130,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
                 "%r can only be swapped with instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
+                    self, self._get_class_for_ordering_queryset(), self.order_with_respect_to,
                     self._get_order_with_respect_to()
                 )
             )
@@ -161,7 +180,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "%r can only be moved above instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
+                    self, self._get_class_for_ordering_queryset(), self.order_with_respect_to,
                     self._get_order_with_respect_to()
                 )
             )
@@ -183,7 +202,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "%r can only be moved below instances of %r which %s equals %r." % (
-                    self, self.__class__, self.order_with_respect_to,
+                    self, self._get_class_for_ordering_queryset(), self.order_with_respect_to,
                     self._get_order_with_respect_to()
                 )
             )
