@@ -174,12 +174,20 @@ class OrderedTabularInline(admin.TabularInline):
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = cls.model._default_manager.get_queryset()
+        # support get_query_set for backward compatibility
+        get_queryset = getattr(cls.model._default_manager,
+                               'get_queryset', None) or getattr(cls.model._default_manager,
+                                                                'get_query_set')
+        qs = get_queryset()
         # TODO: this should be handled by some parameter to the ChangeList.
         ordering = cls.get_ordering(request)
         if ordering:
             qs = qs.order_by(*ordering)
         return qs
+
+    @classmethod
+    def get_query_set(cls, request):
+        return cls.get_queryset(request)
 
     @classmethod
     def get_ordering(cls, request):
