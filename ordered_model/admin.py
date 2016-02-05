@@ -185,6 +185,7 @@ class OrderedTabularInline(admin.TabularInline):
             qs = qs.order_by(*ordering)
         return qs
 
+    # support get_query_set for backward compatibility
     @classmethod
     def get_query_set(cls, request):
         return cls.get_queryset(request)
