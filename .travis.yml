@@ -7,6 +7,12 @@ python:
 
 env:
   - DJANGO="Django>=1.8,<1.9"
+  - DJANGO="Django>=1.9,<1.10"
+
+matrix:
+  exclude:
+    - python: "3.3"
+      env: DJANGO="Django>=1.9,<1.10"
 
 # command to install dependencies
 install: pip install $DJANGO
