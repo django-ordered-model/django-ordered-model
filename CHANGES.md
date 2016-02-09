@@ -1,6 +1,10 @@
 Change log
 ==========
 
+1.2.0 – TBA
+
+ - Remove support for Django < 1.8.
+
 1.1.0 – 2016-01-15
 ------------------
 

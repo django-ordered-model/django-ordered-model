@@ -11,8 +11,8 @@ https://djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django >=1.5
-  * Python >=2.6 or >=3.3
+  * Django >=1.8
+  * Python 2.7 or >=3.3
 
 Installation
 ------------
@@ -164,14 +164,13 @@ For a many-to-many relationship you need the following in the admin.py file:
             for inline in self.inlines:
                 if hasattr(inline, 'get_urls'):
                     urls = inline.get_urls(self) + urls
-            return urls            
+            return urls
 
     admin.site.register(Pizza, PizzaAdmin)
-            
+
 Test suite
 ----------
 
 Requires Docker.
 
     $ script/test
-
