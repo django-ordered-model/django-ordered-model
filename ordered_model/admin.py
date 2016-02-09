@@ -1,5 +1,6 @@
 from functools import update_wrapper
 
+from django.conf.urls import url
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -13,19 +14,17 @@ from django.contrib.admin.views.main import ChangeList
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
-        from django.conf.urls import patterns, url
-
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
+        return [
             url(r'^(.+)/move-(up)/$', wrap(self.move_view),
                 name='{app}_{model}_order_up'.format(**self._get_model_info())),
 
             url(r'^(.+)/move-(down)/$', wrap(self.move_view),
                 name='{app}_{model}_order_down'.format(**self._get_model_info())),
-            ) + super(OrderedModelAdmin, self).get_urls()
+        ] + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
@@ -98,19 +97,16 @@ class OrderedTabularInline(admin.TabularInline):
 
     @classmethod
     def get_urls(cls, model_admin):
-        from django.conf.urls import patterns, url
-
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return model_admin.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
-                        url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
-
-                        url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
-                        ) # + super(OrderedTabularInline, cls).get_urls()
+        return [
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
+        ]
 
     @classmethod
     def get_list_display(cls, request):
