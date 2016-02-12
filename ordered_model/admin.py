@@ -1,18 +1,13 @@
 from functools import update_wrapper
 
-# from django.conf import settings
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-# from django.utils.html import strip_spaces_between_tags as short
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-try:
-    from django.contrib.admin.utils import unquote
-except ImportError:
-    from django.contrib.admin.util import unquote
+from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
 
 
@@ -52,11 +47,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
         return super(OrderedModelAdmin, self).changelist_view(request, extra_context)
 
     def move_view(self, request, object_id, direction):
-        cl = self._get_changelist(request)
-
-        # support get_query_set for backward compatibility
-        get_queryset = getattr(cl, 'get_queryset', None) or getattr(cl, 'get_query_set')
-        qs = get_queryset(request)
+        qs = self._get_changelist(request).get_queryset(request)
 
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
@@ -79,14 +70,9 @@ class OrderedModelAdmin(admin.ModelAdmin):
     move_up_down_links.short_description = _(u'Move')
 
     def _get_model_info(self):
-        # module_name was renamed to model_name in Django 1.7
-        if hasattr(self.model._meta, 'model_name'):
-            model = self.model._meta.model_name
-        else:
-            model = self.model._meta.module_name
         return {
             'app': self.model._meta.app_label,
-            'model': model
+            'model': self.model._meta.model_name,
         }
 
 
@@ -236,10 +222,7 @@ class OrderedTabularInline(admin.TabularInline):
 
     @classmethod
     def move_view(cls, request, admin_id, object_id, direction):
-        cl = cls._get_changelist(request)
-        # support get_query_set for backward compatibility
-        get_queryset = getattr(cl, 'get_queryset', None) or getattr(cl, 'get_query_set')
-        qs = get_queryset(request)
+        qs = cls._get_changelist(request).get_queryset(request)
 
         obj = get_object_or_404(cls.model, pk=unquote(object_id))
         obj.move(direction, qs)
@@ -281,4 +264,3 @@ class OrderedTabularInline(admin.TabularInline):
             return ''
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
-
