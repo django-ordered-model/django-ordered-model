@@ -1,4 +1,7 @@
 
+import operator
+from functools import reduce
+from django.db import models
 from django.template import RequestContext
 from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
@@ -10,7 +13,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-from django.contrib.admin.utils import unquote
+from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
 from threading import local
 
@@ -197,6 +200,38 @@ class OrderedTabularInline(admin.TabularInline):
         somebody submits a search query.
         """
         return cls.search_fields
+
+    @classmethod
+    def get_search_results(cls, request, queryset, search_term):
+        """
+        Returns a tuple containing a queryset to implement the search,
+        and a boolean indicating if the results may contain duplicates.
+        """
+        # Apply keyword searches.
+        def construct_search(field_name):
+            if field_name.startswith('^'):
+                return "%s__istartswith" % field_name[1:]
+            elif field_name.startswith('='):
+                return "%s__iexact" % field_name[1:]
+            elif field_name.startswith('@'):
+                return "%s__search" % field_name[1:]
+            else:
+                return "%s__icontains" % field_name
+        use_distinct = False
+        search_fields = cls.get_search_fields(request)
+        if search_fields and search_term:
+            orm_lookups = [construct_search(str(search_field))
+                           for search_field in search_fields]
+            for bit in search_term.split():
+                or_queries = [models.Q(**{orm_lookup: bit})
+                              for orm_lookup in orm_lookups]
+                queryset = queryset.filter(reduce(operator.or_, or_queries))
+            if not use_distinct:
+                for search_spec in orm_lookups:
+                    if lookup_needs_distinct(cls.opts, search_spec):
+                        use_distinct = True
+                        break
+        return queryset, use_distinct
 
     @classmethod
     def move_view(cls, request, admin_id, object_id, direction):
