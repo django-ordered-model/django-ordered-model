@@ -61,8 +61,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': model_info['model'],
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
+                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
+                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
@@ -238,6 +240,7 @@ class OrderedTabularInline(admin.TabularInline):
         if cls.preserve_filters and match:
             opts = cls.model._meta
             current_url = '%s:%s' % (match.app_name, match.url_name)
+            # could not use the correct admin site, since `self` isn't available, so use default instead:
             changelist_url = 'admin:%s_%s_changelist' % (opts.app_label, opts.model_name)
             if current_url == changelist_url:
                 preserved_filters = request.GET.urlencode()
@@ -256,9 +259,11 @@ class OrderedTabularInline(admin.TabularInline):
                 'model_name': self.model._meta.model_name,
                 'object_id': obj.id,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()),
+                    'up': reverse("{admin_name}:{app}_{model}_order_up_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
                         args=[obj._get_order_with_respect_to() or 'obj', obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(**self.get_model_info()),
+                    'down': reverse("{admin_name}:{app}_{model}_order_down_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
                         args=[obj._get_order_with_respect_to() or 'obj', obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
