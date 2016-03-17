@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel, Pizza, Topping, PizzaToppingsThroughModel
+from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel, \
+    Pizza, Topping, PizzaToppingsThroughModel
 import uuid
 
 
@@ -276,6 +277,7 @@ class CustomOrderFieldTest(TestCase):
 
 admin.site.register(Item, OrderedModelAdmin)
 
+
 class OrderedModelAdminTest(TestCase):
     def test_move_up_down_links(self):
         item = Item.objects.create(name='foo')
@@ -283,7 +285,7 @@ class OrderedModelAdminTest(TestCase):
         self.assertIn('/admin/tests/item/1/move-up/', s)
         self.assertIn('/admin/tests/item/1/move-down/', s)
 
-        
+
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
         self.t1 = Topping.objects.create(name='tomatoe')
@@ -291,8 +293,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.t3 = Topping.objects.create(name='anchovy')
         self.t4 = Topping.objects.create(name='mushrooms')
         self.t5 = Topping.objects.create(name='ham')
-        self.p1 = Pizza.objects.create(name='Napoli') # tomatoe, mozarella, anchovy
-        self.p2 = Pizza.objects.create(name='Regina') # tomatoe, mozarella, mushrooms, ham
+        self.p1 = Pizza.objects.create(name='Napoli')  # tomatoe, mozarella, anchovy
+        self.p2 = Pizza.objects.create(name='Regina')  # tomatoe, mozarella, mushrooms, ham
         # Now put the toppings on the pizza
         self.p1_t1 = PizzaToppingsThroughModel(pizza=self.p1, topping=self.t1)
         self.p1_t1.save()
@@ -313,7 +315,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_swap(self):
@@ -325,7 +328,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t2.topping.pk, 0), (self.p1_t1.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_down(self):
@@ -333,7 +337,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_to(self):
@@ -341,7 +346,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_above(self):
@@ -351,7 +357,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t2.topping.pk, 0), (self.p1_t1.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_below(self):
@@ -361,7 +368,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t2.topping.pk, 0), (self.p2_t1.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_top(self):
@@ -369,7 +377,8 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t3.topping.pk, 0), (self.p1_t1.topping.pk, 1), (self.p1_t2.topping.pk, 2),
-            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2), (self.p2_t4.topping.pk, 3)
+            (self.p2_t1.topping.pk, 0), (self.p2_t2.topping.pk, 1), (self.p2_t3.topping.pk, 2),
+            (self.p2_t4.topping.pk, 3)
         ])
 
     def test_bottom(self):
@@ -377,5 +386,6 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.assertSequenceEqual(
             PizzaToppingsThroughModel.objects.values_list('topping__pk', 'order'), [
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
-            (self.p2_t2.topping.pk, 0), (self.p2_t3.topping.pk, 1), (self.p2_t4.topping.pk, 2), (self.p2_t1.topping.pk, 3)
+            (self.p2_t2.topping.pk, 0), (self.p2_t3.topping.pk, 1), (self.p2_t4.topping.pk, 2),
+            (self.p2_t1.topping.pk, 3)
         ])

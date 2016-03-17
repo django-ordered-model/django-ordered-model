@@ -1,5 +1,6 @@
 
 from django.template import RequestContext
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 from functools import update_wrapper
 from django.core.paginator import Paginator
@@ -16,7 +17,7 @@ from threading import local
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -108,7 +109,7 @@ class OrderedTabularInline(admin.TabularInline):
 
     @classmethod
     def get_urls(cls, model_admin):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -153,7 +154,6 @@ class OrderedTabularInline(admin.TabularInline):
                         cls.search_fields, cls.list_select_related,
                         cls.list_per_page, cls.list_max_show_all, cls.list_editable,
                         cls)
-
         return cl
 
     request_query_string = ''
@@ -199,40 +199,6 @@ class OrderedTabularInline(admin.TabularInline):
         return cls.search_fields
 
     @classmethod
-    def get_search_results(cls, request, queryset, search_term):
-        """
-        Returns a tuple containing a queryset to implement the search,
-        and a boolean indicating if the results may contain duplicates.
-        """
-        # Apply keyword searches.
-        def construct_search(field_name):
-            if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
-            elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
-            elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
-            else:
-                return "%s__icontains" % field_name
-
-        use_distinct = False
-        search_fields = cls.get_search_fields(request)
-        if search_fields and search_term:
-            orm_lookups = [construct_search(str(search_field))
-                           for search_field in search_fields]
-            for bit in search_term.split():
-                or_queries = [models.Q(**{orm_lookup: bit})
-                              for orm_lookup in orm_lookups]
-                queryset = queryset.filter(reduce(operator.or_, or_queries))
-            if not use_distinct:
-                for search_spec in orm_lookups:
-                    if lookup_needs_distinct(cls.opts, search_spec):
-                        use_distinct = True
-                        break
-
-        return queryset, use_distinct
-
-    @classmethod
     def move_view(cls, request, admin_id, object_id, direction):
         qs = cls._get_changelist(request).get_queryset(request)
 
@@ -249,7 +215,6 @@ class OrderedTabularInline(admin.TabularInline):
         match = request.resolver_match
         if cls.preserve_filters and match:
             opts = cls.model._meta
-            # could not use the correct admin site, since `self` isn't available, so use default instead:
             changelist_url = '%s_%s_changelist' % (opts.app_label, opts.model_name)
             if match.url_name == changelist_url:
                 preserved_filters = request.GET.urlencode()
