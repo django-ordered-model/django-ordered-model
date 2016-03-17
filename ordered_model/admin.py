@@ -1,3 +1,6 @@
+
+from django.template import RequestContext
+from django.views.decorators.http import require_POST
 from functools import update_wrapper
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -8,6 +11,7 @@ from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+from threading import local
 
 
 class OrderedModelAdmin(admin.ModelAdmin):
@@ -45,12 +49,13 @@ class OrderedModelAdmin(admin.ModelAdmin):
         self.request_query_string = cl.get_query_string()
         return super(OrderedModelAdmin, self).changelist_view(request, extra_context)
 
+    @require_POST
     def move_view(self, request, object_id, direction):
+        # use POST because otherwise it's vulnerable to CSRF attacks
         qs = self._get_changelist(request).get_queryset(request)
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
-
-        return HttpResponseRedirect('../../%s' % self.request_query_string)
+        return HttpResponseRedirect('../../{0}'.format(self.request_query_string))
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -95,6 +100,11 @@ class OrderedTabularInline(admin.TabularInline):
     def get_model_info(cls):
         return dict(app=cls.model._meta.app_label,
                     model=cls.model._meta.model_name)
+
+    # set up a thread-local store for `request` object
+    # this is done to get request to `move_up_down_links` for csrf token
+    # cannot be stored simply on self, since concurrent threads may overwrite it
+    _thread_local = local()
 
     @classmethod
     def get_urls(cls, model_admin):
@@ -172,6 +182,8 @@ class OrderedTabularInline(admin.TabularInline):
         """
         Hook for specifying field ordering.
         """
+        # store the request in thread-local storage, see top of class for details
+        cls._thread_local.request = request
         return cls.ordering or ()  # otherwise we might try to *None, which is bad ;)
 
     @classmethod
@@ -250,10 +262,14 @@ class OrderedTabularInline(admin.TabularInline):
 
     def move_up_down_links(self, obj):
         if obj.id:
-            order_obj_name = 'obj'
-            if obj._get_order_with_respect_to() is not None:
-                order_obj_name = obj._get_order_with_respect_to().id
-            return render_to_string("ordered_model/admin/order_controls.html", {
+            # get the request from thread-local storage, see top of class for details
+            request = self._thread_local.request
+            # order_obj_name = 'obj'
+            # if obj._get_order_with_respect_to() is not None:
+            assert hasattr(obj._get_order_with_respect_to(), 'id'), \
+                '{0} has no id'.format(obj._get_order_with_respect_to())
+            order_obj_name = obj._get_order_with_respect_to().id
+            return render_to_string("ordered_model/admin/order_controls.html", RequestContext(request, {
                 'app_label': self.model._meta.app_label,
                 'module_name': self.model._meta.model_name,  # backward compatibility
                 'model_name': self.model._meta.model_name,
@@ -267,7 +283,7 @@ class OrderedTabularInline(admin.TabularInline):
                         args=[order_obj_name, obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
-            })
+            }))
         else:
             return ''
     move_up_down_links.allow_tags = True

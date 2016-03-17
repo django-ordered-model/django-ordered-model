@@ -1,5 +1,30 @@
+
 {% load static %}
-<a href="{{ urls.up }}{{query_string}}">
-    <img src="{% static 'ordered_model/arrow-up.gif' %}"></a>
-<a href="{{ urls.down }}{{query_string}}">
-    <img src="{% static 'ordered_model/arrow-down.gif' %}"></a>
+
+
+<script type="text/javascript">
+    function send_move_post(url) {
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = url;
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrfmiddlewaretoken';
+        input.value = '{{ csrf_token }}';
+        form.appendChild(input);
+        var button = document.createElement('button');
+        button.type = 'submit';
+        form.appendChild(button);
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
+
+<a href="#up" onclick="send_move_post('{{ urls.up }}{{query_string}}'); return false;">
+    <img src="{% static 'ordered_model/arrow-up.gif' %}" alt="up" />
+</a>
+<a href="#down" onclick="send_move_post('{{ urls.down }}{{query_string}}'); return false;">
+    <img src="{% static 'ordered_model/arrow-down.gif' %}" alt="down" />
+</a>
+
+
