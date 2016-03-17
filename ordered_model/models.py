@@ -24,7 +24,9 @@ class OrderedModelBase(models.Model):
 
     def _get_order_with_respect_to(self):
         if self.order_with_respect_to is None:
-            return None
+            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
+                'should go in the model body, and is not to be confused with the Meta property of the same name, '
+                'which is independent Django functionality').format(self))
         return getattr(self, self.order_with_respect_to)
 
     def _valid_ordering_reference(self, reference):

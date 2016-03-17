@@ -264,10 +264,6 @@ class OrderedTabularInline(admin.TabularInline):
         if obj.id:
             # get the request from thread-local storage, see top of class for details
             request = self._thread_local.request
-            # order_obj_name = 'obj'
-            # if obj._get_order_with_respect_to() is not None:
-            assert hasattr(obj._get_order_with_respect_to(), 'id'), \
-                '{0} has no id'.format(obj._get_order_with_respect_to())
             order_obj_name = obj._get_order_with_respect_to().id
             return render_to_string("ordered_model/admin/order_controls.html", RequestContext(request, {
                 'app_label': self.model._meta.app_label,
