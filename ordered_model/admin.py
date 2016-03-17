@@ -19,13 +19,13 @@ class OrderedModelAdmin(admin.ModelAdmin):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
+        return [
             url(r'^(.+)/move-(up)/$', wrap(self.move_view),
                 name='{app}_{model}_order_up'.format(**self._get_model_info())),
 
             url(r'^(.+)/move-(down)/$', wrap(self.move_view),
                 name='{app}_{model}_order_down'.format(**self._get_model_info())),
-            ) + super(OrderedModelAdmin, self).get_urls()
+            ] + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
@@ -106,13 +106,13 @@ class OrderedTabularInline(admin.TabularInline):
             def wrapper(*args, **kwargs):
                 return model_admin.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
-                        url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
+        return [
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
 
-                        url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
-                        ) # + super(OrderedTabularInline, cls).get_urls()
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
+        ] # + super(OrderedTabularInline, cls).get_urls()
 
     @classmethod
     def get_list_display(cls, request):
