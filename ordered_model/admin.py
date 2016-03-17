@@ -239,10 +239,9 @@ class OrderedTabularInline(admin.TabularInline):
         match = request.resolver_match
         if cls.preserve_filters and match:
             opts = cls.model._meta
-            current_url = '%s:%s' % (match.app_name, match.url_name)
             # could not use the correct admin site, since `self` isn't available, so use default instead:
-            changelist_url = 'admin:%s_%s_changelist' % (opts.app_label, opts.model_name)
-            if current_url == changelist_url:
+            changelist_url = '%s_%s_changelist' % (opts.app_label, opts.model_name)
+            if match.url_name == changelist_url:
                 preserved_filters = request.GET.urlencode()
             else:
                 preserved_filters = request.GET.get('_changelist_filters')
