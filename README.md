@@ -168,6 +168,9 @@ For a many-to-many relationship you need the following in the admin.py file:
 
     admin.site.register(Pizza, PizzaAdmin)
 
+You can use the sorting icons from the Django 1.9+ default theme, with the added benefit that unavailable buttons will be greyed out at the cost of an extra query. If you want to use this, set `settings.ORDERED_MODEL_FANCY_BUTTONS = True`.
+
+
 Test suite
 ----------
 

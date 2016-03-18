@@ -189,6 +189,8 @@ class OrderedTabularInline(admin.TabularInline):
         """
         # store the request in thread-local storage, see top of class for details
         cls._thread_local.request = request
+        setattr(cls._thread_local, 'max_order', None)
+        print('>>> reset cache')
         return cls.ordering or ()  # otherwise we might try to *None, which is bad ;)
 
     @classmethod
@@ -267,14 +269,16 @@ class OrderedTabularInline(admin.TabularInline):
             # get the request from thread-local storage, see top of class for details
             request = self._thread_local.request
             order_obj_name = obj._get_order_with_respect_to().id
-            fancy_buttons = getattr(settings, 'ORDERED_MODE_FANCY_BUTTONS', True)
+            fancy_buttons = getattr(settings, 'ORDERED_MODEL_FANCY_BUTTONS', False)
             is_first = is_last = False
             if fancy_buttons:
                 order = getattr(obj, obj.order_field_name)
-                filter = {obj.order_with_respect_to: getattr(obj, obj.order_with_respect_to)}
-                max_order = obj.__class__.objects.filter(**filter).aggregate(Max(obj.order_field_name))
+                if not getattr(self._thread_local, 'max_order', None):
+                    filter = {obj.order_with_respect_to: getattr(obj, obj.order_with_respect_to)}
+                    self._thread_local.max_order = obj.__class__.objects.filter(
+                        **filter).aggregate(Max(obj.order_field_name))['order__max']
                 is_first = order == 0
-                is_last = order == max_order['order__max']
+                is_last = order == self._thread_local.max_order
             return render_to_string("ordered_model/admin/order_controls.html", RequestContext(request, {
                 'app_label': self.model._meta.app_label,
                 'module_name': self.model._meta.model_name,  # backward compatibility
