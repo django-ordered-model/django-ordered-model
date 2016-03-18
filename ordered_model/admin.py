@@ -1,5 +1,13 @@
+import django
+import operator
+from django.conf import settings
+from django.db.models import Max
+from functools import reduce
+from django.db import models
+from django.template import RequestContext
+from django.utils.http import urlencode
+from django.views.decorators.http import require_POST
 from functools import update_wrapper
-
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -7,25 +15,26 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-from django.contrib.admin.utils import unquote
+from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
+from threading import local
 
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
+        return [
             url(r'^(.+)/move-(up)/$', wrap(self.move_view),
                 name='{app}_{model}_order_up'.format(**self._get_model_info())),
 
             url(r'^(.+)/move-(down)/$', wrap(self.move_view),
                 name='{app}_{model}_order_down'.format(**self._get_model_info())),
-            ) + super(OrderedModelAdmin, self).get_urls()
+            ] + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
@@ -46,13 +55,13 @@ class OrderedModelAdmin(admin.ModelAdmin):
         self.request_query_string = cl.get_query_string()
         return super(OrderedModelAdmin, self).changelist_view(request, extra_context)
 
+    @require_POST
     def move_view(self, request, object_id, direction):
+        # use POST because otherwise it's vulnerable to CSRF attacks
         qs = self._get_changelist(request).get_queryset(request)
-
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
-
-        return HttpResponseRedirect('../../%s' % self.request_query_string)
+        return HttpResponseRedirect('../../{0}'.format(self.request_query_string))
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -61,8 +70,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': model_info['model'],
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
+                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
+                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
@@ -96,21 +107,26 @@ class OrderedTabularInline(admin.TabularInline):
         return dict(app=cls.model._meta.app_label,
                     model=cls.model._meta.model_name)
 
+    # set up a thread-local store for `request` object
+    # this is done to get request to `move_up_down_links` for csrf token
+    # cannot be stored simply on self, since concurrent threads may overwrite it
+    _thread_local = local()
+
     @classmethod
     def get_urls(cls, model_admin):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return model_admin.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
-                        url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
+        return [
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
 
-                        url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
-                        ) # + super(OrderedTabularInline, cls).get_urls()
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
+        ] # + super(OrderedTabularInline, cls).get_urls()
 
     @classmethod
     def get_list_display(cls, request):
@@ -143,7 +159,6 @@ class OrderedTabularInline(admin.TabularInline):
                         cls.search_fields, cls.list_select_related,
                         cls.list_per_page, cls.list_max_show_all, cls.list_editable,
                         cls)
-
         return cl
 
     request_query_string = ''
@@ -160,7 +175,7 @@ class OrderedTabularInline(admin.TabularInline):
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = cls.model._default_manager.get_query_set()
+        qs = cls.model._default_manager.get_queryset()
         # TODO: this should be handled by some parameter to the ChangeList.
         ordering = cls.get_ordering(request)
         if ordering:
@@ -172,6 +187,10 @@ class OrderedTabularInline(admin.TabularInline):
         """
         Hook for specifying field ordering.
         """
+        # store the request in thread-local storage, see top of class for details
+        cls._thread_local.request = request
+        setattr(cls._thread_local, 'max_order', None)
+        print('>>> reset cache')
         return cls.ordering or ()  # otherwise we might try to *None, which is bad ;)
 
     @classmethod
@@ -202,7 +221,6 @@ class OrderedTabularInline(admin.TabularInline):
                 return "%s__search" % field_name[1:]
             else:
                 return "%s__icontains" % field_name
-
         use_distinct = False
         search_fields = cls.get_search_fields(request)
         if search_fields and search_term:
@@ -217,7 +235,6 @@ class OrderedTabularInline(admin.TabularInline):
                     if lookup_needs_distinct(cls.opts, search_spec):
                         use_distinct = True
                         break
-
         return queryset, use_distinct
 
     @classmethod
@@ -237,9 +254,8 @@ class OrderedTabularInline(admin.TabularInline):
         match = request.resolver_match
         if cls.preserve_filters and match:
             opts = cls.model._meta
-            current_url = '%s:%s' % (match.app_name, match.url_name)
-            changelist_url = 'admin:%s_%s_changelist' % (opts.app_label, opts.model_name)
-            if current_url == changelist_url:
+            changelist_url = '%s_%s_changelist' % (opts.app_label, opts.model_name)
+            if match.url_name == changelist_url:
                 preserved_filters = request.GET.urlencode()
             else:
                 preserved_filters = request.GET.get('_changelist_filters')
@@ -250,16 +266,37 @@ class OrderedTabularInline(admin.TabularInline):
 
     def move_up_down_links(self, obj):
         if obj.id:
-            return render_to_string("ordered_model/admin/order_controls.html", {
+            # get the request from thread-local storage, see top of class for details
+            request = self._thread_local.request
+            order_obj_name = obj._get_order_with_respect_to().id
+            fancy_buttons = getattr(settings, 'ORDERED_MODEL_FANCY_BUTTONS', False)
+            is_first = is_last = False
+            if fancy_buttons:
+                order = getattr(obj, obj.order_field_name)
+                if not getattr(self._thread_local, 'max_order', None):
+                    filter = {obj.order_with_respect_to: getattr(obj, obj.order_with_respect_to)}
+                    self._thread_local.max_order = obj.__class__.objects.filter(
+                        **filter).aggregate(Max(obj.order_field_name))['order__max']
+                is_first = order == 0
+                is_last = order == self._thread_local.max_order
+            return render_to_string("ordered_model/admin/order_controls.html", RequestContext(request, {
                 'app_label': self.model._meta.app_label,
-                'module_name': self.model._meta.module_name,
+                'module_name': self.model._meta.model_name,  # backward compatibility
+                'model_name': self.model._meta.model_name,
                 'object_id': obj.id,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'down']),
+                    'up': reverse("{admin_name}:{app}_{model}_order_up_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'up']),
+                    'down': reverse("{admin_name}:{app}_{model}_order_down_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'down']),
                 },
-                'query_string': self.request_query_string
-            })
+                'query_string': self.request_query_string,
+                'fancy_buttons': fancy_buttons,
+                'is_first': is_first,
+                'is_last': is_last,
+            }))
         else:
             return ''
     move_up_down_links.allow_tags = True

@@ -1,6 +1,5 @@
+
 import warnings
-from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
@@ -23,6 +22,10 @@ class OrderedModelBase(models.Model):
         abstract = True
 
     def _get_order_with_respect_to(self):
+        if self.order_with_respect_to is None:
+            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
+                'should go in the model body, and is not to be confused with the Meta property of the same name, '
+                'which is independent Django functionality').format(self))
         return getattr(self, self.order_with_respect_to)
 
     def _valid_ordering_reference(self, reference):
@@ -84,7 +87,8 @@ class OrderedModelBase(models.Model):
         Move this object down one position.
         """
         warnings.warn(
-            _("The method move_down() is deprecated and will be removed in the next release. Please use down() instead!"),
+            _("The method move_down() is deprecated and will be removed in the next release. "
+                "Please use down() instead!"),
             DeprecationWarning
         )
         return self.down()
@@ -133,7 +137,8 @@ class OrderedModelBase(models.Model):
         """
         Move this object down one position.
         """
-        self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
+        self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt':
+            getattr(self, self.order_field_name)}))
 
     def to(self, order):
         """
