@@ -1,5 +1,7 @@
-
+import django
 import operator
+from django.conf import settings
+from django.db.models import Max
 from functools import reduce
 from django.db import models
 from django.template import RequestContext
@@ -265,6 +267,14 @@ class OrderedTabularInline(admin.TabularInline):
             # get the request from thread-local storage, see top of class for details
             request = self._thread_local.request
             order_obj_name = obj._get_order_with_respect_to().id
+            fancy_buttons = getattr(settings, 'ORDERED_MODE_FANCY_BUTTONS', True)
+            is_first = is_last = False
+            if fancy_buttons:
+                order = getattr(obj, obj.order_field_name)
+                filter = {obj.order_with_respect_to: getattr(obj, obj.order_with_respect_to)}
+                max_order = obj.__class__.objects.filter(**filter).aggregate(Max(obj.order_field_name))
+                is_first = order == 0
+                is_last = order == max_order['order__max']
             return render_to_string("ordered_model/admin/order_controls.html", RequestContext(request, {
                 'app_label': self.model._meta.app_label,
                 'module_name': self.model._meta.model_name,  # backward compatibility
@@ -278,7 +288,10 @@ class OrderedTabularInline(admin.TabularInline):
                         admin_name=self.admin_site.name, **self.get_model_info()),
                         args=[order_obj_name, obj.id, 'down']),
                 },
-                'query_string': self.request_query_string
+                'query_string': self.request_query_string,
+                'fancy_buttons': fancy_buttons,
+                'is_first': is_first,
+                'is_last': is_last,
             }))
         else:
             return ''

@@ -20,11 +20,27 @@
     }
 </script>
 
-<a href="#up" onclick="send_move_post('{{ urls.up }}{{query_string}}'); return false;">
-    <img src="{% static 'ordered_model/arrow-up.gif' %}" alt="up" />
-</a>
-<a href="#down" onclick="send_move_post('{{ urls.down }}{{query_string}}'); return false;">
-    <img src="{% static 'ordered_model/arrow-down.gif' %}" alt="down" />
-</a>
+{% if fancy_buttons %}
+    <!-- Django 1.9 style (built-in svg's) -->
+    {% if is_first %}
+        <a href="#up" onclick="send_move_post('{{ urls.up }}{{query_string}}'); return false;" style="width: 14px; height: 14px; display: inline-block; background: url({% static 'admin/img/svg/sorting-icons.svg' %}) 0 0 no-repeat; background-size: 14px auto; background-position: 0 -28px;">&nbsp;</a>
+    {% else %}
+        <a href="#up" onclick="send_move_post('{{ urls.up }}{{query_string}}'); return false;" style="width: 14px; height: 14px; display: inline-block; background: url({% static 'admin/img/svg/sorting-icons.svg' %}) 0 0 no-repeat; background-size: 14px auto; background-position: 0 -42px;">&nbsp;</a>
+    {% endif %}
+
+    {% if is_last %}
+        <a href="#down" onclick="send_move_post('{{ urls.down }}{{query_string}}'); return false;" style="width: 14px; height: 14px; display: inline-block; background: url({% static 'admin/img/svg/sorting-icons.svg' %}) 0 0 no-repeat; background-size: 14px auto; background-position: 0 -56px;">&nbsp;</a>
+    {% else %}
+        <a href="#down" onclick="send_move_post('{{ urls.down }}{{query_string}}'); return false;" style="width: 14px; height: 14px; display: inline-block; background: url({% static 'admin/img/svg/sorting-icons.svg' %}) 0 0 no-repeat; background-size: 14px auto; background-position: 0 -70px;">&nbsp;</a>
+    {% endif %}
+{% else %}
+    <!-- Django <= 1.8 style (custom images) -->
+    <a href="#up" onclick="send_move_post('{{ urls.up }}{{query_string}}'); return false;">
+        <img src="{% static 'ordered_model/arrow-up.gif' %}" alt="up" />
+    </a>
+    <a href="#down" onclick="send_move_post('{{ urls.down }}{{query_string}}'); return false;">
+        <img src="{% static 'ordered_model/arrow-down.gif' %}" alt="down" />
+    </a>
+{% endif %}
 
 
