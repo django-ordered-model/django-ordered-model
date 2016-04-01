@@ -15,13 +15,13 @@ from ordered_model.tests.models import (
 from ordered_model.tests.models import User
 import uuid
 
+
 class OrderGenerationTests(TestCase):
     def test_second_order_generation(self):
         first_item = Item.objects.create()
         self.assertEqual(first_item.order, 0)
         second_item = Item.objects.create()
         self.assertEqual(second_item.order, 1)
-
 
 class ModelTestCase(TestCase):
     fixtures = ['test_items.json']
