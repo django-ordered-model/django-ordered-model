@@ -1,7 +1,18 @@
+
 from django.contrib import admin
 from django.test import TestCase
 from ordered_model.admin import OrderedModelAdmin
-from ordered_model.tests.models import Answer, Item, Question, CustomItem, CustomOrderFieldModel, Pizza, Topping, PizzaToppingsThroughModel
+from ordered_model.tests.models import (
+    Answer,
+    Item,
+    Question,
+    CustomItem,
+    CustomOrderFieldModel,
+    Pizza,
+    Topping,
+    PizzaToppingsThroughModel
+)
+from ordered_model.tests.models import User
 import uuid
 
 
@@ -11,7 +22,6 @@ class OrderGenerationTests(TestCase):
         self.assertEqual(first_item.order, 0)
         second_item = Item.objects.create()
         self.assertEqual(second_item.order, 1)
-
 
 class ModelTestCase(TestCase):
     fixtures = ['test_items.json']
@@ -98,10 +108,11 @@ class OrderWithRespectToTests(TestCase):
     def setUp(self):
         q1 = Question.objects.create()
         q2 = Question.objects.create()
-        self.q1_a1 = q1.answers.create()
-        self.q2_a1 = q2.answers.create()
-        self.q1_a2 = q1.answers.create()
-        self.q2_a2 = q2.answers.create()
+        u0 = User.objects.create()
+        self.q1_a1 = q1.answers.create(user=u0)
+        self.q2_a1 = q2.answers.create(user=u0)
+        self.q1_a2 = q1.answers.create(user=u0)
+        self.q2_a2 = q2.answers.create(user=u0)
 
     def test_saved_order(self):
         self.assertSequenceEqual(
@@ -191,6 +202,7 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
+
 
 
 class CustomOrderFieldTest(TestCase):
@@ -379,3 +391,31 @@ class OrderWithRespectToTestsManyToMany(TestCase):
             (self.p1_t1.topping.pk, 0), (self.p1_t2.topping.pk, 1), (self.p1_t3.topping.pk, 2),
             (self.p2_t2.topping.pk, 0), (self.p2_t3.topping.pk, 1), (self.p2_t4.topping.pk, 2), (self.p2_t1.topping.pk, 3)
         ])
+
+class MultiOrderWithRespectToTests(TestCase):
+    def setUp(self):
+        q1 = Question.objects.create()
+        q2 = Question.objects.create()
+        u1 = User.objects.create()
+        u2 = User.objects.create()
+        self.q1_u1_a1 = q1.answers.create(user=u1)
+        self.q2_u1_a1 = q2.answers.create(user=u1)
+        self.q1_u1_a2 = q1.answers.create(user=u1)
+        self.q2_u1_a2 = q2.answers.create(user=u1)
+        self.q1_u2_a1 = q1.answers.create(user=u2)
+        self.q2_u2_a1 = q2.answers.create(user=u2)
+        self.q1_u2_a2 = q1.answers.create(user=u2)
+        self.q2_u2_a2 = q2.answers.create(user=u2)
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_u1_a1.pk, 0), (self.q1_u1_a2.pk, 1),
+            (self.q1_u2_a1.pk, 0), (self.q1_u2_a2.pk, 1),
+            (self.q2_u1_a1.pk, 0), (self.q2_u1_a2.pk, 1),
+            (self.q2_u2_a1.pk, 0), (self.q2_u2_a2.pk, 1)
+        ])
+
+    def test_swap_fails(self):
+        with self.assertRaises(ValueError):
+            self.q1_u1_a1.swap([self.q2_u1_a2])
