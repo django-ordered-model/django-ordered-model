@@ -247,14 +247,21 @@ class OrderedTabularInline(admin.TabularInline):
 
     def move_up_down_links(self, obj):
         if obj.id:
+            order_obj_name = 'obj'
+            if obj._get_order_with_respect_to() is not None:
+                order_obj_name = obj._get_order_with_respect_to().id
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
                 'model_name': self.model._meta.model_name,
                 'module_name': self.model._meta.model_name, # backwards compat
                 'object_id': obj.id,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'down']),
+                    'up': reverse("admin:{app}_{model}_order_up_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'up']),
+                    'down': reverse("admin:{app}_{model}_order_down_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
             })
