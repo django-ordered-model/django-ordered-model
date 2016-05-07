@@ -13,7 +13,7 @@ from django.contrib.admin.views.main import ChangeList
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -98,7 +98,7 @@ class OrderedTabularInline(admin.TabularInline):
 
     @classmethod
     def get_urls(cls, model_admin):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
