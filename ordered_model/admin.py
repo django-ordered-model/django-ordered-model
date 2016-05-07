@@ -61,8 +61,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': model_info['model'], # for backwards compatibility
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
+                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
+                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
