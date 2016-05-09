@@ -13,19 +13,19 @@ from django.contrib.admin.views.main import ChangeList
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
+        return [
             url(r'^(.+)/move-(up)/$', wrap(self.move_view),
                 name='{app}_{model}_order_up'.format(**self._get_model_info())),
 
             url(r'^(.+)/move-(down)/$', wrap(self.move_view),
                 name='{app}_{model}_order_down'.format(**self._get_model_info())),
-            ) + super(OrderedModelAdmin, self).get_urls()
+            ] + super(OrderedModelAdmin, self).get_urls()
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
@@ -61,8 +61,10 @@ class OrderedModelAdmin(admin.ModelAdmin):
             'module_name': model_info['model'],
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
+                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
+                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
@@ -98,19 +100,19 @@ class OrderedTabularInline(admin.TabularInline):
 
     @classmethod
     def get_urls(cls, model_admin):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return model_admin.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
-        return patterns('',
-                        url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
+        return [
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
 
-                        url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                            name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
-                        ) # + super(OrderedTabularInline, cls).get_urls()
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
+            ] # + super(OrderedTabularInline, cls).get_urls()
 
     @classmethod
     def get_list_display(cls, request):
@@ -160,7 +162,7 @@ class OrderedTabularInline(admin.TabularInline):
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = cls.model._default_manager.get_query_set()
+        qs = cls.model._default_manager.get_queryset()
         # TODO: this should be handled by some parameter to the ChangeList.
         ordering = cls.get_ordering(request)
         if ordering:
@@ -250,13 +252,21 @@ class OrderedTabularInline(admin.TabularInline):
 
     def move_up_down_links(self, obj):
         if obj.id:
+            order_obj_name = 'obj'
+            if obj._get_order_with_respect_to() is not None:
+                order_obj_name = obj._get_order_with_respect_to().id
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
-                'module_name': self.model._meta.module_name,
+                'module_name': self.model._meta.model_name,  # backward compatibility
+                'model_name': self.model._meta.model_name,
                 'object_id': obj.id,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'down']),
+                    'up': reverse("admin:{app}_{model}_order_up_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'up']),
+                    'down': reverse("admin:{app}_{model}_order_down_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
             })
