@@ -140,17 +140,13 @@ class OrderedModelBase(models.Model):
         """
         Move object to a certain position, updating all affected objects to move accordingly up or down.
         """
-        if order is None or getattr(self, self.order_field_name) == order:
-            # object is already at desired position
-            return
         qs = self.get_ordering_queryset()
-        if getattr(self, self.order_field_name) > order:
-            qs.filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name),
-                         self.order_field_name + '__gte': order})\
+        qs = qs.exclude(pk=self.pk)
+        if getattr(self, self.order_field_name) >= order:
+            qs.filter(**{self.order_field_name + '__gte': order})\
               .update(**{self.order_field_name: F(self.order_field_name) + 1})
         else:
-            qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name),
-                         self.order_field_name + '__lte': order})\
+            qs.filter(**{self.order_field_name + '__lte': order})\
               .update(**{self.order_field_name: F(self.order_field_name) - 1})
         setattr(self, self.order_field_name, order)
         self.save()
@@ -165,9 +161,8 @@ class OrderedModelBase(models.Model):
                     self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
-        if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
-            return
-        if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
+
+        if getattr(self, self.order_field_name) >= getattr(ref, self.order_field_name):
             o = getattr(ref, self.order_field_name)
         else:
             o = self.get_ordering_queryset()\
@@ -186,9 +181,7 @@ class OrderedModelBase(models.Model):
                     self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
-        if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
-            return
-        if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
+        if getattr(self, self.order_field_name) >= getattr(ref, self.order_field_name):
             o = self.get_ordering_queryset()\
                     .filter(**{self.order_field_name + '__gt': getattr(ref, self.order_field_name)})\
                     .aggregate(Min(self.order_field_name))\
