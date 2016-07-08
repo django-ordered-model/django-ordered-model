@@ -4,7 +4,7 @@ from distutils.core import setup
  
 setup(
     name='django-ordered-model',
-    version='1.1.0',
+    version='1.2.0',
     description='Allows Django models to be ordered and provides a simple admin interface for reordering them.',
     author='Ben Firshman',
     author_email='ben@firshman.co.uk',

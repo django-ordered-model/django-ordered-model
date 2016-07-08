@@ -1,9 +1,12 @@
 Change log
 ==========
 
-1.2.0 – TBA
+1.2.0 – 2016-07-08
+------------------
 
- - Remove support for Django < 1.8.
+ - Remove support for Django <1.8 and Python 2.6
+ - Support for multiple order_with_respect_to fields
+ - Remove usage of deprecated django.conf.urls.patterns
 
 1.1.0 – 2016-01-15
 ------------------
