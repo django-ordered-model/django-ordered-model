@@ -248,7 +248,7 @@ class OrderedTabularInline(admin.TabularInline):
         if obj.id:
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
-                'module_name': self.model._meta.module_name,
+                'module_name': self.model._meta.model_name,
                 'object_id': obj.id,
                 'urls': {
                     'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
