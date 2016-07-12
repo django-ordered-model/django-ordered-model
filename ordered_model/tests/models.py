@@ -10,13 +10,13 @@ class Question(models.Model):
     pass
 
 
-class User(models.Model):
+class TestUser(models.Model):
     pass
 
 
 class Answer(OrderedModel):
     question = models.ForeignKey(Question, related_name='answers')
-    user = models.ForeignKey(User, related_name='answers')
+    user = models.ForeignKey(TestUser, related_name='answers')
     order_with_respect_to = ('question', 'user')
 
     class Meta:
@@ -56,4 +56,3 @@ class PizzaToppingsThroughModel(OrderedModel):
 
     class Meta:
         ordering = ('pizza', 'order')
-

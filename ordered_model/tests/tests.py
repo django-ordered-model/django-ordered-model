@@ -12,7 +12,7 @@ from ordered_model.tests.models import (
     Topping,
     PizzaToppingsThroughModel
 )
-from ordered_model.tests.models import User
+from ordered_model.tests.models import TestUser
 import uuid
 
 
@@ -108,7 +108,7 @@ class OrderWithRespectToTests(TestCase):
     def setUp(self):
         q1 = Question.objects.create()
         q2 = Question.objects.create()
-        u0 = User.objects.create()
+        u0 = TestUser.objects.create()
         self.q1_a1 = q1.answers.create(user=u0)
         self.q2_a1 = q2.answers.create(user=u0)
         self.q1_a2 = q1.answers.create(user=u0)
@@ -396,8 +396,8 @@ class MultiOrderWithRespectToTests(TestCase):
     def setUp(self):
         q1 = Question.objects.create()
         q2 = Question.objects.create()
-        u1 = User.objects.create()
-        u2 = User.objects.create()
+        u1 = TestUser.objects.create()
+        u2 = TestUser.objects.create()
         self.q1_u1_a1 = q1.answers.create(user=u1)
         self.q2_u1_a1 = q2.answers.create(user=u1)
         self.q1_u1_a2 = q1.answers.create(user=u1)
