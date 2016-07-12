@@ -1,7 +1,7 @@
-
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.test import TestCase
-from ordered_model.admin import OrderedModelAdmin
+import uuid
 from ordered_model.tests.models import (
     Answer,
     Item,
@@ -13,7 +13,7 @@ from ordered_model.tests.models import (
     PizzaToppingsThroughModel
 )
 from ordered_model.tests.models import TestUser
-import uuid
+from .admin import ItemAdmin
 
 
 class OrderGenerationTests(TestCase):
@@ -286,16 +286,19 @@ class CustomOrderFieldTest(TestCase):
         self.assertNames(['3', '1', '4'])
 
 
-admin.site.register(Item, OrderedModelAdmin)
-
 class OrderedModelAdminTest(TestCase):
-    def test_move_up_down_links(self):
-        item = Item.objects.create(name='foo')
-        s = admin.site._registry[Item].move_up_down_links(item)
-        self.assertIn('/admin/tests/item/1/move-up/', s)
-        self.assertIn('/admin/tests/item/1/move-down/', s)
+    def setUp(self):
+        user = User.objects.create_superuser("admin", "a@example.com", "admin")
+        self.assertTrue(self.client.login(username="admin", password="admin"))
+        item1 = Item.objects.create(name='item1')
+        item2 = Item.objects.create(name='item2')
 
-        
+    def test_move_up_down_links(self):
+        res = self.client.get("/admin/tests/item/")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('/admin/tests/item/1/move-up/', str(res.content))
+        self.assertIn('/admin/tests/item/1/move-down/', str(res.content))
+
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
         self.t1 = Topping.objects.create(name='tomatoe')
