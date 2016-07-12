@@ -299,6 +299,23 @@ class OrderedModelAdminTest(TestCase):
         self.assertIn('/admin/tests/item/1/move-up/', str(res.content))
         self.assertIn('/admin/tests/item/1/move-down/', str(res.content))
 
+    def test_move_down(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        res = self.client.get("/admin/tests/item/1/move-down/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+    def test_move_up(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        res = self.client.get("/admin/tests/item/2/move-up/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
         self.t1 = Topping.objects.create(name='tomatoe')
