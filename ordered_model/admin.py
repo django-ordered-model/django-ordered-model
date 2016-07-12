@@ -57,11 +57,14 @@ class OrderedModelAdmin(admin.ModelAdmin):
         model_info = self._get_model_info()
         return render_to_string("ordered_model/admin/order_controls.html", {
             'app_label': model_info['app'],
-            'module_name': model_info['model'],
+            'model_name': model_info['model'],
+            'module_name': model_info['model'], # for backwards compatibility
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
-                'down': reverse("admin:{app}_{model}_order_down".format(**model_info), args=[obj.pk, 'down']),
+                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
+                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
             },
             'query_string': self.request_query_string
         })
@@ -156,7 +159,7 @@ class OrderedTabularInline(admin.TabularInline):
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = cls.model._default_manager.get_query_set()
+        qs = cls.model._default_manager.get_queryset()
         # TODO: this should be handled by some parameter to the ChangeList.
         ordering = cls.get_ordering(request)
         if ordering:
@@ -246,13 +249,21 @@ class OrderedTabularInline(admin.TabularInline):
 
     def move_up_down_links(self, obj):
         if obj.id:
+            order_obj_name = 'obj'
+            if obj._get_order_with_respect_to() is not None:
+                order_obj_name = obj._get_order_with_respect_to().id
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
-                'module_name': self.model._meta.module_name,
+                'model_name': self.model._meta.model_name,
+                'module_name': self.model._meta.model_name, # backwards compat
                 'object_id': obj.id,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'down']),
+                    'up': reverse("admin:{app}_{model}_order_up_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'up']),
+                    'down': reverse("admin:{app}_{model}_order_down_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
             })

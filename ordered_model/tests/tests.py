@@ -1,7 +1,7 @@
-
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.test import TestCase
-from ordered_model.admin import OrderedModelAdmin
+import uuid
 from ordered_model.tests.models import (
     Answer,
     Item,
@@ -12,8 +12,8 @@ from ordered_model.tests.models import (
     Topping,
     PizzaToppingsThroughModel
 )
-from ordered_model.tests.models import User
-import uuid
+from ordered_model.tests.models import TestUser
+from .admin import ItemAdmin
 
 
 class OrderGenerationTests(TestCase):
@@ -108,7 +108,7 @@ class OrderWithRespectToTests(TestCase):
     def setUp(self):
         q1 = Question.objects.create()
         q2 = Question.objects.create()
-        u0 = User.objects.create()
+        u0 = TestUser.objects.create()
         self.q1_a1 = q1.answers.create(user=u0)
         self.q2_a1 = q2.answers.create(user=u0)
         self.q1_a2 = q1.answers.create(user=u0)
@@ -286,16 +286,36 @@ class CustomOrderFieldTest(TestCase):
         self.assertNames(['3', '1', '4'])
 
 
-admin.site.register(Item, OrderedModelAdmin)
-
 class OrderedModelAdminTest(TestCase):
-    def test_move_up_down_links(self):
-        item = Item.objects.create(name='foo')
-        s = admin.site._registry[Item].move_up_down_links(item)
-        self.assertIn('/admin/tests/item/1/move-up/', s)
-        self.assertIn('/admin/tests/item/1/move-down/', s)
+    def setUp(self):
+        user = User.objects.create_superuser("admin", "a@example.com", "admin")
+        self.assertTrue(self.client.login(username="admin", password="admin"))
+        item1 = Item.objects.create(name='item1')
+        item2 = Item.objects.create(name='item2')
 
-        
+    def test_move_up_down_links(self):
+        res = self.client.get("/admin/tests/item/")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('/admin/tests/item/1/move-up/', str(res.content))
+        self.assertIn('/admin/tests/item/1/move-down/', str(res.content))
+
+    def test_move_down(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        res = self.client.get("/admin/tests/item/1/move-down/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+    def test_move_up(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        res = self.client.get("/admin/tests/item/2/move-up/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
         self.t1 = Topping.objects.create(name='tomatoe')
@@ -396,8 +416,8 @@ class MultiOrderWithRespectToTests(TestCase):
     def setUp(self):
         q1 = Question.objects.create()
         q2 = Question.objects.create()
-        u1 = User.objects.create()
-        u2 = User.objects.create()
+        u1 = TestUser.objects.create()
+        u2 = TestUser.objects.create()
         self.q1_u1_a1 = q1.answers.create(user=u1)
         self.q2_u1_a1 = q2.answers.create(user=u1)
         self.q1_u1_a2 = q1.answers.create(user=u1)
