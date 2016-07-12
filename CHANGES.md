@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.2.1 – 2016-07-12
+------------------
+
+ - Various bug fixes in admin
+ - Add support for URL namespaces other than "admin"
+
 1.2.0 – 2016-07-08
 ------------------
 
