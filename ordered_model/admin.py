@@ -57,7 +57,8 @@ class OrderedModelAdmin(admin.ModelAdmin):
         model_info = self._get_model_info()
         return render_to_string("ordered_model/admin/order_controls.html", {
             'app_label': model_info['app'],
-            'module_name': model_info['model'],
+            'model_name': model_info['model'],
+            'module_name': model_info['model'], # for backwards compatibility
             'object_id': obj.pk,
             'urls': {
                 'up': reverse("admin:{app}_{model}_order_up".format(**model_info), args=[obj.pk, 'up']),
@@ -248,7 +249,8 @@ class OrderedTabularInline(admin.TabularInline):
         if obj.id:
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
-                'module_name': self.model._meta.module_name,
+                'model_name': self.model._meta.model_name,
+                'module_name': self.model._meta.model_name, # backwards compat
                 'object_id': obj.id,
                 'urls': {
                     'up': reverse("admin:{app}_{model}_order_up_inline".format(**self.get_model_info()), args=[obj._get_order_with_respect_to().id, obj.id, 'up']),
