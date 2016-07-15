@@ -51,7 +51,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../%s' % self.request_query_string)
+        return HttpResponseRedirect('../../{0!s}'.format(self.request_query_string))
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -194,13 +194,13 @@ class OrderedTabularInline(admin.TabularInline):
         # Apply keyword searches.
         def construct_search(field_name):
             if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
+                return "{0!s}__istartswith".format(field_name[1:])
             elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
+                return "{0!s}__iexact".format(field_name[1:])
             elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
+                return "{0!s}__search".format(field_name[1:])
             else:
-                return "%s__icontains" % field_name
+                return "{0!s}__icontains".format(field_name)
 
         use_distinct = False
         search_fields = cls.get_search_fields(request)
@@ -226,7 +226,7 @@ class OrderedTabularInline(admin.TabularInline):
         obj = get_object_or_404(cls.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../../%s' % cls.request_query_string)
+        return HttpResponseRedirect('../../../{0!s}'.format(cls.request_query_string))
 
     @classmethod
     def get_preserved_filters(cls, request):
@@ -236,8 +236,8 @@ class OrderedTabularInline(admin.TabularInline):
         match = request.resolver_match
         if cls.preserve_filters and match:
             opts = cls.model._meta
-            current_url = '%s:%s' % (match.app_name, match.url_name)
-            changelist_url = 'admin:%s_%s_changelist' % (opts.app_label, opts.model_name)
+            current_url = '{0!s}:{1!s}'.format(match.app_name, match.url_name)
+            changelist_url = 'admin:{0!s}_{1!s}_changelist'.format(opts.app_label, opts.model_name)
             if current_url == changelist_url:
                 preserved_filters = request.GET.urlencode()
             else:

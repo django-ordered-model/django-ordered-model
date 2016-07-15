@@ -23,7 +23,7 @@ class Answer(OrderedModel):
         ordering = ('question', 'user', 'order')
 
     def __unicode__(self):
-        return u"Answer #%d of question #%d for user #%d" % (self.order, self.question_id, self.user_id)
+        return u"Answer #{0:d} of question #{1:d} for user #{2:d}".format(self.order, self.question_id, self.user_id)
 
 
 class CustomItem(OrderedModel):
