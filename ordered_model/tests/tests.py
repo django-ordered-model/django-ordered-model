@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.test import TestCase
@@ -18,7 +17,6 @@ from ordered_model.tests.models import (
     GroupedItem
 )
 from ordered_model.tests.models import TestUser
-from .admin import ItemAdmin
 
 
 class OrderGenerationTests(TestCase):
@@ -27,6 +25,7 @@ class OrderGenerationTests(TestCase):
         self.assertEqual(first_item.order, 0)
         second_item = Item.objects.create()
         self.assertEqual(second_item.order, 1)
+
 
 class ModelTestCase(TestCase):
     fixtures = ['test_items.json']
@@ -385,10 +384,10 @@ class CustomOrderFieldTest(TestCase):
 
 class OrderedModelAdminTest(TestCase):
     def setUp(self):
-        user = User.objects.create_superuser("admin", "a@example.com", "admin")
+        User.objects.create_superuser("admin", "a@example.com", "admin")
         self.assertTrue(self.client.login(username="admin", password="admin"))
-        item1 = Item.objects.create(name='item1')
-        item2 = Item.objects.create(name='item2')
+        Item.objects.create(name='item1')
+        Item.objects.create(name='item2')
 
         self.ham = Topping.objects.create(name='Ham')
         self.pineapple = Topping.objects.create(name='Pineapple')
