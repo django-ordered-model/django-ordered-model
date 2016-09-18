@@ -9,6 +9,7 @@ from ordered_model.admin import (
 from .models import Item, PizzaToppingsThroughModel, Pizza
 
 
+
 class ItemAdmin(OrderedModelAdmin):
     list_display = ('name', 'move_up_down_links')
 
