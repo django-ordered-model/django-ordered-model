@@ -3,13 +3,21 @@ from functools import update_wrapper
 from django.conf.urls import url
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
+from django.db import models
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-from django.contrib.admin.utils import unquote
+from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
+
+import sys
+
+if sys.version.startswith('3'):
+    from functools import reduce
+    import operator
+    from urllib.parse import urlencode
 
 
 class OrderedModelAdmin(admin.ModelAdmin):

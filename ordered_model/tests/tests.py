@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.contrib.auth.models import User
 from django.test import TestCase
 import uuid
@@ -13,7 +12,6 @@ from ordered_model.tests.models import (
     PizzaToppingsThroughModel
 )
 from ordered_model.tests.models import TestUser
-from .admin import ItemAdmin
 
 
 class OrderGenerationTests(TestCase):
@@ -22,6 +20,7 @@ class OrderGenerationTests(TestCase):
         self.assertEqual(first_item.order, 0)
         second_item = Item.objects.create()
         self.assertEqual(second_item.order, 1)
+
 
 class ModelTestCase(TestCase):
     fixtures = ['test_items.json']
@@ -288,10 +287,10 @@ class CustomOrderFieldTest(TestCase):
 
 class OrderedModelAdminTest(TestCase):
     def setUp(self):
-        user = User.objects.create_superuser("admin", "a@example.com", "admin")
+        User.objects.create_superuser("admin", "a@example.com", "admin")
         self.assertTrue(self.client.login(username="admin", password="admin"))
-        item1 = Item.objects.create(name='item1')
-        item2 = Item.objects.create(name='item2')
+        Item.objects.create(name='item1')
+        Item.objects.create(name='item2')
 
     def test_move_up_down_links(self):
         res = self.client.get("/admin/tests/item/")
