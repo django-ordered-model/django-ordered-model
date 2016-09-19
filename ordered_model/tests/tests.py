@@ -292,6 +292,7 @@ class OrderedModelAdminTest(TestCase):
         self.assertTrue(self.client.login(username="admin", password="admin"))
         item1 = Item.objects.create(name='item1')
         item2 = Item.objects.create(name='item2')
+        item3 = Item.objects.create(name='item3')
 
     def test_move_up_down_links(self):
         res = self.client.get("/admin/tests/item/")
@@ -314,6 +315,26 @@ class OrderedModelAdminTest(TestCase):
         self.assertRedirects(res, "/admin/tests/item/")
         self.assertEqual(Item.objects.get(name="item1").order, 1)
         self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+    def test_move_top(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        self.assertEqual(Item.objects.get(name="item3").order, 2)
+        res = self.client.get("/admin/tests/item/3/move-top/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 2)
+        self.assertEqual(Item.objects.get(name="item3").order, 0)
+
+    def test_move_bottom(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        self.assertEqual(Item.objects.get(name="item3").order, 2)
+        res = self.client.get("/admin/tests/item/1/move-bottom/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 2)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+        self.assertEqual(Item.objects.get(name="item3").order, 1)
 
 
 class OrderWithRespectToTestsManyToMany(TestCase):
