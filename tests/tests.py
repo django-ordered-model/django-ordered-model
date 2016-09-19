@@ -436,8 +436,9 @@ class OrderedModelAdminTest(TestCase):
     def setUp(self):
         User.objects.create_superuser("admin", "a@example.com", "admin")
         self.assertTrue(self.client.login(username="admin", password="admin"))
-        Item.objects.create(name='item1')
-        Item.objects.create(name='item2')
+        item1 = Item.objects.create(name='item1')
+        item2 = Item.objects.create(name='item2')
+        item3 = Item.objects.create(name='item3')
 
         self.ham = Topping.objects.create(name='Ham')
         self.pineapple = Topping.objects.create(name='Pineapple')
@@ -483,6 +484,26 @@ class OrderedModelAdminTest(TestCase):
         self.assertEqual(self.pizza_to_ham.order, 1)
         self.assertEqual(self.pizza_to_pineapple.order, 0)
         self.assertEqual(res.status_code, 200)
+
+    def test_move_top(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        self.assertEqual(Item.objects.get(name="item3").order, 2)
+        res = self.client.get("/admin/tests/item/3/move-top/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 1)
+        self.assertEqual(Item.objects.get(name="item2").order, 2)
+        self.assertEqual(Item.objects.get(name="item3").order, 0)
+
+    def test_move_bottom(self):
+        self.assertEqual(Item.objects.get(name="item1").order, 0)
+        self.assertEqual(Item.objects.get(name="item2").order, 1)
+        self.assertEqual(Item.objects.get(name="item3").order, 2)
+        res = self.client.get("/admin/tests/item/1/move-bottom/")
+        self.assertRedirects(res, "/admin/tests/item/")
+        self.assertEqual(Item.objects.get(name="item1").order, 2)
+        self.assertEqual(Item.objects.get(name="item2").order, 0)
+        self.assertEqual(Item.objects.get(name="item3").order, 1)
 
 
 class OrderWithRespectToTestsManyToMany(TestCase):
