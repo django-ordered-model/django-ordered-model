@@ -82,8 +82,6 @@ class OrderedModelBase(models.Model):
         )
         if direction in ['up', 'down', 'top', 'bottom']:
             getattr(self, direction)()
-        else:
-            self.down()
 
     def move_down(self):
         """
