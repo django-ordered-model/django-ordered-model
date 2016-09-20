@@ -107,6 +107,10 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
                 ),
                 'top': reverse("admin:{app}_{model}_order_top".format(**model_info), args=[obj.pk, 'top']),
                 'bottom': reverse("admin:{app}_{model}_order_bottom".format(**model_info), args=[obj.pk, 'bottom']),
+                'top': reverse("{admin_name}:{app}_{model}_order_top".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'top']),
+                'bottom': reverse("{admin_name}:{app}_{model}_order_bottom".format(
+                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'bottom']),
             },
             'query_string': self.request_query_string
         })
@@ -143,11 +147,10 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                 wrap(self.move_view),
                 name='{app}_{model}_change_order_inline'.format(**model_info)
             ),
-            url(r'^(.+)/move-(top)/$', wrap(self.move_view),
-                name='{app}_{model}_order_top'.format(**self._get_model_info())),
-
-            url(r'^(.+)/move-(bottom)/$', wrap(self.move_view),
-                name='{app}_{model}_order_bottom'.format(**self._get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(top)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_top_inline'.format(**cls.get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(bottom)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
+                name='{app}_{model}_order_bottom_inline'.format(**cls.get_model_info())),
         ]
 
     def move_view(self, request, admin_id, object_id, direction):
@@ -198,6 +201,12 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                         ),
                         args=[order_obj_name, obj.id, 'down']
                     ),
+                    'top': reverse("admin:{app}_{model}_order_top_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'top']),
+                    'bottom': reverse("admin:{app}_{model}_order_bottom_inline".format(
+                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        args=[order_obj_name, obj.id, 'bottom']),
                 },
                 'query_string': self.request_query_string
             })
