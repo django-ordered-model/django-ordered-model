@@ -92,6 +92,19 @@ the order value of all objects that were above the moved object by one.
 This sets the order value to the highest value found in the stack and decreases
 the order value of all objects that were below the moved object by one.
 
+### Updating fields that would be updated during save()
+
+For performance reasons, the delete(), to(), below(), above(), top(), and bottom()
+methods use Django's update() method to change the order of other objects that
+are shifted as a result of one of these calls. If the model has fields that
+are typically updated in a customized save() method, or through other app level 
+functionality such as DateTimeField(auto_now=True), you can add additional fields
+to be passed through to update(). This will only impact objects where their order
+is being shifted as a result of an operation on the target object, not the target
+object itself.
+
+    foo.to(12, extra_update={'modified': now()}
+ 
 ## Subset Ordering
 
 In some cases, ordering objects is required only on a subset of objects. For example,
