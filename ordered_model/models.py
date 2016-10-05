@@ -52,8 +52,12 @@ class OrderedModelBase(models.Model):
 
     def delete(self, *args, **kwargs):
         qs = self.get_ordering_queryset()
+        update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
+        extra = kwargs.pop('extra_update', None)
+        if extra:
+            update_kwargs.update(extra) 
         qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})\
-          .update(**{self.order_field_name: F(self.order_field_name) - 1})
+          .update(**update_kwargs)
         super(OrderedModelBase, self).delete(*args, **kwargs)
 
     def _move(self, up, qs=None):
@@ -140,7 +144,7 @@ class OrderedModelBase(models.Model):
         """
         self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
 
-    def to(self, order):
+    def to(self, order, extra_update=None):
         """
         Move object to a certain position, updating all affected objects to move accordingly up or down.
         """
@@ -149,17 +153,23 @@ class OrderedModelBase(models.Model):
             return
         qs = self.get_ordering_queryset()
         if getattr(self, self.order_field_name) > order:
+            update_kwargs = {self.order_field_name: F(self.order_field_name) + 1}
+            if extra_update:
+                update_kwargs.update(extra_update)
             qs.filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name),
                          self.order_field_name + '__gte': order})\
-              .update(**{self.order_field_name: F(self.order_field_name) + 1})
+              .update(**update_kwargs)
         else:
+            update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
+            if extra_update:
+                update_kwargs.update(extra_update)
             qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name),
                          self.order_field_name + '__lte': order})\
-              .update(**{self.order_field_name: F(self.order_field_name) - 1})
+              .update(**update_kwargs)
         setattr(self, self.order_field_name, order)
         self.save()
 
-    def above(self, ref):
+    def above(self, ref, extra_update=None):
         """
         Move this object above the referenced object.
         """
@@ -178,9 +188,9 @@ class OrderedModelBase(models.Model):
                     .filter(**{self.order_field_name + '__lt': getattr(ref, self.order_field_name)})\
                     .aggregate(Max(self.order_field_name))\
                     .get(self.order_field_name + '__max') or 0
-        self.to(o)
+        self.to(o, extra_update=extra_update)
 
-    def below(self, ref):
+    def below(self, ref, extra_update=None):
         """
         Move this object below the referenced object.
         """
@@ -199,21 +209,21 @@ class OrderedModelBase(models.Model):
                     .get(self.order_field_name + '__min') or 0
         else:
             o = getattr(ref, self.order_field_name)
-        self.to(o)
+        self.to(o, extra_update=extra_update)
 
-    def top(self):
+    def top(self, extra_update=None):
         """
         Move this object to the top of the ordered stack.
         """
         o = self.get_ordering_queryset().aggregate(Min(self.order_field_name)).get(self.order_field_name + '__min')
-        self.to(o)
+        self.to(o, extra_update=extra_update)
 
-    def bottom(self):
+    def bottom(self, extra_update=None):
         """
         Move this object to the bottom of the ordered stack.
         """
         o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
-        self.to(o)
+        self.to(o, extra_update=extra_update)
 
 
 class OrderedModel(OrderedModelBase):
