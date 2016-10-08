@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
+import six
 
 
 class OrderedModelBase(models.Model):
@@ -23,7 +24,7 @@ class OrderedModelBase(models.Model):
         abstract = True
 
     def _get_order_with_respect_to(self):
-        if type(self.order_with_respect_to) is str:
+        if isinstance(self.order_with_respect_to, six.string_types):
             self.order_with_respect_to = (self.order_with_respect_to,)
         if self.order_with_respect_to is None:
             raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
