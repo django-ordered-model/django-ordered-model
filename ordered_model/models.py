@@ -121,7 +121,7 @@ class OrderedModelBase(models.Model):
             return
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
-                "%r can only be swapped with instances of %r with equal %s fields." % (
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
@@ -176,7 +176,7 @@ class OrderedModelBase(models.Model):
         """
         if not self._valid_ordering_reference(ref):
             raise ValueError(
-                "%r can only be swapped with instances of %r with equal %s fields." % (
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
@@ -197,7 +197,7 @@ class OrderedModelBase(models.Model):
         """
         if not self._valid_ordering_reference(ref):
             raise ValueError(
-                "%r can only be swapped with instances of %r with equal %s fields." % (
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
