@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.3.0 – 2016-10-08
+------------------
+
+ - Add `extra_update` argument to various methods.
+ - Fix bug in `order_with_respect_to` when using string in Python 3.
+
 1.2.1 – 2016-07-12
 ------------------
 
