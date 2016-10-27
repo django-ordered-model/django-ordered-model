@@ -42,7 +42,7 @@ class OrderedModelBase(models.Model):
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
             order_values = self._get_order_with_respect_to()
-            qs = qs.filter(*order_values)
+            qs = qs.filter(**dict(order_values))
         return qs
 
     def save(self, *args, **kwargs):
