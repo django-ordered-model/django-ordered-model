@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from distutils.core import setup
- 
+
+with open('requirements.txt') as f:
+    requires = f.read().splitlines()
+
 setup(
     name='django-ordered-model',
     version='1.3.0',
@@ -13,6 +16,7 @@ setup(
         'ordered_model',
         'ordered_model.tests',
     ],
+    requires=requires,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Framework :: Django',
