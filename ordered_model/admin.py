@@ -248,14 +248,23 @@ class OrderedTabularInline(admin.TabularInline):
         return ''
 
     def move_up_down_links(self, obj):
-        if obj.id:
-            order_obj_name = 'obj'
-            if obj._get_order_with_respect_to() is not None:
-                order_obj_name = obj._get_order_with_respect_to().id
+        if not obj.id:
+            return ''
+
+        # Find the fields which refer to the parent model of this inline, and
+        # use one of them if they aren't None.
+        order_with_respect_to = obj._get_order_with_respect_to() or []
+        parent_model = self.parent_model._meta
+        fields = [
+            str(value.id) for field_name, value in order_with_respect_to
+            if value.__class__ is self.parent_model and value is not None and value.id is not None]
+        order_obj_name = fields[0] if len(fields) > 0 else None
+
+        if order_obj_name:
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
                 'model_name': self.model._meta.model_name,
-                'module_name': self.model._meta.model_name, # backwards compat
+                'module_name': self.model._meta.model_name,  # backwards compat
                 'object_id': obj.id,
                 'urls': {
                     'up': reverse("admin:{app}_{model}_order_up_inline".format(
@@ -267,7 +276,6 @@ class OrderedTabularInline(admin.TabularInline):
                 },
                 'query_string': self.request_query_string
             })
-        else:
-            return ''
+        return ''
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
