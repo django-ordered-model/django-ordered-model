@@ -30,9 +30,31 @@ class ModelTestCase(TestCase):
     def assertNames(self, names):
         self.assertEqual(list(enumerate(names)), [(i.order, i.name) for i in Item.objects.all()])
 
+    def assertName(self, result, name):
+        self.assertIsNotNone(result)
+        self.assertEqual(result.name, name)
+
     def test_inserting_new_models(self):
         Item.objects.create(name='Wurble')
         self.assertNames(['1', '2', '3', '4', 'Wurble'])
+
+    def test_previous(self):
+        self.assertName(Item.objects.get(pk=4).previous(), '3')
+
+    def test_previous_first(self):
+        self.assertEqual(Item.objects.get(pk=1).previous(), None)
+
+    def test_previous_with_gap(self):
+        self.assertName(Item.objects.get(pk=3).previous(), '2')
+
+    def test_next(self):
+        self.assertName(Item.objects.get(pk=1).next(), '2')
+
+    def test_next_last(self):
+        self.assertEqual(Item.objects.get(pk=4).next(), None)
+
+    def test_next_with_gap(self):
+        self.assertName(Item.objects.get(pk=2).next(), '3')
 
     def test_up(self):
         Item.objects.get(pk=4).up()
@@ -121,6 +143,18 @@ class OrderWithRespectToTests(TestCase):
             (self.q1_a1.pk, 0), (self.q1_a2.pk, 1),
             (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
         ])
+
+    def test_previous(self):
+        self.assertEqual(self.q1_a2.previous(), self.q1_a1)
+
+    def test_previous_first(self):
+        self.assertEqual(self.q2_a1.previous(), None)
+
+    def test_next(self):
+        self.assertEqual(self.q2_a1.next(), self.q2_a2)
+
+    def test_next_last(self):
+        self.assertEqual(self.q1_a2.next(), None)
 
     def test_swap(self):
         with self.assertRaises(ValueError):
@@ -293,9 +327,31 @@ class CustomOrderFieldTest(TestCase):
     def assertNames(self, names):
         self.assertEqual(list(enumerate(names)), [(i.sort_order, i.name) for i in CustomOrderFieldModel.objects.all()])
 
+    def assertName(self, result, name):
+        self.assertIsNotNone(result)
+        self.assertEqual(result.name, name)
+
     def test_inserting_new_models(self):
         CustomOrderFieldModel.objects.create(name='Wurble')
         self.assertNames(['1', '2', '3', '4', 'Wurble'])
+
+    def test_previous(self):
+        self.assertName(CustomOrderFieldModel.objects.get(pk=4).previous(), '3')
+
+    def test_previous_first(self):
+        self.assertEqual(CustomOrderFieldModel.objects.get(pk=1).previous(), None)
+
+    def test_previous_with_gap(self):
+        self.assertName(CustomOrderFieldModel.objects.get(pk=3).previous(), '2')
+
+    def test_next(self):
+        self.assertName(CustomOrderFieldModel.objects.get(pk=1).next(), '2')
+
+    def test_next_last(self):
+        self.assertEqual(CustomOrderFieldModel.objects.get(pk=4).next(), None)
+
+    def test_next_with_gap(self):
+        self.assertName(CustomOrderFieldModel.objects.get(pk=2).next(), '3')
 
     def test_up(self):
         CustomOrderFieldModel.objects.get(pk=4).up()
@@ -433,6 +489,18 @@ class OrderWithRespectToTestsManyToMany(TestCase):
     def test_swap(self):
         with self.assertRaises(ValueError):
             self.p1_t1.swap([self.p2_t1])
+
+    def test_previous(self):
+        self.assertEqual(self.p1_t2.previous(), self.p1_t1)
+
+    def test_previous_first(self):
+        self.assertEqual(self.p2_t1.previous(), None)
+
+    def test_down(self):
+        self.assertEqual(self.p2_t1.next(), self.p2_t2)
+
+    def test_down_last(self):
+        self.assertEqual(self.p1_t3.next(), None)
 
     def test_up(self):
         self.p1_t2.up()

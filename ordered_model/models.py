@@ -45,6 +45,26 @@ class OrderedModelBase(models.Model):
             qs = qs.filter(**dict(order_values))
         return qs
 
+    def previous(self):
+        """
+        Get previous element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset().filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)}).order_by('-' + self.order_field_name)[0]
+        except IndexError:
+            # first
+            return None
+
+    def next(self):
+        """
+        Get next element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})[0]
+        except IndexError:
+            # last
+            return None
+
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
             c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
@@ -135,15 +155,17 @@ class OrderedModelBase(models.Model):
         """
         Move this object up one position.
         """
-        self.swap(self.get_ordering_queryset()
-                      .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
-                      .order_by('-' + self.order_field_name))
+        ref = self.previous()
+        qs = [ref] if ref is not None else []
+        self.swap(qs)
 
     def down(self):
         """
         Move this object down one position.
         """
-        self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
+        ref = self.next()
+        qs = [ref] if ref is not None else []
+        self.swap(qs)
 
     def to(self, order, extra_update=None):
         """
