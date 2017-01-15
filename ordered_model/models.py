@@ -226,6 +226,44 @@ class OrderedModelBase(models.Model):
         o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
         self.to(o, extra_update=extra_update)
 
+    def first(self):
+        """
+        Get first element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset()[0]
+        except IndexError:
+            return None
+
+    def last(self):
+        """
+        Get last element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset().order_by('-' + self.order_field_name)[0]
+        except IndexError:
+            return None
+
+    def previous(self):
+        """
+        Get previous element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset().filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)}).order_by('-' + self.order_field_name)[0]
+        except IndexError:
+            # first
+            return None
+
+    def next(self):
+        """
+        Get next element in this object's ordered stack.
+        """
+        try:
+            return self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})[0]
+        except IndexError:
+            # last
+            return None
+
 
 class OrderedModel(OrderedModelBase):
     """
