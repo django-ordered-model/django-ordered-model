@@ -65,7 +65,7 @@ foo.up()
 foo.down()
 ```
 
-Moving an object up or down just makes it swap its position with the neighouring
+Moving an object up or down just makes it swap its position with the neighbouring
 object directly above of below depending on the direction.
 
 ### Move to arbitrary position
@@ -123,6 +123,14 @@ object itself.
 ```python
 foo.to(12, extra_update={'modified': now()}
 ```
+ 
+### Get the previous or next objects
+
+    foo.previous()
+    foo.next()
+
+previous() and next() get the neighbouring objects directly above of below
+within the ordered stack depending on the direction.
 
 ## Subset Ordering
 
