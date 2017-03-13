@@ -146,6 +146,27 @@ A simple example might look like so:
         class Meta:
             ordering = ('pizza', 'order')
 
+When you want ordering on the baseclass instead of subclasses in an ordered list of objects of various classes, specify the full module path of the base class:
+
+    class BaseQuestion(OrderedModel):
+        order_class_path = __module__ '.BaseQuestion'
+        question = models.TextField(max_length=100)
+        class Meta:
+            ordering = ('order',)
+
+    class MultipleChoiceQuestion(BaseQuestion):
+        good_answer = models.TextField(max_length=100)
+        wrong_answer1 = models.TextField(max_length=100)
+        wrong_answer2 = models.TextField(max_length=100)
+        wrong_answer3 = models.TextField(max_length=100)
+
+    class OpenQuestion(BaseQuestion):
+        answer = models.TextField(max_length=100)
+
+        
+
+
+
 Admin integration
 -----------------
 

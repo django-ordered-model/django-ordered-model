@@ -7,6 +7,18 @@ from django.utils.translation import ugettext as _
 import six
 
 
+"""
+Convert a string containing module.submodule.classname to a Class.
+"""
+def _order_model_get_class( classpath ):
+    parts = classpath.split('.')
+    module = ".".join(parts[:-1])
+    m = __import__( module )
+    for comp in parts[1:]:
+        m = getattr(m, comp)           
+    return m
+
+
 class OrderedModelBase(models.Model):
     """
     An abstract model that allows objects to be ordered relative to each other.
@@ -14,14 +26,25 @@ class OrderedModelBase(models.Model):
      - create a model subclassing ``OrderedModelBase``
      - add an indexed ``PositiveIntegerField`` to the model
      - set ``order_field_name`` to the name of that field
-     - use the same field name in ``Meta.ordering``
+     - use the same field name in ``Meta.ordering``     
+    [optional]
+     - set ``order_with_respect_to`` to limit order to a subset 
+     - specify ``order_class_path`` in case of polymorpic classes
     """
 
     order_field_name = None
     order_with_respect_to = None
+    order_class_path = None
 
     class Meta:
         abstract = True
+
+
+    def _get_class_for_ordering_queryset(self):
+        if self.order_class_path:
+            return _order_model_get_class(self.order_class_path)
+        return self.__class__
+
 
     def _get_order_with_respect_to(self):
         if isinstance(self.order_with_respect_to, six.string_types):
@@ -38,7 +61,7 @@ class OrderedModelBase(models.Model):
         )
 
     def get_ordering_queryset(self, qs=None):
-        qs = qs or self.__class__.objects.all()
+        qs = qs or self._get_class_for_ordering_queryset().objects.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
             order_values = self._get_order_with_respect_to()
@@ -122,7 +145,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
@@ -177,7 +200,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
@@ -198,7 +221,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):

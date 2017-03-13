@@ -11,7 +11,9 @@ from ordered_model.tests.models import (
     CustomOrderFieldModel,
     Pizza,
     Topping,
-    PizzaToppingsThroughModel
+    PizzaToppingsThroughModel,
+    OpenQuestion, 
+    MultipleChoiceQuestion
 )
 from ordered_model.tests.models import TestUser
 from .admin import ItemAdmin
@@ -521,3 +523,28 @@ class MultiOrderWithRespectToTests(TestCase):
     def test_swap_fails(self):
         with self.assertRaises(ValueError):
             self.q1_u1_a1.swap([self.q2_u1_a2])
+
+
+class PolymorpicOrderGenerationTests(TestCase):
+    def test_order_of_Baselist(self):
+        o1 = OpenQuestion.objects.create()
+        self.assertEqual(o1.order, 0)
+        o1.save()
+        m1 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m1.order, 1)
+        m1.save()
+        m2 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m2.order, 2)
+        m2.save()
+        o2 = OpenQuestion.objects.create()
+        self.assertEqual(o2.order, 3)
+        o2.save()
+
+        m2.up()
+        self.assertEqual(m2.order, 1)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 2)
+        o2.up()
+        self.assertEqual(o2.order, 2)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 3)
