@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.3.1 - 2017-03-13
+------------------
+
+-Add support for ordering using a specified base class when using Multi-table inheritance
+
+
 1.3.0 – 2016-10-08
 ------------------
 
