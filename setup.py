@@ -26,6 +26,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
+    zip_safe = False,
     package_data={'ordered_model': ['static/ordered_model/arrow-up.gif',
                                     'static/ordered_model/arrow-down.gif',
                                     'locale/de/LC_MESSAGES/django.po',
