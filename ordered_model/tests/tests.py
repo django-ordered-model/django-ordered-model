@@ -12,7 +12,7 @@ from ordered_model.tests.models import (
     Pizza,
     Topping,
     PizzaToppingsThroughModel,
-    OpenQuestion, 
+    OpenQuestion,
     MultipleChoiceQuestion
 )
 from ordered_model.tests.models import TestUser
@@ -205,7 +205,7 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
-    
+
     def test_order_to_extra_update(self):
         modified_time = now()
         self.item1.to(3, extra_update={'modified':modified_time})
@@ -214,12 +214,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_bottom_extra_update(self):
         modified_time = now()
         self.item1.bottom(extra_update={'modified':modified_time})
@@ -228,12 +228,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_top_extra_update(self):
         modified_time = now()
         self.item4.top(extra_update={'modified':modified_time})
@@ -242,12 +242,12 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 0, None),
                 (self.item1.pk, 1, modified_time),
                 (self.item2.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item3.pk, 3, modified_time)
             ]
         )
-    
+
     def test_below_extra_update(self):
         modified_time = now()
         self.item1.below(self.item4, extra_update={'modified':modified_time})
@@ -256,12 +256,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_above_extra_update(self):
         modified_time = now()
         self.item4.above(self.item1, extra_update={'modified':modified_time})
@@ -270,12 +270,12 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 0, None),
                 (self.item1.pk, 1, modified_time),
                 (self.item2.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item3.pk, 3, modified_time)
             ]
         )
-    
+
     def test_delete_extra_update(self):
         modified_time = now()
         self.item1.delete(extra_update={'modified':modified_time})
