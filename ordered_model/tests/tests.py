@@ -11,7 +11,9 @@ from ordered_model.tests.models import (
     CustomOrderFieldModel,
     Pizza,
     Topping,
-    PizzaToppingsThroughModel
+    PizzaToppingsThroughModel,
+    OpenQuestion,
+    MultipleChoiceQuestion
 )
 from ordered_model.tests.models import TestUser
 from .admin import ItemAdmin
@@ -203,7 +205,7 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 3)
             ]
         )
-    
+
     def test_order_to_extra_update(self):
         modified_time = now()
         self.item1.to(3, extra_update={'modified':modified_time})
@@ -212,12 +214,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_bottom_extra_update(self):
         modified_time = now()
         self.item1.bottom(extra_update={'modified':modified_time})
@@ -226,12 +228,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_top_extra_update(self):
         modified_time = now()
         self.item4.top(extra_update={'modified':modified_time})
@@ -240,12 +242,12 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 0, None),
                 (self.item1.pk, 1, modified_time),
                 (self.item2.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item3.pk, 3, modified_time)
             ]
         )
-    
+
     def test_below_extra_update(self):
         modified_time = now()
         self.item1.below(self.item4, extra_update={'modified':modified_time})
@@ -254,12 +256,12 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 0, modified_time),
                 (self.item3.pk, 1, modified_time),
                 (self.item4.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item1.pk, 3, None)
             ]
         )
-    
+
     def test_above_extra_update(self):
         modified_time = now()
         self.item4.above(self.item1, extra_update={'modified':modified_time})
@@ -268,12 +270,12 @@ class CustomPKTest(TestCase):
                 (self.item4.pk, 0, None),
                 (self.item1.pk, 1, modified_time),
                 (self.item2.pk, 2, modified_time),
-                # This one is the primary item being operated on and modified would be 
+                # This one is the primary item being operated on and modified would be
                 # handled via auto_now or something
                 (self.item3.pk, 3, modified_time)
             ]
         )
-    
+
     def test_delete_extra_update(self):
         modified_time = now()
         self.item1.delete(extra_update={'modified':modified_time})
@@ -521,3 +523,28 @@ class MultiOrderWithRespectToTests(TestCase):
     def test_swap_fails(self):
         with self.assertRaises(ValueError):
             self.q1_u1_a1.swap([self.q2_u1_a2])
+
+
+class PolymorpicOrderGenerationTests(TestCase):
+    def test_order_of_Baselist(self):
+        o1 = OpenQuestion.objects.create()
+        self.assertEqual(o1.order, 0)
+        o1.save()
+        m1 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m1.order, 1)
+        m1.save()
+        m2 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m2.order, 2)
+        m2.save()
+        o2 = OpenQuestion.objects.create()
+        self.assertEqual(o2.order, 3)
+        o2.save()
+
+        m2.up()
+        self.assertEqual(m2.order, 1)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 2)
+        o2.up()
+        self.assertEqual(o2.order, 2)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 3)

@@ -57,3 +57,18 @@ class PizzaToppingsThroughModel(OrderedModel):
 
     class Meta:
         ordering = ('pizza', 'order')
+
+class BaseQuestion(OrderedModel):
+    order_class_path = __module__ + '.BaseQuestion'
+    question = models.TextField(max_length=100)
+    class Meta:
+        ordering = ('order',)
+
+class MultipleChoiceQuestion(BaseQuestion):
+    good_answer = models.TextField(max_length=100)
+    wrong_answer1 = models.TextField(max_length=100)
+    wrong_answer2 = models.TextField(max_length=100)
+    wrong_answer3 = models.TextField(max_length=100)
+
+class OpenQuestion(BaseQuestion):
+    answer = models.TextField(max_length=100)
