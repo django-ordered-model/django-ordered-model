@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from distutils.core import setup
+from setuptools import setup
 
 with open('requirements.txt') as f:
     requires = f.read().splitlines()
@@ -26,6 +26,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
+    zip_safe = False,
     package_data={'ordered_model': ['static/ordered_model/arrow-up.gif',
                                     'static/ordered_model/arrow-down.gif',
                                     'locale/de/LC_MESSAGES/django.po',
