@@ -1,10 +1,18 @@
 Change log
 ==========
 
-1.3.1 - 2017-03-13
+1.4.0 - 2017-04-14
 ------------------
 
--Add support for ordering using a specified base class when using Multi-table inheritance
+### Added
+
+- Support for ordering using a specified base class when using Multi-table inheritance
+- Suport for Python 3.6, Django 1.10 and 1.11.
+
+### Fixed
+
+- The move up/down links in OrderedTabularInline
+- Passing args to `filter()` which broke django-polymorphic.
 
 
 1.3.0 – 2016-10-08
