@@ -1,6 +1,13 @@
 Change log
 ==========
 
+1.4.1 - 2017-04-16
+------------------
+
+### Fixed
+
+- `pip install` not working due to missing `requirements.txt`
+
 1.4.0 - 2017-04-14
 ------------------
 
