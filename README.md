@@ -134,7 +134,7 @@ A simple example might look like so:
 
 ```python
 class Contact(OrderedModel):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     phone = models.CharField()
     order_with_respect_to = 'user'
 ```
@@ -162,8 +162,8 @@ class Pizza(models.Model):
     toppings = models.ManyToManyField(Topping, through='PizzaToppingsThroughModel')
 
 class PizzaToppingsThroughModel(OrderedModel):
-    pizza = models.ForeignKey(Pizza)
-    topping = models.ForeignKey(Topping)
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
     order_with_respect_to = 'pizza'
 
     class Meta:

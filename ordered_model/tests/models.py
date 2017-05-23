@@ -15,8 +15,8 @@ class TestUser(models.Model):
 
 
 class Answer(OrderedModel):
-    question = models.ForeignKey(Question, related_name='answers')
-    user = models.ForeignKey(TestUser, related_name='answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    user = models.ForeignKey(TestUser, on_delete=models.CASCADE, related_name='answers')
     order_with_respect_to = ('question', 'user')
 
     class Meta:
@@ -51,8 +51,8 @@ class Pizza(models.Model):
 
 
 class PizzaToppingsThroughModel(OrderedModel):
-    pizza = models.ForeignKey(Pizza)
-    topping = models.ForeignKey(Topping)
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
     order_with_respect_to = 'pizza'
 
     class Meta:
