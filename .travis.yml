@@ -19,7 +19,7 @@ matrix:
   - python: '3.3'
     env: DJANGO="Django>=1.11,<2.0"
 install:
-- pip install $DJANGO
+- pip install six $DJANGO
 - python setup.py sdist
 - pip install dist/*
 script: script/test-command
