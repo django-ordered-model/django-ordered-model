@@ -2,7 +2,6 @@ from functools import update_wrapper
 
 from django.conf.urls import url
 from django.core.paginator import Paginator
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
@@ -10,6 +9,12 @@ from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+
+try:
+    from django.urls import reverse
+except ImportError:
+    # Django < 1.10
+    from django.core.urlresolvers import reverse
 
 
 class OrderedModelAdmin(admin.ModelAdmin):
