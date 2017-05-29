@@ -1,2 +1,2 @@
-Django
-six
+Django==1.10.5
+six==1.10.0
