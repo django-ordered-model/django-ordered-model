@@ -28,7 +28,7 @@ matrix:
   allow_failures:
   - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
 install:
-- pip install six $DJANGO
+- pip install $DJANGO
 - python setup.py sdist
 - pip install dist/*
 script: script/test-command

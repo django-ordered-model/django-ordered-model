@@ -1,9 +1,8 @@
 import warnings
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
-import six
+from django.utils import six
 
 
 """
