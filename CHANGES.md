@@ -1,6 +1,13 @@
 Change log
 ==========
 
+1.4.2 - 2017-08-18
+------------------
+
+- Use Django's version of `six`
+- Fix various deprecations
+- Fix missing up/down links with custom primary key
+
 1.4.1 - 2017-04-16
 ------------------
 
