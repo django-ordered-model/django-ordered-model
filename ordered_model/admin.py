@@ -261,8 +261,8 @@ class OrderedTabularInline(admin.TabularInline):
         order_with_respect_to = obj._get_order_with_respect_to() or []
         parent_model = self.parent_model._meta
         fields = [
-            str(value.id) for field_name, value in order_with_respect_to
-            if value.__class__ is self.parent_model and value is not None and value.id is not None]
+            str(value.pk) for field_name, value in order_with_respect_to
+            if value.__class__ is self.parent_model and value is not None and value.pk is not None]
         order_obj_name = fields[0] if len(fields) > 0 else None
 
         if order_obj_name:
