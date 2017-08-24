@@ -61,7 +61,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
         redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
             ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
 
-        return HttpResponseRedirect(request.build_absolute_uri(location=redir_path))
+        return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -241,7 +241,7 @@ class OrderedTabularInline(admin.TabularInline):
         redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
             ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
 
-        return HttpResponseRedirect(request.build_absolute_uri(location=redir_path))
+        return HttpResponseRedirect(redir_path)
 
     @classmethod
     def get_preserved_filters(cls, request):
