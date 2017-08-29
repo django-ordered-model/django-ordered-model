@@ -1,6 +1,11 @@
 Change log
 ==========
 
+1.4.3 - 2017-08-29
+------------------
+
+- Fix a problem with links in the admin when using multiple threads.
+
 1.4.2 - 2017-08-18
 ------------------
 
