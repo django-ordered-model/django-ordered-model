@@ -15,7 +15,7 @@ try:
 except ImportError:
     # Django < 1.10
     from django.core.urlresolvers import reverse
-
+from django.utils.encoding import (escape_uri_path, iri_to_uri)
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
@@ -56,7 +56,12 @@ class OrderedModelAdmin(admin.ModelAdmin):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../{0!s}'.format(self.request_query_string))
+        # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
+        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-3])
+        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
+            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+
+        return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -231,7 +236,12 @@ class OrderedTabularInline(admin.TabularInline):
         obj = get_object_or_404(cls.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../../{0!s}'.format(cls.request_query_string))
+        # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
+        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-4] + ['change'])
+        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
+            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+
+        return HttpResponseRedirect(redir_path)
 
     @classmethod
     def get_preserved_filters(cls, request):
