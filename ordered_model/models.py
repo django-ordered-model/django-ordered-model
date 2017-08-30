@@ -131,15 +131,21 @@ class OrderedModelBase(models.Model):
         )
         return self.up()
 
-    def swap(self, qs):
+    def _swap_qs0(self, qs):
         """
-        Swap the positions of this object with a reference object.
+        Swap the positions of this object with first result, if any, from the provided queryset.
         """
         try:
             replacement = qs[0]
         except IndexError:
             # already first/last
             return
+        self.swap(replacement)
+
+    def swap(self, replacement):
+        """
+        Swap the position of this object with a replacement object.
+        """
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
@@ -156,7 +162,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object up one position.
         """
-        self.swap(self.get_ordering_queryset()
+        self._swap_qs0(self.get_ordering_queryset()
                       .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
                       .order_by('-' + self.order_field_name))
 
@@ -164,7 +170,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object down one position.
         """
-        self.swap(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
+        self._swap_qs0(self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)}))
 
     def to(self, order, extra_update=None):
         """

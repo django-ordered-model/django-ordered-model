@@ -126,7 +126,14 @@ class OrderWithRespectToTests(TestCase):
 
     def test_swap(self):
         with self.assertRaises(ValueError):
-            self.q1_a1.swap([self.q2_a1])
+            self.q1_a1.swap(self.q2_a1)
+
+        self.q1_a1.swap(self.q1_a2)
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a2.pk, 0), (self.q1_a1.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
 
     def test_up(self):
         self.q1_a2.up()
@@ -434,7 +441,7 @@ class OrderWithRespectToTestsManyToMany(TestCase):
 
     def test_swap(self):
         with self.assertRaises(ValueError):
-            self.p1_t1.swap([self.p2_t1])
+            self.p1_t1.swap(self.p2_t1)
 
     def test_up(self):
         self.p1_t2.up()
@@ -522,7 +529,7 @@ class MultiOrderWithRespectToTests(TestCase):
 
     def test_swap_fails(self):
         with self.assertRaises(ValueError):
-            self.q1_u1_a1.swap([self.q2_u1_a2])
+            self.q1_u1_a1.swap(self.q2_u1_a2)
 
 
 class PolymorpicOrderGenerationTests(TestCase):
