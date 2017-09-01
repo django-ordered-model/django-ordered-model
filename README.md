@@ -148,7 +148,7 @@ class Model(OrderedModel)
     order_with_respect_to = ('field_a', 'field_b')
 ```
 
-In a many-to-many relationship you need to use a seperate through model which is derived from the OrderedModel.
+In a many-to-many relationship you need to use a separate through model which is derived from the OrderedModel.
 For example, an application which manages pizzas with toppings.
 
 A simple example might look like so:
