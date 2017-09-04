@@ -1,6 +1,45 @@
 Change log
 ==========
 
+1.4.3 - 2017-08-29
+------------------
+
+- Fix a problem with links in the admin when using multiple threads.
+
+1.4.2 - 2017-08-18
+------------------
+
+- Use Django's version of `six`
+- Fix various deprecations
+- Fix missing up/down links with custom primary key
+
+1.4.1 - 2017-04-16
+------------------
+
+### Fixed
+
+- `pip install` not working due to missing `requirements.txt`
+
+1.4.0 - 2017-04-14
+------------------
+
+### Added
+
+- Support for ordering using a specified base class when using Multi-table inheritance
+- Suport for Python 3.6, Django 1.10 and 1.11.
+
+### Fixed
+
+- The move up/down links in OrderedTabularInline
+- Passing args to `filter()` which broke django-polymorphic.
+
+
+1.3.0 – 2016-10-08
+------------------
+
+ - Add `extra_update` argument to various methods.
+ - Fix bug in `order_with_respect_to` when using string in Python 3.
+
 1.2.1 – 2016-07-12
 ------------------
 

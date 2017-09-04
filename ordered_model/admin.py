@@ -2,8 +2,6 @@ from functools import update_wrapper
 
 from django.conf.urls import url
 from django.core.paginator import Paginator
-from django.core.urlresolvers import reverse
-from django.db import models
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
@@ -12,13 +10,12 @@ from django.contrib import admin
 from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
 
-import sys
-
-if sys.version.startswith('3'):
-    from functools import reduce
-    import operator
-    from urllib.parse import urlencode
-
+try:
+    from django.urls import reverse
+except ImportError:
+    # Django < 1.10
+    from django.core.urlresolvers import reverse
+from django.utils.encoding import (escape_uri_path, iri_to_uri)
 
 class OrderedModelAdmin(admin.ModelAdmin):
     def get_urls(self):
@@ -59,7 +56,12 @@ class OrderedModelAdmin(admin.ModelAdmin):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../%s' % self.request_query_string)
+        # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
+        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-3])
+        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
+            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+
+        return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
@@ -202,13 +204,13 @@ class OrderedTabularInline(admin.TabularInline):
         # Apply keyword searches.
         def construct_search(field_name):
             if field_name.startswith('^'):
-                return "%s__istartswith" % field_name[1:]
+                return "{0!s}__istartswith".format(field_name[1:])
             elif field_name.startswith('='):
-                return "%s__iexact" % field_name[1:]
+                return "{0!s}__iexact".format(field_name[1:])
             elif field_name.startswith('@'):
-                return "%s__search" % field_name[1:]
+                return "{0!s}__search".format(field_name[1:])
             else:
-                return "%s__icontains" % field_name
+                return "{0!s}__icontains".format(field_name)
 
         use_distinct = False
         search_fields = cls.get_search_fields(request)
@@ -234,7 +236,12 @@ class OrderedTabularInline(admin.TabularInline):
         obj = get_object_or_404(cls.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
-        return HttpResponseRedirect('../../../%s' % cls.request_query_string)
+        # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
+        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-4] + ['change'])
+        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
+            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+
+        return HttpResponseRedirect(redir_path)
 
     @classmethod
     def get_preserved_filters(cls, request):
@@ -244,8 +251,8 @@ class OrderedTabularInline(admin.TabularInline):
         match = request.resolver_match
         if cls.preserve_filters and match:
             opts = cls.model._meta
-            current_url = '%s:%s' % (match.app_name, match.url_name)
-            changelist_url = 'admin:%s_%s_changelist' % (opts.app_label, opts.model_name)
+            current_url = '{0!s}:{1!s}'.format(match.app_name, match.url_name)
+            changelist_url = 'admin:{0!s}_{1!s}_changelist'.format(opts.app_label, opts.model_name)
             if current_url == changelist_url:
                 preserved_filters = request.GET.urlencode()
             else:
@@ -256,14 +263,23 @@ class OrderedTabularInline(admin.TabularInline):
         return ''
 
     def move_up_down_links(self, obj):
-        if obj.id:
-            order_obj_name = 'obj'
-            if obj._get_order_with_respect_to() is not None:
-                order_obj_name = obj._get_order_with_respect_to()[0][1].id
+        if not obj.id:
+            return ''
+
+        # Find the fields which refer to the parent model of this inline, and
+        # use one of them if they aren't None.
+        order_with_respect_to = obj._get_order_with_respect_to() or []
+        parent_model = self.parent_model._meta
+        fields = [
+            str(value.pk) for field_name, value in order_with_respect_to
+            if value.__class__ is self.parent_model and value is not None and value.pk is not None]
+        order_obj_name = fields[0] if len(fields) > 0 else None
+
+        if order_obj_name:
             return render_to_string("ordered_model/admin/order_controls.html", {
                 'app_label': self.model._meta.app_label,
                 'model_name': self.model._meta.model_name,
-                'module_name': self.model._meta.model_name, # backwards compat
+                'module_name': self.model._meta.model_name,  # backwards compat
                 'object_id': obj.id,
                 'urls': {
                     'up': reverse("admin:{app}_{model}_order_up_inline".format(
@@ -275,7 +291,6 @@ class OrderedTabularInline(admin.TabularInline):
                 },
                 'query_string': self.request_query_string
             })
-        else:
-            return ''
+        return ''
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')

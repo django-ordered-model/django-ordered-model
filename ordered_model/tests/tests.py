@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.utils.timezone import now
 from django.test import TestCase
 import uuid
 from ordered_model.tests.models import (
@@ -9,7 +10,9 @@ from ordered_model.tests.models import (
     CustomOrderFieldModel,
     Pizza,
     Topping,
-    PizzaToppingsThroughModel
+    PizzaToppingsThroughModel,
+    OpenQuestion,
+    MultipleChoiceQuestion
 )
 from ordered_model.tests.models import TestUser
 
@@ -122,7 +125,14 @@ class OrderWithRespectToTests(TestCase):
 
     def test_swap(self):
         with self.assertRaises(ValueError):
-            self.q1_a1.swap([self.q2_a1])
+            self.q1_a1.swap(self.q2_a1)
+
+        self.q1_a1.swap(self.q1_a2)
+        self.assertSequenceEqual(
+            Answer.objects.values_list('pk', 'order'), [
+            (self.q1_a2.pk, 0), (self.q1_a1.pk, 1),
+            (self.q2_a1.pk, 0), (self.q2_a2.pk, 1)
+        ])
 
     def test_up(self):
         self.q1_a2.up()
@@ -199,6 +209,87 @@ class CustomPKTest(TestCase):
                 (self.item2.pk, 1),
                 (self.item3.pk, 2),
                 (self.item4.pk, 3)
+            ]
+        )
+
+    def test_order_to_extra_update(self):
+        modified_time = now()
+        self.item1.to(3, extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item2.pk, 0, modified_time),
+                (self.item3.pk, 1, modified_time),
+                (self.item4.pk, 2, modified_time),
+                # This one is the primary item being operated on and modified would be
+                # handled via auto_now or something
+                (self.item1.pk, 3, None)
+            ]
+        )
+
+    def test_bottom_extra_update(self):
+        modified_time = now()
+        self.item1.bottom(extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item2.pk, 0, modified_time),
+                (self.item3.pk, 1, modified_time),
+                (self.item4.pk, 2, modified_time),
+                # This one is the primary item being operated on and modified would be
+                # handled via auto_now or something
+                (self.item1.pk, 3, None)
+            ]
+        )
+
+    def test_top_extra_update(self):
+        modified_time = now()
+        self.item4.top(extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item4.pk, 0, None),
+                (self.item1.pk, 1, modified_time),
+                (self.item2.pk, 2, modified_time),
+                # This one is the primary item being operated on and modified would be
+                # handled via auto_now or something
+                (self.item3.pk, 3, modified_time)
+            ]
+        )
+
+    def test_below_extra_update(self):
+        modified_time = now()
+        self.item1.below(self.item4, extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item2.pk, 0, modified_time),
+                (self.item3.pk, 1, modified_time),
+                (self.item4.pk, 2, modified_time),
+                # This one is the primary item being operated on and modified would be
+                # handled via auto_now or something
+                (self.item1.pk, 3, None)
+            ]
+        )
+
+    def test_above_extra_update(self):
+        modified_time = now()
+        self.item4.above(self.item1, extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item4.pk, 0, None),
+                (self.item1.pk, 1, modified_time),
+                (self.item2.pk, 2, modified_time),
+                # This one is the primary item being operated on and modified would be
+                # handled via auto_now or something
+                (self.item3.pk, 3, modified_time)
+            ]
+        )
+
+    def test_delete_extra_update(self):
+        modified_time = now()
+        self.item1.delete(extra_update={'modified':modified_time})
+        self.assertSequenceEqual(
+            CustomItem.objects.values_list('pk', 'order', 'modified'), [
+                (self.item2.pk, 0, modified_time),
+                (self.item3.pk, 1, modified_time),
+                (self.item4.pk, 2, modified_time),
             ]
         )
 
@@ -349,7 +440,7 @@ class OrderWithRespectToTestsManyToMany(TestCase):
 
     def test_swap(self):
         with self.assertRaises(ValueError):
-            self.p1_t1.swap([self.p2_t1])
+            self.p1_t1.swap(self.p2_t1)
 
     def test_up(self):
         self.p1_t2.up()
@@ -437,4 +528,29 @@ class MultiOrderWithRespectToTests(TestCase):
 
     def test_swap_fails(self):
         with self.assertRaises(ValueError):
-            self.q1_u1_a1.swap([self.q2_u1_a2])
+            self.q1_u1_a1.swap(self.q2_u1_a2)
+
+
+class PolymorpicOrderGenerationTests(TestCase):
+    def test_order_of_Baselist(self):
+        o1 = OpenQuestion.objects.create()
+        self.assertEqual(o1.order, 0)
+        o1.save()
+        m1 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m1.order, 1)
+        m1.save()
+        m2 = MultipleChoiceQuestion.objects.create()
+        self.assertEqual(m2.order, 2)
+        m2.save()
+        o2 = OpenQuestion.objects.create()
+        self.assertEqual(o2.order, 3)
+        o2.save()
+
+        m2.up()
+        self.assertEqual(m2.order, 1)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 2)
+        o2.up()
+        self.assertEqual(o2.order, 2)
+        m1.refresh_from_db()
+        self.assertEqual(m1.order, 3)

@@ -15,20 +15,21 @@ class TestUser(models.Model):
 
 
 class Answer(OrderedModel):
-    question = models.ForeignKey(Question, related_name='answers')
-    user = models.ForeignKey(TestUser, related_name='answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    user = models.ForeignKey(TestUser, on_delete=models.CASCADE, related_name='answers')
     order_with_respect_to = ('question', 'user')
 
     class Meta:
         ordering = ('question', 'user', 'order')
 
     def __unicode__(self):
-        return u"Answer #%d of question #%d for user #%d" % (self.order, self.question_id, self.user_id)
+        return u"Answer #{0:d} of question #{1:d} for user #{2:d}".format(self.order, self.question_id, self.user_id)
 
 
 class CustomItem(OrderedModel):
     id = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=100)
+    modified = models.DateTimeField(null=True, blank=True)
 
 
 class CustomOrderFieldModel(OrderedModelBase):
@@ -50,9 +51,24 @@ class Pizza(models.Model):
 
 
 class PizzaToppingsThroughModel(OrderedModel):
-    pizza = models.ForeignKey(Pizza)
-    topping = models.ForeignKey(Topping)
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
     order_with_respect_to = 'pizza'
 
     class Meta:
         ordering = ('pizza', 'order')
+
+class BaseQuestion(OrderedModel):
+    order_class_path = __module__ + '.BaseQuestion'
+    question = models.TextField(max_length=100)
+    class Meta:
+        ordering = ('order',)
+
+class MultipleChoiceQuestion(BaseQuestion):
+    good_answer = models.TextField(max_length=100)
+    wrong_answer1 = models.TextField(max_length=100)
+    wrong_answer2 = models.TextField(max_length=100)
+    wrong_answer3 = models.TextField(max_length=100)
+
+class OpenQuestion(BaseQuestion):
+    answer = models.TextField(max_length=100)
