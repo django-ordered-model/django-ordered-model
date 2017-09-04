@@ -1,3 +1,5 @@
+import django
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3'
@@ -13,14 +15,20 @@ INSTALLED_APPS = [
     'ordered_model.tests',
 ]
 SECRET_KEY = 'topsecret'
-MIDDLEWARE_CLASSES = (
+
+MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+]
+
+# Compatibility for Django < 1.10
+if django.VERSION < (1, 10):
+    MIDDLEWARE_CLASSES = MIDDLEWARE
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
