@@ -12,7 +12,7 @@ https://djangosnippets.org/snippets/259/
 Requires:
 
   * Django >=1.8
-  * Python 2.7 or >=3.3
+  * Python 2.7 or >=3.4
 
 Installation
 ------------
