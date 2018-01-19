@@ -34,6 +34,7 @@ Inherit your model from `OrderedModel` to make it ordered:
 from django.db import models
 from ordered_model.models import OrderedModel
 
+
 class Item(OrderedModel):
     name = models.CharField(max_length=100)
 
@@ -157,9 +158,11 @@ A simple example might look like so:
 class Topping(models.Model):
     name = models.CharField(max_length=100)
 
+
 class Pizza(models.Model):
     name = models.CharField(max_length=100)
     toppings = models.ManyToManyField(Topping, through='PizzaToppingsThroughModel')
+
 
 class PizzaToppingsThroughModel(OrderedModel):
     pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
@@ -203,6 +206,7 @@ from django.contrib import admin
 from ordered_model.admin import OrderedModelAdmin
 from models import Item
 
+
 class ItemAdmin(OrderedModelAdmin):
     list_display = ('name', 'move_up_down_links')
 
@@ -210,23 +214,60 @@ admin.site.register(Item, ItemAdmin)
 ```
 
 
-For a many-to-many relationship you need the following in the admin.py file:
+For a many-to-many relationship you need one of the following inlines.
+
+`OrderedTabularInline` or `OrderedStackedInline` just like the django admin.
+
+For the `OrderedTabularInline` it will look like this:
 
 ```python
 from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline
 from models import Pizza, PizzaToppingsThroughModel
 
-class PizzaToppingsThroughModelInline(OrderedTabularInline):
+
+class PizzaToppingsThroughModelTabularInline(OrderedTabularInline):
     model = PizzaToppingsThroughModel
     fields = ('topping', 'order', 'move_up_down_links',)
     readonly_fields = ('order', 'move_up_down_links',)
     extra = 1
     ordering = ('order',)
 
+
 class PizzaAdmin(admin.ModelAdmin):
     list_display = ('name', )
-    inlines = (PizzaToppingsThroughModelInline, )
+    inlines = (PizzaToppingsThroughModelTabularInline, )
+
+    def get_urls(self):
+        urls = super(PizzaAdmin, self).get_urls()
+        for inline in self.inlines:
+            if hasattr(inline, 'get_urls'):
+                urls = inline.get_urls(self) + urls
+        return urls
+
+admin.site.register(Pizza, PizzaAdmin)
+```
+
+
+For the `OrderedStackedInline` it will look like this:
+
+```python
+from django.contrib import admin
+from ordered_model.admin import OrderedStackedInline
+from models import Pizza, PizzaToppingsThroughModel
+
+
+class PizzaToppingsThroughModelStackedInline(OrderedStackedInline):
+    model = PizzaToppingsThroughModel
+    fields = ('topping', 'order', 'move_up_down_links',)
+    readonly_fields = ('order', 'move_up_down_links',)
+    extra = 1
+    ordering = ('order',)
+
+
+class PizzaAdmin(admin.ModelAdmin):
+    list_display = ('name', )
+    inlines = (PizzaToppingsThroughModelStackedInline, )
 
     def get_urls(self):
         urls = super(PizzaAdmin, self).get_urls()

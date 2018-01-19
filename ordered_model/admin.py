@@ -88,7 +88,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
         }
 
 
-class OrderedInlineMixin:
+class OrderedInlineMixin(object):
 
     ordering = None
     list_display = ('__str__',)
