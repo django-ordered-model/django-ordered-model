@@ -25,10 +25,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Compatibility for Django < 1.10
-if django.VERSION < (1, 10):
-    MIDDLEWARE_CLASSES = MIDDLEWARE
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
