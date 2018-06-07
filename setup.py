@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='django-ordered-model',
-    version='1.5.0',
+    version='2.0.0',
     description='Allows Django models to be ordered and provides a simple admin interface for reordering them.',
     author='Ben Firshman',
     author_email='ben@firshman.co.uk',
