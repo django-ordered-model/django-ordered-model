@@ -1,6 +1,12 @@
 Change log
 ==========
 
+1.5.0 - 2018-06-07
+------------------
+
+- Add support for Django 2.0
+- Fix problem where swap took a queryset instead of a model instance
+
 1.4.3 - 2017-08-29
 ------------------
 
