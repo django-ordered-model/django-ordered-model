@@ -84,7 +84,7 @@ class OrderedModelAdmin(admin.ModelAdmin):
         }
 
 
-class OrderedTabularInline(admin.TabularInline):
+class OrderedInlineMixin(object):
 
     ordering = None
     list_display = ('__str__',)
@@ -290,3 +290,11 @@ class OrderedTabularInline(admin.TabularInline):
         return ''
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
+
+    
+class OrderedTabularInline(OrderedInlineMixin, admin.TabularInline):
+    pass
+
+
+class OrderedStackedInline(OrderedInlineMixin, admin.StackedInline):
+    pass
