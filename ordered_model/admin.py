@@ -9,7 +9,7 @@ from django.utils.encoding import escape_uri_path, iri_to_uri
 from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-from django.contrib.admin.utils import unquote
+from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.views.main import ChangeList
 
 
