@@ -72,3 +72,10 @@ class MultipleChoiceQuestion(BaseQuestion):
 
 class OpenQuestion(BaseQuestion):
     answer = models.TextField(max_length=100)
+
+class ItemGroup(models.Model):
+    user = models.ForeignKey(TestUser, on_delete=models.CASCADE, related_name='item_groups')
+
+class GroupedItem(OrderedModel):
+    group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, related_name='items')
+    order_with_respect_to = 'group__user'
