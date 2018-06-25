@@ -13,7 +13,9 @@ from ordered_model.tests.models import (
     Topping,
     PizzaToppingsThroughModel,
     OpenQuestion,
-    MultipleChoiceQuestion
+    MultipleChoiceQuestion,
+    ItemGroup,
+    GroupedItem
 )
 from ordered_model.tests.models import TestUser
 from .admin import ItemAdmin
@@ -531,6 +533,54 @@ class MultiOrderWithRespectToTests(TestCase):
         with self.assertRaises(ValueError):
             self.q1_u1_a1.swap(self.q2_u1_a2)
 
+class OrderWithRespectToRelatedModelFieldTests(TestCase):
+    def setUp(self):
+        self.u1 = TestUser.objects.create()
+        self.u2 = TestUser.objects.create()
+        self.u1_g1 = self.u1.item_groups.create()
+        self.u2_g1 = self.u2.item_groups.create()
+        self.u2_g2 = self.u2.item_groups.create()
+        self.u1_g2 = self.u1.item_groups.create()
+        self.u2_g2_i1 = self.u2_g2.items.create()
+        self.u2_g1_i1 = self.u2_g1.items.create()
+        self.u1_g1_i1 = self.u1_g1.items.create()
+        self.u1_g2_i1 = self.u1_g2.items.create()
+
+    def test_saved_order(self):
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group__user=self.u1).values_list('pk', 'order'), [
+            (self.u1_g1_i1.pk, 0), (self.u1_g2_i1.pk, 1)
+        ])
+
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group__user=self.u2).values_list('pk', 'order'), [
+            (self.u2_g2_i1.pk, 0), (self.u2_g1_i1.pk, 1)
+        ])
+
+    def test_swap(self):
+        i2 = self.u1_g1.items.create()
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group__user=self.u1).values_list('pk', 'order'), [
+            (self.u1_g1_i1.pk, 0), (self.u1_g2_i1.pk, 1), (i2.pk, 2)
+        ])
+
+        i2.swap(self.u1_g1_i1)
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group__user=self.u1).values_list('pk', 'order'), [
+            (i2.pk, 0), (self.u1_g2_i1.pk, 1), (self.u1_g1_i1.pk, 2)
+        ])
+
+    def test_swap_fails_between_users(self):
+        with self.assertRaises(ValueError):
+            self.u1_g1_i1.swap(self.u2_g1_i1)
+
+    def test_above_between_groups(self):
+        i2 = self.u1_g2.items.create()
+        i2.above(self.u1_g1_i1)
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group__user=self.u1).values_list('pk', 'order'), [
+            (i2.pk, 0), (self.u1_g1_i1.pk, 1), (self.u1_g2_i1.pk, 2)
+        ])
 
 class PolymorpicOrderGenerationTests(TestCase):
     def test_order_of_Baselist(self):

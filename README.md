@@ -173,6 +173,21 @@ class PizzaToppingsThroughModel(OrderedModel):
         ordering = ('pizza', 'order')
 ```
 
+You can also specify `order_with_respect_to` to a field on a related model. An example use-case can be made with the following models:
+
+```python
+class ItemGroup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    general_info = models.CharField(max_length=100)
+
+class GroupedItem(OrderedModel):
+    group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE)
+    specific_info = models.CharField(max_length=100)
+    order_with_respect_to = 'group__user'
+```
+
+Here items are put into groups that have some general information used by its items, but the ordering of the items is independent of the group the item is in.
+
 When you want ordering on the baseclass instead of subclasses in an ordered list of objects of various classes, specify the full module path of the base class:
 
 ```python

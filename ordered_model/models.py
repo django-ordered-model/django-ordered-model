@@ -1,4 +1,5 @@
 import warnings
+from functools import reduce
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
@@ -51,7 +52,9 @@ class OrderedModelBase(models.Model):
             raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
                 'should go in the model body, and is not to be confused with the Meta property of the same name, '
                 'which is independent Django functionality').format(self))
-        return [(field, getattr(self, field)) for field in self.order_with_respect_to]
+        def get_field_tuple(field):
+            return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
+        return list(map(get_field_tuple, self.order_with_respect_to))
 
     def _valid_ordering_reference(self, reference):
         return self.order_with_respect_to is None or (
