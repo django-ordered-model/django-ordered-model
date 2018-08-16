@@ -1,6 +1,13 @@
 Change log
 ==========
 
+2.1.0 - 2018-08-16
+------------------
+
+- Add support for Django 2.1
+- Support order_with_respect_to on related fields
+- Add Tabular and Stacked inline 
+
 2.0.0 - 2018-06-07
 ------------------
 
