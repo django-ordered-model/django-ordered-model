@@ -11,6 +11,7 @@ from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+from django import VERSION
 
 
 class OrderedModelAdmin(admin.ModelAdmin):
@@ -31,13 +32,15 @@ class OrderedModelAdmin(admin.ModelAdmin):
         list_display = self.get_list_display(request)
         list_display_links = self.get_list_display_links(request, list_display)
 
-        cl = ChangeList(request, self.model, list_display,
-                        list_display_links, self.list_filter, self.date_hierarchy,
-                        self.search_fields, self.list_select_related,
-                        self.list_per_page, self.list_max_show_all, self.list_editable,
-                        self)
+        args = (request, self.model, list_display,
+                list_display_links, self.list_filter, self.date_hierarchy,
+                self.search_fields, self.list_select_related,
+                self.list_per_page, self.list_max_show_all, self.list_editable, self)
 
-        return cl
+        if VERSION >= (2, 1):
+            args = args + (self.sortable_by, )
+
+        return ChangeList(*args)
 
     request_query_string = ''
 

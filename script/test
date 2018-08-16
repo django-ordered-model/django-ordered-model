@@ -1,3 +1,18 @@
 #!/bin/sh
-docker build -t django-ordered-model .
+
+docker build -t django-ordered-model -f - . << EOS
+FROM python:3
+WORKDIR /code
+RUN pip install django==2.0
+ADD . /code
+EOS
+docker run django-ordered-model script/test-command
+
+
+docker build -t django-ordered-model -f - . << EOS
+FROM python:3
+WORKDIR /code
+RUN pip install django==2.1
+ADD . /code
+EOS
 docker run django-ordered-model script/test-command
