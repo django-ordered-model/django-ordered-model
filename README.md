@@ -300,3 +300,9 @@ Test suite
 Requires Docker.
 
     $ script/test
+
+Maintainers
+-----------
+
+ * [Ben Firshman](https://github.com/bfirsh)
+ * [Chris Shucksmith](https://github.com/shuckc)
