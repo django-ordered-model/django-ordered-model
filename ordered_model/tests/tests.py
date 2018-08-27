@@ -386,6 +386,12 @@ class OrderedModelAdminTest(TestCase):
         item1 = Item.objects.create(name='item1')
         item2 = Item.objects.create(name='item2')
 
+        self.ham = Topping.objects.create(name='Ham')
+        self.pineapple = Topping.objects.create(name='Pineapple')
+        self.pizza = Pizza.objects.create(name='Hawaiin Pizza')
+        self.pizza_to_ham = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.ham)
+        self.pizza_to_pineapple = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.pineapple)
+
     def test_move_up_down_links(self):
         res = self.client.get("/admin/tests/item/")
         self.assertEqual(res.status_code, 200)
@@ -407,6 +413,22 @@ class OrderedModelAdminTest(TestCase):
         self.assertRedirects(res, "/admin/tests/item/")
         self.assertEqual(Item.objects.get(name="item1").order, 1)
         self.assertEqual(Item.objects.get(name="item2").order, 0)
+
+    def test_move_up_down_links_ordered_inline(self):
+        res = self.client.get("/admin/tests/pizza/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.pizza_to_ham.order, 0)
+        self.assertEqual(self.pizza_to_pineapple.order, 1)
+
+        res = self.client.get("/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/".format(
+            self.pizza.id,
+            self.pineapple.id
+        ), follow=True)
+        self.pizza_to_ham.refresh_from_db()
+        self.pizza_to_pineapple.refresh_from_db()
+        self.assertEqual(self.pizza_to_ham.order, 1)
+        self.assertEqual(self.pizza_to_pineapple.order, 0)
+        self.assertEqual(res.status_code, 200)
 
 
 class OrderWithRespectToTestsManyToMany(TestCase):
