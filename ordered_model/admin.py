@@ -141,26 +141,7 @@ class OrderedInlineMixin(object):
             # Use only the first item in list_display as link
             return list(list_display)[:1]
 
-    @classmethod
-    def _get_changelist(cls, request):
-        list_display = cls.get_list_display(request)
-        list_display_links = cls.get_list_display_links(request, list_display)
-
-        cl = ChangeList(request, cls.model, list_display,
-                        list_display_links, cls.list_filter, cls.date_hierarchy,
-                        cls.search_fields, cls.list_select_related,
-                        cls.list_per_page, cls.list_max_show_all, cls.list_editable,
-                        cls)
-
-        return cl
-
     request_query_string = ''
-
-    @classmethod
-    def changelist_view(cls, request, extra_context=None):
-        cl = cls._get_changelist(request)
-        cls.request_query_string = cl.get_query_string()
-        return super(OrderedTabularInline, cls).changelist_view(request, extra_context)
 
     @classmethod
     def get_queryset(cls, request):
@@ -230,7 +211,7 @@ class OrderedInlineMixin(object):
 
     @classmethod
     def move_view(cls, request, admin_id, object_id, direction):
-        qs = cls._get_changelist(request).get_queryset(request)
+        qs = cls.get_queryset(request)
 
         obj = get_object_or_404(cls.model, pk=unquote(object_id))
         obj.move(direction, qs)
