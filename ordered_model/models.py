@@ -29,11 +29,13 @@ class OrderedModelBase(models.Model):
     [optional]
      - set ``order_with_respect_to`` to limit order to a subset 
      - specify ``order_class_path`` in case of polymorpic classes
+     - specify ``order_start_value`` to set start value other than 0
     """
 
     order_field_name = None
     order_with_respect_to = None
     order_class_path = None
+    order_start_value = 0
 
     class Meta:
         abstract = True
@@ -72,7 +74,7 @@ class OrderedModelBase(models.Model):
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
             c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
-            setattr(self, self.order_field_name, 0 if c is None else c + 1)
+            setattr(self, self.order_field_name, self.order_start_value if c is None else c + 1)
         super(OrderedModelBase, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
