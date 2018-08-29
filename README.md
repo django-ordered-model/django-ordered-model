@@ -306,3 +306,4 @@ Maintainers
 
  * [Ben Firshman](https://github.com/bfirsh)
  * [Chris Shucksmith](https://github.com/shuckc)
+ * [Sardorbek Imomaliev](https://github.com/imomaliev)
