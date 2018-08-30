@@ -87,6 +87,15 @@ class OrderedModelAdmin(admin.ModelAdmin):
         }
 
 
+class OrderedInlineModelAdminMixin(object):
+    def get_urls(self):
+        urls = super(OrderedInlineModelAdminMixin, self).get_urls()
+        for inline in self.inlines:
+            if issubclass(inline, OrderedInlineMixin):
+                urls = inline(self, self.admin_site).get_urls() + urls
+        return urls
+
+
 class OrderedInlineMixin(object):
 
     ordering = None
@@ -102,100 +111,92 @@ class OrderedInlineMixin(object):
     paginator = Paginator
     preserve_filters = True
 
-    @classmethod
-    def get_model_info(cls):
-        return dict(app=cls.model._meta.app_label,
-                    model=cls.model._meta.model_name)
+    def get_model_info(self):
+        return dict(app=self.model._meta.app_label,
+                    model=self.model._meta.model_name)
 
-    @classmethod
-    def get_urls(cls, model_admin):
+    def get_urls(self):
         def wrap(view):
             def wrapper(*args, **kwargs):
-                return model_admin.admin_site.admin_view(view)(*args, **kwargs)
+                return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
+
         return [
-            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                name='{app}_{model}_order_up_inline'.format(**cls.get_model_info())),
-            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**cls.get_model_info()), wrap(cls.move_view),
-                name='{app}_{model}_order_down_inline'.format(**cls.get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**self.get_model_info()), wrap(self.move_view),
+                name='{app}_{model}_order_up_inline'.format(**self.get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**self.get_model_info()), wrap(self.move_view),
+                name='{app}_{model}_order_down_inline'.format(**self.get_model_info())),
         ]
 
-    @classmethod
-    def get_list_display(cls, request):
+    def get_list_display(self, request):
         """
         Return a sequence containing the fields to be displayed on the
         changelist.
         """
-        return cls.list_display
+        return self.list_display
 
-    @classmethod
-    def get_list_display_links(cls, request, list_display):
+    def get_list_display_links(self, request, list_display):
         """
         Return a sequence containing the fields to be displayed as links
         on the changelist. The list_display parameter is the list of fields
         returned by get_list_display().
         """
-        if cls.list_display_links or not list_display:
-            return cls.list_display_links
+        if self.list_display_links or not list_display:
+            return self.list_display_links
         else:
             # Use only the first item in list_display as link
             return list(list_display)[:1]
 
-    @classmethod
-    def _get_changelist(cls, request):
-        list_display = cls.get_list_display(request)
-        list_display_links = cls.get_list_display_links(request, list_display)
+    def _get_changelist(self, request):
+        list_display = self.get_list_display(request)
+        list_display_links = self.get_list_display_links(request, list_display)
 
-        cl = ChangeList(request, cls.model, list_display,
-                        list_display_links, cls.list_filter, cls.date_hierarchy,
-                        cls.search_fields, cls.list_select_related,
-                        cls.list_per_page, cls.list_max_show_all, cls.list_editable,
-                        cls)
+        args = (request, self.model, list_display,
+                list_display_links, self.list_filter, self.date_hierarchy,
+                self.search_fields, self.list_select_related,
+                self.list_per_page, self.list_max_show_all, self.list_editable, self)
 
-        return cl
+        if VERSION >= (2, 1):
+            args = args + (self.sortable_by, )
+
+        return ChangeList(*args)
 
     request_query_string = ''
 
-    @classmethod
-    def changelist_view(cls, request, extra_context=None):
-        cl = cls._get_changelist(request)
-        cls.request_query_string = cl.get_query_string()
-        return super(OrderedTabularInline, cls).changelist_view(request, extra_context)
+    def changelist_view(self, request, extra_context=None):
+        cl = self._get_changelist(request)
+        self.request_query_string = cl.get_query_string()
+        return super(OrderedTabularInline, self).changelist_view(request, extra_context)
 
-    @classmethod
-    def get_queryset(cls, request):
+    def get_queryset(self, request):
         """
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = cls.model._default_manager.get_queryset()
+        qs = self.model._default_manager.get_queryset()
         # TODO: this should be handled by some parameter to the ChangeList.
-        ordering = cls.get_ordering(request)
+        ordering = self.get_ordering(request)
         if ordering:
             qs = qs.order_by(*ordering)
         return qs
 
-    @classmethod
-    def get_ordering(cls, request):
+    def get_ordering(self, request):
         """
         Hook for specifying field ordering.
         """
-        return cls.ordering or ()  # otherwise we might try to *None, which is bad ;)
+        return self.ordering or ()  # otherwise we might try to *None, which is bad ;)
 
-    @classmethod
-    def get_paginator(cls, request, queryset, per_page, orphans=0, allow_empty_first_page=True):
-        return cls.paginator(queryset, per_page, orphans, allow_empty_first_page)
+    def get_paginator(self, request, queryset, per_page, orphans=0, allow_empty_first_page=True):
+        return self.paginator(queryset, per_page, orphans, allow_empty_first_page)
 
-    @classmethod
-    def get_search_fields(cls, request):
+    def get_search_fields(self, request):
         """
         Returns a sequence containing the fields to be searched whenever
         somebody submits a search query.
         """
-        return cls.search_fields
+        return self.search_fields
 
-    @classmethod
-    def get_search_results(cls, request, queryset, search_term):
+    def get_search_results(self, request, queryset, search_term):
         """
         Returns a tuple containing a queryset to implement the search,
         and a boolean indicating if the results may contain duplicates.
@@ -212,7 +213,7 @@ class OrderedInlineMixin(object):
                 return "{0!s}__icontains".format(field_name)
 
         use_distinct = False
-        search_fields = cls.get_search_fields(request)
+        search_fields = self.get_search_fields(request)
         if search_fields and search_term:
             orm_lookups = [construct_search(str(search_field))
                            for search_field in search_fields]
@@ -222,17 +223,16 @@ class OrderedInlineMixin(object):
                 queryset = queryset.filter(reduce(operator.or_, or_queries))
             if not use_distinct:
                 for search_spec in orm_lookups:
-                    if lookup_needs_distinct(cls.opts, search_spec):
+                    if lookup_needs_distinct(self.opts, search_spec):
                         use_distinct = True
                         break
 
         return queryset, use_distinct
 
-    @classmethod
-    def move_view(cls, request, admin_id, object_id, direction):
-        qs = cls._get_changelist(request).get_queryset(request)
+    def move_view(self, request, admin_id, object_id, direction):
+        qs = self._get_changelist(request).get_queryset(request)
 
-        obj = get_object_or_404(cls.model, pk=unquote(object_id))
+        obj = get_object_or_404(self.model, pk=unquote(object_id))
         obj.move(direction, qs)
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
@@ -242,14 +242,13 @@ class OrderedInlineMixin(object):
 
         return HttpResponseRedirect(redir_path)
 
-    @classmethod
-    def get_preserved_filters(cls, request):
+    def get_preserved_filters(self, request):
         """
         Returns the preserved filters querystring.
         """
         match = request.resolver_match
-        if cls.preserve_filters and match:
-            opts = cls.model._meta
+        if self.preserve_filters and match:
+            opts = self.model._meta
             current_url = '{0!s}:{1!s}'.format(match.app_name, match.url_name)
             changelist_url = 'admin:{0!s}_{1!s}_changelist'.format(opts.app_label, opts.model_name)
             if current_url == changelist_url:
@@ -294,7 +293,7 @@ class OrderedInlineMixin(object):
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
 
-    
+
 class OrderedTabularInline(OrderedInlineMixin, admin.TabularInline):
     pass
 
