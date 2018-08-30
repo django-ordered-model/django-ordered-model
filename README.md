@@ -237,7 +237,7 @@ For the `OrderedTabularInline` it will look like this:
 
 ```python
 from django.contrib import admin
-from ordered_model.admin import OrderedTabularInline
+from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
 from models import Pizza, PizzaToppingsThroughModel
 
 
@@ -249,16 +249,10 @@ class PizzaToppingsThroughModelTabularInline(OrderedTabularInline):
     ordering = ('order',)
 
 
-class PizzaAdmin(admin.ModelAdmin):
+class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     list_display = ('name', )
     inlines = (PizzaToppingsThroughModelTabularInline, )
 
-    def get_urls(self):
-        urls = super(PizzaAdmin, self).get_urls()
-        for inline in self.inlines:
-            if hasattr(inline, 'get_urls'):
-                urls = inline.get_urls(self) + urls
-        return urls
 
 admin.site.register(Pizza, PizzaAdmin)
 ```
@@ -268,7 +262,7 @@ For the `OrderedStackedInline` it will look like this:
 
 ```python
 from django.contrib import admin
-from ordered_model.admin import OrderedStackedInline
+from ordered_model.admin import OrderedStackedInline, OrderedInlineModelAdminMixin
 from models import Pizza, PizzaToppingsThroughModel
 
 
@@ -280,16 +274,10 @@ class PizzaToppingsThroughModelStackedInline(OrderedStackedInline):
     ordering = ('order',)
 
 
-class PizzaAdmin(admin.ModelAdmin):
+class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     list_display = ('name', )
     inlines = (PizzaToppingsThroughModelStackedInline, )
 
-    def get_urls(self):
-        urls = super(PizzaAdmin, self).get_urls()
-        for inline in self.inlines:
-            if hasattr(inline, 'get_urls'):
-                urls = inline.get_urls(self) + urls
-        return urls
 
 admin.site.register(Pizza, PizzaAdmin)
 ```

@@ -388,7 +388,8 @@ class OrderedModelAdminTest(TestCase):
 
         self.ham = Topping.objects.create(name='Ham')
         self.pineapple = Topping.objects.create(name='Pineapple')
-        self.pizza = Pizza.objects.create(name='Hawaiin Pizza')
+
+        self.pizza = Pizza.objects.create(name='Hawaiian Pizza')
         self.pizza_to_ham = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.ham)
         self.pizza_to_pineapple = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.pineapple)
 

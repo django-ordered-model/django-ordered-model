@@ -1,5 +1,11 @@
 from django.contrib import admin
-from ordered_model.admin import OrderedModelAdmin, OrderedTabularInline
+
+from ordered_model.admin import (
+    OrderedModelAdmin,
+    OrderedTabularInline,
+    OrderedInlineModelAdminMixin
+)
+
 from .models import Item, PizzaToppingsThroughModel, Pizza
 
 
@@ -14,17 +20,10 @@ class PizzaToppingTabularInline(OrderedTabularInline):
     ordering = ('order',)
 
 
-class PizzaAdmin(admin.ModelAdmin):
+class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     model = Pizza
     list_display = ('name',)
     inlines = (PizzaToppingTabularInline,)
-
-    def get_urls(self):
-        urls = super(PizzaAdmin, self).get_urls()
-        for inline in self.inlines:
-            if hasattr(inline, 'get_urls'):
-                urls = inline.get_urls(self) + urls
-        return urls
 
 
 admin.site.register(Item, ItemAdmin)
