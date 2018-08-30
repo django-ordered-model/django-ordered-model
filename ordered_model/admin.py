@@ -10,23 +10,23 @@ from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
+from django.contrib.admin.options import csrf_protect_m
 from django.contrib.admin.views.main import ChangeList
 from django import VERSION
 
 
-class OrderedModelAdmin(admin.ModelAdmin):
-    def get_urls(self):
-        def wrap(view):
-            def wrapper(*args, **kwargs):
-                return self.admin_site.admin_view(view)(*args, **kwargs)
-            return update_wrapper(wrapper, view)
-        return [
-            url(r'^(.+)/move-(up)/$', wrap(self.move_view),
-                name='{app}_{model}_order_up'.format(**self._get_model_info())),
+class BaseOrderedModelAdmin(object):
+    """
+    Functionality common to both OrderedModelAdmin and OrderedInlineMixin.
+    """
 
-            url(r'^(.+)/move-(down)/$', wrap(self.move_view),
-                name='{app}_{model}_order_down'.format(**self._get_model_info())),
-        ] + super(OrderedModelAdmin, self).get_urls()
+    request_query_string = ''
+
+    def _get_model_info(self):
+        return {
+            'app': self.model._meta.app_label,
+            'model': self.model._meta.model_name,
+        }
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
@@ -42,12 +42,28 @@ class OrderedModelAdmin(admin.ModelAdmin):
 
         return ChangeList(*args)
 
-    request_query_string = ''
-
+    @csrf_protect_m
     def changelist_view(self, request, extra_context=None):
         cl = self._get_changelist(request)
         self.request_query_string = cl.get_query_string()
-        return super(OrderedModelAdmin, self).changelist_view(request, extra_context)
+        return super(BaseOrderedModelAdmin, self).changelist_view(request, extra_context)
+
+
+class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
+    def get_urls(self):
+        def wrap(view):
+            def wrapper(*args, **kwargs):
+                return self.admin_site.admin_view(view)(*args, **kwargs)
+            return update_wrapper(wrapper, view)
+
+        model_info = self._get_model_info()
+        return [
+            url(r'^(.+)/move-(up)/$', wrap(self.move_view),
+                name='{app}_{model}_order_up'.format(**model_info)),
+
+            url(r'^(.+)/move-(down)/$', wrap(self.move_view),
+                name='{app}_{model}_order_down'.format(**model_info)),
+        ] + super(OrderedModelAdmin, self).get_urls()
 
     def move_view(self, request, object_id, direction):
         qs = self._get_changelist(request).get_queryset(request)
@@ -80,14 +96,12 @@ class OrderedModelAdmin(admin.ModelAdmin):
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _(u'Move')
 
-    def _get_model_info(self):
-        return {
-            'app': self.model._meta.app_label,
-            'model': self.model._meta.model_name,
-        }
-
 
 class OrderedInlineModelAdminMixin(object):
+    """
+    ModelAdminMixin for classes that contain OrderedInilines
+    """
+
     def get_urls(self):
         urls = super(OrderedInlineModelAdminMixin, self).get_urls()
         for inline in self.inlines:
@@ -96,7 +110,7 @@ class OrderedInlineModelAdminMixin(object):
         return urls
 
 
-class OrderedInlineMixin(object):
+class OrderedInlineMixin(BaseOrderedModelAdmin):
 
     ordering = None
     list_display = ('__str__',)
@@ -111,21 +125,18 @@ class OrderedInlineMixin(object):
     paginator = Paginator
     preserve_filters = True
 
-    def get_model_info(self):
-        return dict(app=self.model._meta.app_label,
-                    model=self.model._meta.model_name)
-
     def get_urls(self):
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
             return update_wrapper(wrapper, view)
 
+        model_info = self._get_model_info()
         return [
-            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**self.get_model_info()), wrap(self.move_view),
-                name='{app}_{model}_order_up_inline'.format(**self.get_model_info())),
-            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**self.get_model_info()), wrap(self.move_view),
-                name='{app}_{model}_order_down_inline'.format(**self.get_model_info())),
+            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**model_info), wrap(self.move_view),
+                name='{app}_{model}_order_up_inline'.format(**model_info)),
+            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**model_info), wrap(self.move_view),
+                name='{app}_{model}_order_down_inline'.format(**model_info)),
         ]
 
     def get_list_display(self, request):
@@ -146,27 +157,6 @@ class OrderedInlineMixin(object):
         else:
             # Use only the first item in list_display as link
             return list(list_display)[:1]
-
-    def _get_changelist(self, request):
-        list_display = self.get_list_display(request)
-        list_display_links = self.get_list_display_links(request, list_display)
-
-        args = (request, self.model, list_display,
-                list_display_links, self.list_filter, self.date_hierarchy,
-                self.search_fields, self.list_select_related,
-                self.list_per_page, self.list_max_show_all, self.list_editable, self)
-
-        if VERSION >= (2, 1):
-            args = args + (self.sortable_by, )
-
-        return ChangeList(*args)
-
-    request_query_string = ''
-
-    def changelist_view(self, request, extra_context=None):
-        cl = self._get_changelist(request)
-        self.request_query_string = cl.get_query_string()
-        return super(OrderedTabularInline, self).changelist_view(request, extra_context)
 
     def get_queryset(self, request):
         """
@@ -273,18 +263,19 @@ class OrderedInlineMixin(object):
             if value.__class__ is self.parent_model and value is not None and value.pk is not None]
         order_obj_name = fields[0] if len(fields) > 0 else None
 
+        model_info = self._get_model_info()
         if order_obj_name:
             return render_to_string("ordered_model/admin/order_controls.html", {
-                'app_label': self.model._meta.app_label,
-                'model_name': self.model._meta.model_name,
-                'module_name': self.model._meta.model_name,  # backwards compat
-                'object_id': obj.id,
+                'app_label': model_info['app'],
+                'model_name': model_info['model'],
+                'module_name': model_info['model'],  # backwards compat
+                'object_id': obj.pk,
                 'urls': {
                     'up': reverse("admin:{app}_{model}_order_up_inline".format(
-                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        admin_name=self.admin_site.name, **model_info),
                         args=[order_obj_name, obj.id, 'up']),
                     'down': reverse("admin:{app}_{model}_order_down_inline".format(
-                        admin_name=self.admin_site.name, **self.get_model_info()),
+                        admin_name=self.admin_site.name, **model_info),
                         args=[order_obj_name, obj.id, 'down']),
                 },
                 'query_string': self.request_query_string
