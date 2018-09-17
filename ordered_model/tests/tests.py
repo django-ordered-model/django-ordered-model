@@ -70,6 +70,10 @@ class ModelTestCase(TestCase):
         Item.objects.get(pk=3).to(1)
         self.assertNames(['1', '3', '2', '4'])
 
+    def test_to_not_int(self):
+        with self.assertRaises(TypeError):
+            Item.objects.get(pk=4).to('1')
+
     def test_top(self):
         Item.objects.get(pk=4).top()
         self.assertNames(['4', '1', '2', '3'])
