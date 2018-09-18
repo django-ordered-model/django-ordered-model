@@ -1,5 +1,6 @@
 from functools import update_wrapper
 
+from django.db import models
 from django.conf.urls import url
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
