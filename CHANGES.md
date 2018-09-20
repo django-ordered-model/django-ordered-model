@@ -1,6 +1,15 @@
 Change log
 ==========
 
+3.0.0 - 2018-09-21
+------------------
+
+- Drop support for python 2.x
+- Drop support for django 1.x
+- Fix AdminInline for django > 2.1
+- Do not install tests
+- delete deprecated methods `move`, `move_up`, `move_down` and `_move`
+
 2.1.0 - 2018-08-16
 ------------------
 

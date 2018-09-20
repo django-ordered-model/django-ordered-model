@@ -5,14 +5,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3'
     }
 }
-ROOT_URLCONF = 'ordered_model.tests.urls'
+ROOT_URLCONF = 'tests.urls'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'ordered_model',
-    'ordered_model.tests',
+    'tests',
 ]
 SECRET_KEY = 'topsecret'
 
