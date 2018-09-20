@@ -4,7 +4,6 @@ from functools import reduce
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.translation import ugettext as _
-from django.utils import six
 
 
 def _order_model_get_class( classpath ):
@@ -45,7 +44,7 @@ class OrderedModelBase(models.Model):
         return self.__class__
 
     def _get_order_with_respect_to(self):
-        if isinstance(self.order_with_respect_to, six.string_types):
+        if isinstance(self.order_with_respect_to, str):
             self.order_with_respect_to = (self.order_with_respect_to,)
         if self.order_with_respect_to is None:
             raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '

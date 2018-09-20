@@ -1,4 +1,8 @@
-from functools import update_wrapper
+import operator
+
+from functools import update_wrapper, reduce
+
+from urllib.parse import urlencode
 
 from django.db import models
 from django.conf.urls import url
@@ -14,13 +18,6 @@ from django.contrib.admin.utils import unquote, lookup_needs_distinct
 from django.contrib.admin.options import csrf_protect_m
 from django.contrib.admin.views.main import ChangeList
 from django import VERSION
-
-import sys
-
-if sys.version.startswith('3'):
-    from functools import reduce
-    import operator
-    from urllib.parse import urlencode
 
 
 class BaseOrderedModelAdmin(object):
