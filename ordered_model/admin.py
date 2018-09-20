@@ -5,7 +5,6 @@ from functools import update_wrapper, reduce
 from urllib.parse import urlencode
 
 from django.db import models
-from django.conf.urls import url
 from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -56,18 +55,19 @@ class BaseOrderedModelAdmin(object):
 
 class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
     def get_urls(self):
+        from django.urls import path
+
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+            wrapper.model_admin = self
             return update_wrapper(wrapper, view)
 
         model_info = self._get_model_info()
-        return [
-            url(r'^(.+)/move-(up)/$', wrap(self.move_view),
-                name='{app}_{model}_order_up'.format(**model_info)),
 
-            url(r'^(.+)/move-(down)/$', wrap(self.move_view),
-                name='{app}_{model}_order_down'.format(**model_info)),
+        return [
+            path('<path:object_id>/move-<direction>/', wrap(self.move_view),
+                 name='{app}_{model}_change_order'.format(**model_info)),
         ] + super(OrderedModelAdmin, self).get_urls()
 
     def move_view(self, request, object_id, direction):
@@ -91,15 +91,23 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
             'module_name': model_info['model'], # for backwards compatibility
             'object_id': obj.pk,
             'urls': {
-                'up': reverse("{admin_name}:{app}_{model}_order_up".format(
-                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'up']),
-                'down': reverse("{admin_name}:{app}_{model}_order_down".format(
-                    admin_name=self.admin_site.name, **model_info), args=[obj.pk, 'down']),
+                'up': reverse(
+                    "{admin_name}:{app}_{model}_change_order".format(
+                        admin_name=self.admin_site.name, **model_info
+                    ),
+                    args=[obj.pk, 'up']
+                ),
+                'down': reverse(
+                    "{admin_name}:{app}_{model}_change_order".format(
+                        admin_name=self.admin_site.name, **model_info
+                    ),
+                    args=[obj.pk, 'down']
+                ),
             },
             'query_string': self.request_query_string
         })
     move_up_down_links.allow_tags = True
-    move_up_down_links.short_description = _(u'Move')
+    move_up_down_links.short_description = _('Move')
 
 
 class OrderedInlineModelAdminMixin(object):
@@ -131,17 +139,21 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
     preserve_filters = True
 
     def get_urls(self):
+        from django.urls import path
+
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+            wrapper.model_admin = self
             return update_wrapper(wrapper, view)
 
         model_info = self._get_model_info()
         return [
-            url(r'^(.+)/{model}/(.+)/move-(up)/$'.format(**model_info), wrap(self.move_view),
-                name='{app}_{model}_order_up_inline'.format(**model_info)),
-            url(r'^(.+)/{model}/(.+)/move-(down)/$'.format(**model_info), wrap(self.move_view),
-                name='{app}_{model}_order_down_inline'.format(**model_info)),
+            path(
+                '<path:admin_id>/{model}/<path:object_id>/move-<direction>/'.format(**model_info),
+                wrap(self.move_view),
+                name='{app}_{model}_change_order_inline'.format(**model_info)
+            ),
         ]
 
     def get_list_display(self, request):
@@ -276,18 +288,24 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                 'module_name': model_info['model'],  # backwards compat
                 'object_id': obj.pk,
                 'urls': {
-                    'up': reverse("admin:{app}_{model}_order_up_inline".format(
-                        admin_name=self.admin_site.name, **model_info),
-                        args=[order_obj_name, obj.id, 'up']),
-                    'down': reverse("admin:{app}_{model}_order_down_inline".format(
-                        admin_name=self.admin_site.name, **model_info),
-                        args=[order_obj_name, obj.id, 'down']),
+                    'up': reverse(
+                        "admin:{app}_{model}_change_order_inline".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[order_obj_name, obj.id, 'up']
+                    ),
+                    'down': reverse(
+                        "admin:{app}_{model}_change_order_inline".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[order_obj_name, obj.id, 'down']
+                    ),
                 },
                 'query_string': self.request_query_string
             })
         return ''
     move_up_down_links.allow_tags = True
-    move_up_down_links.short_description = _(u'Move')
+    move_up_down_links.short_description = _('Move')
 
 
 class OrderedTabularInline(OrderedInlineMixin, admin.TabularInline):
