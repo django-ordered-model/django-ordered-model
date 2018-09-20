@@ -1,4 +1,5 @@
 from django.db import models
+
 from ordered_model.models import OrderedModel, OrderedModelBase
 
 
@@ -23,7 +24,7 @@ class Answer(OrderedModel):
         ordering = ('question', 'user', 'order')
 
     def __unicode__(self):
-        return u"Answer #{0:d} of question #{1:d} for user #{2:d}".format(self.order, self.question_id, self.user_id)
+        return "Answer #{0:d} of question #{1:d} for user #{2:d}".format(self.order, self.question_id, self.user_id)
 
 
 class CustomItem(OrderedModel):
