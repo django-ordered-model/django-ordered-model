@@ -11,8 +11,8 @@ https://djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django >=1.11
-  * Python 2.7 or >=3.4
+  * Django >=2.x
+  * Python >=3.4
 
 Installation
 ------------

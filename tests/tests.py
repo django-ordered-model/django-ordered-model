@@ -1,8 +1,10 @@
+import uuid
+
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.test import TestCase
-import uuid
-from ordered_model.tests.models import (
+
+from tests.models import (
     Answer,
     Item,
     Question,
@@ -16,7 +18,7 @@ from ordered_model.tests.models import (
     ItemGroup,
     GroupedItem
 )
-from ordered_model.tests.models import TestUser
+from tests.models import TestUser
 
 
 class OrderGenerationTests(TestCase):
