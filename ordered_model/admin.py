@@ -74,7 +74,11 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
         qs = self._get_changelist(request).get_queryset(request)
 
         obj = get_object_or_404(self.model, pk=unquote(object_id))
-        obj.move(direction, qs)
+
+        if direction == 'up':
+            obj.up()
+        else:
+            obj.down()
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
         mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-3])
@@ -240,7 +244,11 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         qs = self._get_changelist(request).get_queryset(request)
 
         obj = get_object_or_404(self.model, pk=unquote(object_id))
-        obj.move(direction, qs)
+
+        if direction == 'up':
+            obj.up()
+        else:
+            obj.down()
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
         mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-4] + ['change'])

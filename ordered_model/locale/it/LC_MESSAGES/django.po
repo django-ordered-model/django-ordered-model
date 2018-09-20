@@ -21,25 +21,3 @@ msgstr ""
 #: admin.py:76
 msgid "Move"
 msgstr "Sposta"
-
-#: models.py:67
-msgid ""
-"The method move() is deprecated and will be removed in the next release."
-msgstr ""
-"Il metodo move() è stato deprecato e sarà rimosso nella prossima release."
-
-#: models.py:80
-msgid ""
-"The method move_down() is deprecated and will be removed in the next "
-"release. Please use down() instead!"
-msgstr ""
-"Il metodo move_down() è stato deprecato e sarà rimosso nella prossima release."
-"Al suo posto utilizzare down()!"
-
-#: models.py:90
-msgid ""
-"The method move_up() is deprecated and will be removed in the next release. "
-"Please use up() instead!"
-msgstr ""
-"Il metodo move_up() è stato deprecato e sarà rimosso nella prossima release."
-"Al suo posto utilizzare up()!"
