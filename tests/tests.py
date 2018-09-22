@@ -16,9 +16,9 @@ from tests.models import (
     OpenQuestion,
     MultipleChoiceQuestion,
     ItemGroup,
-    GroupedItem
+    GroupedItem,
+    TestUser
 )
-from tests.models import TestUser
 
 
 class OrderGenerationTests(TestCase):

@@ -110,7 +110,6 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
             },
             'query_string': self.request_query_string
         })
-    move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _('Move')
 
 
@@ -312,7 +311,6 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                 'query_string': self.request_query_string
             })
         return ''
-    move_up_down_links.allow_tags = True
     move_up_down_links.short_description = _('Move')
 
 
