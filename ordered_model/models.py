@@ -4,19 +4,8 @@ from functools import reduce
 
 from django.db import models
 from django.db.models import Max, Min, F
-from django.utils.translation import ugettext as _
-
-
-def _order_model_get_class(classpath):
-    """
-    Convert a string containing module.submodule.classname to a Class.
-    """
-    parts = classpath.split('.')
-    module = ".".join(parts[:-1])
-    m = __import__( module )
-    for comp in parts[1:]:
-        m = getattr(m, comp)
-    return m
+from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 
 
 class OrderedModelBase(models.Model):
@@ -41,7 +30,7 @@ class OrderedModelBase(models.Model):
 
     def _get_class_for_ordering_queryset(self):
         if self.order_class_path:
-            return _order_model_get_class(self.order_class_path)
+            return import_string(self.order_class_path)
         return self.__class__
 
     def _get_order_with_respect_to(self):
@@ -217,7 +206,7 @@ class OrderedModel(OrderedModelBase):
     Provides an ``order`` field.
     """
 
-    order = models.PositiveIntegerField(editable=False, db_index=True)
+    order = models.PositiveIntegerField(_('order'), editable=False, db_index=True)
     order_field_name = 'order'
 
     class Meta:

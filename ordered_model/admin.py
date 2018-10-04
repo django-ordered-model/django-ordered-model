@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.encoding import escape_uri_path, iri_to_uri
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
 from django.contrib.admin.utils import unquote, lookup_needs_distinct
