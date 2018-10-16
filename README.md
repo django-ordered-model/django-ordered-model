@@ -192,7 +192,7 @@ When you want ordering on the baseclass instead of subclasses in an ordered list
 
 ```python
 class BaseQuestion(OrderedModel):
-    order_class_path = __module__ '.BaseQuestion'
+    order_class_path = __module__ + '.BaseQuestion'
     question = models.TextField(max_length=100)
     class Meta:
         ordering = ('order',)
