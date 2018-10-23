@@ -1,10 +1,11 @@
 import warnings
-from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
+
+from functools import reduce
+
 from django.db import models
 from django.db.models import Max, Min, F
-from django.utils.translation import ugettext as _
-import six
+from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 
 
 class OrderedModelBase(models.Model):
@@ -15,22 +16,34 @@ class OrderedModelBase(models.Model):
      - add an indexed ``PositiveIntegerField`` to the model
      - set ``order_field_name`` to the name of that field
      - use the same field name in ``Meta.ordering``
+    [optional]
+     - set ``order_with_respect_to`` to limit order to a subset
+     - specify ``order_class_path`` in case of polymorpic classes
     """
 
     order_field_name = None
     order_with_respect_to = None
+    order_class_path = None
 
     class Meta:
         abstract = True
 
+    def _get_class_for_ordering_queryset(self):
+        if self.order_class_path:
+            return import_string(self.order_class_path)
+        return self.__class__
+
     def _get_order_with_respect_to(self):
-        if isinstance(self.order_with_respect_to, six.string_types):
+        if isinstance(self.order_with_respect_to, str):
             self.order_with_respect_to = (self.order_with_respect_to,)
         if self.order_with_respect_to is None:
             raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
                 'should go in the model body, and is not to be confused with the Meta property of the same name, '
                 'which is independent Django functionality').format(self))
-        return [(field, getattr(self, field)) for field in self.order_with_respect_to]
+
+        def get_field_tuple(field):
+            return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
+        return list(map(get_field_tuple, self.order_with_respect_to))
 
     def _valid_ordering_reference(self, reference):
         return self.order_with_respect_to is None or (
@@ -38,7 +51,7 @@ class OrderedModelBase(models.Model):
         )
 
     def get_ordering_queryset(self, qs=None):
-        qs = qs or self.__class__.objects.all()
+        qs = qs or self._get_class_for_ordering_queryset().objects.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
             order_values = self._get_order_with_respect_to()
@@ -81,68 +94,25 @@ class OrderedModelBase(models.Model):
           .update(**update_kwargs)
         super(OrderedModelBase, self).delete(*args, **kwargs)
 
-    def _move(self, up, qs=None):
-        qs = self.get_ordering_queryset(qs)
-
-        if up:
-            qs = qs.order_by('-' + self.order_field_name)\
-                   .filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)})
-        else:
-            qs = qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})
-        try:
-            replacement = qs[0]
-        except IndexError:
-            # already first/last
-            return
-        order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
-        setattr(self, self.order_field_name, replacement_order)
-        setattr(replacement, self.order_field_name, order)
-        self.save()
-        replacement.save()
-
-    def move(self, direction, qs=None):
-        warnings.warn(
-            _("The method move() is deprecated and will be removed in the next release."),
-            DeprecationWarning
-        )
-        if direction == 'up':
-            self.up()
-        else:
-            self.down()
-
-    def move_down(self):
+    def _swap_qs0(self, qs):
         """
-        Move this object down one position.
-        """
-        warnings.warn(
-            _("The method move_down() is deprecated and will be removed in the next release. Please use down() instead!"),
-            DeprecationWarning
-        )
-        return self.down()
-
-    def move_up(self):
-        """
-        Move this object up one position.
-        """
-        warnings.warn(
-            _("The method move_up() is deprecated and will be removed in the next release. Please use up() instead!"),
-            DeprecationWarning
-        )
-        return self.up()
-
-    def swap(self, qs):
-        """
-        Swap the positions of this object with a reference object.
+        Swap the positions of this object with first result, if any, from the provided queryset.
         """
         try:
             replacement = qs[0]
         except IndexError:
             # already first/last
             return
+        self.swap(replacement)
+
+    def swap(self, replacement):
+        """
+        Swap the position of this object with a replacement object.
+        """
         if not self._valid_ordering_reference(replacement):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
@@ -157,7 +127,7 @@ class OrderedModelBase(models.Model):
         """
         ref = self.previous()
         qs = [ref] if ref is not None else []
-        self.swap(qs)
+        self._swap_qs0(qs)
 
     def down(self):
         """
@@ -165,12 +135,15 @@ class OrderedModelBase(models.Model):
         """
         ref = self.next()
         qs = [ref] if ref is not None else []
-        self.swap(qs)
+        self._swap_qs0(qs)
 
     def to(self, order, extra_update=None):
         """
         Move object to a certain position, updating all affected objects to move accordingly up or down.
         """
+        if not isinstance(order, int):
+            raise TypeError("Order value must be set using an 'int', not using a '{0}'.".format(type(order).__name__))
+
         if order is None or getattr(self, self.order_field_name) == order:
             # object is already at desired position
             return
@@ -199,7 +172,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
@@ -220,7 +193,7 @@ class OrderedModelBase(models.Model):
         if not self._valid_ordering_reference(ref):
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self.__class__, ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
                 )
             )
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
@@ -293,7 +266,7 @@ class OrderedModel(OrderedModelBase):
     Provides an ``order`` field.
     """
 
-    order = models.PositiveIntegerField(editable=False, db_index=True)
+    order = models.PositiveIntegerField(_('order'), editable=False, db_index=True)
     order_field_name = 'order'
 
     class Meta:

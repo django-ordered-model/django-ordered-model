@@ -11,8 +11,8 @@ https://djangosnippets.org/snippets/259/
 
 Requires:
 
-  * Django >=1.8
-  * Python 2.7 or >=3.3
+  * Django >=2.x
+  * Python >=3.4
 
 Installation
 ------------
@@ -30,39 +30,50 @@ Add `ordered_model` to your `SETTINGS.INSTALLED_APPS`.
 
 Inherit your model from `OrderedModel` to make it ordered:
 
-    from django.db import models
-    from ordered_model.models import OrderedModel
+```python
+from django.db import models
+from ordered_model.models import OrderedModel
 
-    class Item(OrderedModel):
+
+class Item(OrderedModel):
         name = models.CharField(max_length=100)
 
         class Meta(OrderedModel.Meta):
             pass
+```
 
 Model instances now have a set of methods to move them relative to each other.
 To demonstrate those methods we create two instances of `Item`:
 
-    foo = Item.objects.create(name="Foo")
-    bar = Item.objects.create(name="Bar")
+```python
+foo = Item.objects.create(name="Foo")
+bar = Item.objects.create(name="Bar")
+```
 
 ### Swap positions
 
-    foo.swap(bar)
+```
+foo.swap(bar)
+```
 
 This swaps the position of two objects.
 
 ### Move position up on position
 
-    foo.up()
-    foo.down()
+```python
+foo.up()
+foo.down()
+```
 
 Moving an object up or down just makes it swap its position with the neighbouring
 object directly above of below depending on the direction.
 
 ### Move to arbitrary position
 
-    foo.to(12)
-    bar.to(13)
+```python
+foo.to(12)
+bar.to(13)
+```
 
 Move the object to an arbitrary position in the stack. This essentially sets the
 order value to the specified integer. Objects between the original and the new
@@ -71,8 +82,10 @@ of the move.
 
 ### Move object above or below reference
 
-    foo.above(bar)
-    foo.below(bar)
+```python
+foo.above(bar)
+foo.below(bar)
+```
 
 Move the object directly above or below the reference object, increasing or
 decreasing the order value for all objects between the two, depending on the
@@ -80,14 +93,18 @@ direction of the move.
 
 ### Move to top of stack
 
-    foo.top()
+```python
+foo.top()
+```
 
 This sets the order value to the lowest value found in the stack and increases
 the order value of all objects that were above the moved object by one.
 
 ### Move to bottom of stack
 
-    foo.bottom()
+```python
+foo.bottom()
+```
 
 This sets the order value to the highest value found in the stack and decreases
 the order value of all objects that were below the moved object by one.
@@ -97,14 +114,16 @@ the order value of all objects that were below the moved object by one.
 For performance reasons, the delete(), to(), below(), above(), top(), and bottom()
 methods use Django's update() method to change the order of other objects that
 are shifted as a result of one of these calls. If the model has fields that
-are typically updated in a customized save() method, or through other app level 
+are typically updated in a customized save() method, or through other app level
 functionality such as DateTimeField(auto_now=True), you can add additional fields
 to be passed through to update(). This will only impact objects where their order
 is being shifted as a result of an operation on the target object, not the target
 object itself.
 
-    foo.to(12, extra_update={'modified': now()}
- 
+```python
+foo.to(12, extra_update={'modified': now()}
+```
+
 ### Get the previous or next objects
 
     foo.previous()
@@ -122,37 +141,82 @@ choose their order. This option is supported via the `order_with_respect_to` par
 
 A simple example might look like so:
 
-    class Contact(OrderedModel):
-        user = models.ForeignKey(User)
+```python
+class Contact(OrderedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
         phone = models.CharField()
         order_with_respect_to = 'user'
+```
 
 If objects are ordered with respect to more than one field, `order_with_respect_to` supports
 tuples to define multiple fields:
 
-    class Model(OrderedModel)
+```python
+class Model(OrderedModel)
         # ...
         order_with_respect_to = ('field_a', 'field_b')
+```
 
-In a many-to-many relationship you need to use a seperate through model which is derived from the OrderedModel.
+In a many-to-many relationship you need to use a separate through model which is derived from the OrderedModel.
 For example, an application which manages pizzas with toppings.
 
 A simple example might look like so:
 
-    class Topping(models.Model):
+```python
+class Topping(models.Model):
         name = models.CharField(max_length=100)
 
-    class Pizza(models.Model):
+
+class Pizza(models.Model):
         name = models.CharField(max_length=100)
         toppings = models.ManyToManyField(Topping, through='PizzaToppingsThroughModel')
 
-    class PizzaToppingsThroughModel(OrderedModel):
-        pizza = models.ForeignKey(Pizza)
-        topping = models.ForeignKey(Topping)
+
+class PizzaToppingsThroughModel(OrderedModel):
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
         order_with_respect_to = 'pizza'
 
         class Meta:
             ordering = ('pizza', 'order')
+```
+
+You can also specify `order_with_respect_to` to a field on a related model. An example use-case can be made with the following models:
+
+```python
+class ItemGroup(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    general_info = models.CharField(max_length=100)
+
+class GroupedItem(OrderedModel):
+    group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE)
+    specific_info = models.CharField(max_length=100)
+    order_with_respect_to = 'group__user'
+```
+
+Here items are put into groups that have some general information used by its items, but the ordering of the items is independent of the group the item is in.
+
+When you want ordering on the baseclass instead of subclasses in an ordered list of objects of various classes, specify the full module path of the base class:
+
+```python
+class BaseQuestion(OrderedModel):
+    order_class_path = __module__ + '.BaseQuestion'
+    question = models.TextField(max_length=100)
+    class Meta:
+        ordering = ('order',)
+
+class MultipleChoiceQuestion(BaseQuestion):
+    good_answer = models.TextField(max_length=100)
+    wrong_answer1 = models.TextField(max_length=100)
+    wrong_answer2 = models.TextField(max_length=100)
+    wrong_answer3 = models.TextField(max_length=100)
+
+class OpenQuestion(BaseQuestion):
+    answer = models.TextField(max_length=100)
+```
+
+
+
 
 Admin integration
 -----------------
@@ -160,41 +224,71 @@ Admin integration
 To add arrows in the admin change list page to do reordering, you can use the
 `OrderedModelAdmin` and the `move_up_down_links` field:
 
-    from django.contrib import admin
-    from ordered_model.admin import OrderedModelAdmin
-    from models import Item
+```python
+from django.contrib import admin
+from ordered_model.admin import OrderedModelAdmin
+from models import Item
 
-    class ItemAdmin(OrderedModelAdmin):
+
+class ItemAdmin(OrderedModelAdmin):
         list_display = ('name', 'move_up_down_links')
 
-    admin.site.register(Item, ItemAdmin)
+admin.site.register(Item, ItemAdmin)
+```
 
 
-For a many-to-many relationship you need the following in the admin.py file:
+For a many-to-many relationship you need one of the following inlines.
 
-    from django.contrib import admin
-    from ordered_model.admin import OrderedTabularInline
-    from models import Pizza, PizzaToppingsThroughModel
+`OrderedTabularInline` or `OrderedStackedInline` just like the django admin.
 
-    class PizzaToppingsThroughModelInline(OrderedTabularInline):
+For the `OrderedTabularInline` it will look like this:
+
+```python
+from django.contrib import admin
+from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
+from models import Pizza, PizzaToppingsThroughModel
+
+
+class PizzaToppingsThroughModelTabularInline(OrderedTabularInline):
         model = PizzaToppingsThroughModel
         fields = ('topping', 'order', 'move_up_down_links',)
         readonly_fields = ('order', 'move_up_down_links',)
         extra = 1
         ordering = ('order',)
 
-    class PizzaAdmin(admin.ModelAdmin):
+
+class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
         list_display = ('name', )
-        inlines = (PizzaToppingsThroughModelInline, )
+    inlines = (PizzaToppingsThroughModelTabularInline, )
 
-        def get_urls(self):
-            urls = super(PizzaAdmin, self).get_urls()
-            for inline in self.inlines:
-                if hasattr(inline, 'get_urls'):
-                    urls = inline.get_urls(self) + urls
-            return urls
 
-    admin.site.register(Pizza, PizzaAdmin)
+admin.site.register(Pizza, PizzaAdmin)
+```
+
+
+For the `OrderedStackedInline` it will look like this:
+
+```python
+from django.contrib import admin
+from ordered_model.admin import OrderedStackedInline, OrderedInlineModelAdminMixin
+from models import Pizza, PizzaToppingsThroughModel
+
+
+class PizzaToppingsThroughModelStackedInline(OrderedStackedInline):
+    model = PizzaToppingsThroughModel
+    fields = ('topping', 'order', 'move_up_down_links',)
+    readonly_fields = ('order', 'move_up_down_links',)
+    extra = 1
+    ordering = ('order',)
+
+
+class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
+    list_display = ('name', )
+    inlines = (PizzaToppingsThroughModelStackedInline, )
+
+
+admin.site.register(Pizza, PizzaAdmin)
+```
 
 Test suite
 ----------
@@ -202,3 +296,10 @@ Test suite
 Requires Docker.
 
     $ script/test
+
+Maintainers
+-----------
+
+ * [Ben Firshman](https://github.com/bfirsh)
+ * [Chris Shucksmith](https://github.com/shuckc)
+ * [Sardorbek Imomaliev](https://github.com/imomaliev)

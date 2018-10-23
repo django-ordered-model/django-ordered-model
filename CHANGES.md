@@ -1,6 +1,66 @@
 Change log
 ==========
 
+3.0.0 - 2018-09-21
+------------------
+
+- Drop support for python 2.x
+- Drop support for django 1.x
+- Fix AdminInline for django > 2.1
+- Do not install tests
+- delete deprecated methods `move`, `move_up`, `move_down` and `_move`
+
+2.1.0 - 2018-08-16
+------------------
+
+- Add support for Django 2.1
+- Support order_with_respect_to on related fields
+- Add Tabular and Stacked inline 
+
+2.0.0 - 2018-06-07
+------------------
+
+- Drop support for Django < 1.11
+
+1.5.0 - 2018-06-07
+------------------
+
+- Add support for Django 2.0
+- Fix problem where swap took a queryset instead of a model instance
+
+1.4.3 - 2017-08-29
+------------------
+
+- Fix a problem with links in the admin when using multiple threads.
+
+1.4.2 - 2017-08-18
+------------------
+
+- Use Django's version of `six`
+- Fix various deprecations
+- Fix missing up/down links with custom primary key
+
+1.4.1 - 2017-04-16
+------------------
+
+### Fixed
+
+- `pip install` not working due to missing `requirements.txt`
+
+1.4.0 - 2017-04-14
+------------------
+
+### Added
+
+- Support for ordering using a specified base class when using Multi-table inheritance
+- Suport for Python 3.6, Django 1.10 and 1.11.
+
+### Fixed
+
+- The move up/down links in OrderedTabularInline
+- Passing args to `filter()` which broke django-polymorphic.
+
+
 1.3.0 – 2016-10-08
 ------------------
 
