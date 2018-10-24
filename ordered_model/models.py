@@ -62,21 +62,17 @@ class OrderedModelBase(models.Model):
         """
         Get previous element in this object's ordered stack.
         """
-        try:
-            return self.get_ordering_queryset().filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)}).order_by('-' + self.order_field_name)[0]
-        except IndexError:
-            # first
-            return None
+        return self.get_ordering_queryset().filter(
+            **{self.order_field_name + '__lt': getattr(self, self.order_field_name)}
+        ).order_by('-' + self.order_field_name).first()
 
     def next(self):
         """
         Get next element in this object's ordered stack.
         """
-        try:
-            return self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})[0]
-        except IndexError:
-            # last
-            return None
+        return self.get_ordering_queryset().filter(
+            **{self.order_field_name + '__gt': getattr(self, self.order_field_name)}
+        ).first()
 
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
@@ -93,17 +89,6 @@ class OrderedModelBase(models.Model):
         qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})\
           .update(**update_kwargs)
         super(OrderedModelBase, self).delete(*args, **kwargs)
-
-    def _swap_qs0(self, qs):
-        """
-        Swap the positions of this object with first result, if any, from the provided queryset.
-        """
-        try:
-            replacement = qs[0]
-        except IndexError:
-            # already first/last
-            return
-        self.swap(replacement)
 
     def swap(self, replacement):
         """
@@ -125,17 +110,17 @@ class OrderedModelBase(models.Model):
         """
         Move this object up one position.
         """
-        ref = self.previous()
-        qs = [ref] if ref is not None else []
-        self.swap(qs)
+        previous = self.previous()
+        if previous:
+            self.swap(previous)
 
     def down(self):
         """
         Move this object down one position.
         """
-        ref = self.next()
-        qs = [ref] if ref is not None else []
-        self.swap(qs)
+        _next = self.next()
+        if _next:
+            self.swap(_next)
 
     def to(self, order, extra_update=None):
         """
@@ -220,44 +205,6 @@ class OrderedModelBase(models.Model):
         """
         o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
         self.to(o, extra_update=extra_update)
-
-    def first(self):
-        """
-        Get first element in this object's ordered stack.
-        """
-        try:
-            return self.get_ordering_queryset()[0]
-        except IndexError:
-            return None
-
-    def last(self):
-        """
-        Get last element in this object's ordered stack.
-        """
-        try:
-            return self.get_ordering_queryset().order_by('-' + self.order_field_name)[0]
-        except IndexError:
-            return None
-
-    def previous(self):
-        """
-        Get previous element in this object's ordered stack.
-        """
-        try:
-            return self.get_ordering_queryset().filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name)}).order_by('-' + self.order_field_name)[0]
-        except IndexError:
-            # first
-            return None
-
-    def next(self):
-        """
-        Get next element in this object's ordered stack.
-        """
-        try:
-            return self.get_ordering_queryset().filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})[0]
-        except IndexError:
-            # last
-            return None
 
 
 class OrderedModel(OrderedModelBase):
