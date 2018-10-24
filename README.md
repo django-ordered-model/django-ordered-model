@@ -126,8 +126,10 @@ foo.to(12, extra_update={'modified': now()}
  
 ### Get the previous or next objects
 
-    foo.previous()
-    foo.next()
+```python
+foo.previous()
+foo.next()
+```
 
 previous() and next() get the neighbouring objects directly above of below
 within the ordered stack depending on the direction.
@@ -202,6 +204,7 @@ When you want ordering on the baseclass instead of subclasses in an ordered list
 class BaseQuestion(OrderedModel):
     order_class_path = __module__ + '.BaseQuestion'
     question = models.TextField(max_length=100)
+
     class Meta:
         ordering = ('order',)
 
