@@ -436,9 +436,9 @@ class OrderedModelAdminTest(TestCase):
     def setUp(self):
         User.objects.create_superuser("admin", "a@example.com", "admin")
         self.assertTrue(self.client.login(username="admin", password="admin"))
-        item1 = Item.objects.create(name='item1')
-        item2 = Item.objects.create(name='item2')
-        item3 = Item.objects.create(name='item3')
+        Item.objects.create(name='item1')
+        Item.objects.create(name='item2')
+        Item.objects.create(name='item3')
 
         self.ham = Topping.objects.create(name='Ham')
         self.pineapple = Topping.objects.create(name='Pineapple')
@@ -447,11 +447,17 @@ class OrderedModelAdminTest(TestCase):
         self.pizza_to_ham = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.ham)
         self.pizza_to_pineapple = PizzaToppingsThroughModel.objects.create(pizza=self.pizza, topping=self.pineapple)
 
-    def test_move_up_down_links(self):
+    def test_move_links(self):
         res = self.client.get("/admin/tests/item/")
         self.assertEqual(res.status_code, 200)
         self.assertIn('/admin/tests/item/1/move-up/', str(res.content))
         self.assertIn('/admin/tests/item/1/move-down/', str(res.content))
+        self.assertIn('/admin/tests/item/1/move-top/', str(res.content))
+        self.assertIn('/admin/tests/item/1/move-bottom/', str(res.content))
+
+    def test_move_invalid_direction(self):
+        res = self.client.get("/admin/tests/item/1/move-middle/")
+        self.assertEqual(res.status_code, 404)
 
     def test_move_down(self):
         self.assertEqual(Item.objects.get(name="item1").order, 0)
@@ -468,22 +474,6 @@ class OrderedModelAdminTest(TestCase):
         self.assertRedirects(res, "/admin/tests/item/")
         self.assertEqual(Item.objects.get(name="item1").order, 1)
         self.assertEqual(Item.objects.get(name="item2").order, 0)
-
-    def test_move_up_down_links_ordered_inline(self):
-        res = self.client.get("/admin/tests/pizza/")
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(self.pizza_to_ham.order, 0)
-        self.assertEqual(self.pizza_to_pineapple.order, 1)
-
-        res = self.client.get("/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/".format(
-            self.pizza.id,
-            self.pineapple.id
-        ), follow=True)
-        self.pizza_to_ham.refresh_from_db()
-        self.pizza_to_pineapple.refresh_from_db()
-        self.assertEqual(self.pizza_to_ham.order, 1)
-        self.assertEqual(self.pizza_to_pineapple.order, 0)
-        self.assertEqual(res.status_code, 200)
 
     def test_move_top(self):
         self.assertEqual(Item.objects.get(name="item1").order, 0)
@@ -504,6 +494,22 @@ class OrderedModelAdminTest(TestCase):
         self.assertEqual(Item.objects.get(name="item1").order, 2)
         self.assertEqual(Item.objects.get(name="item2").order, 0)
         self.assertEqual(Item.objects.get(name="item3").order, 1)
+
+    def test_move_up_down_links_ordered_inline(self):
+        res = self.client.get("/admin/tests/pizza/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.pizza_to_ham.order, 0)
+        self.assertEqual(self.pizza_to_pineapple.order, 1)
+
+        res = self.client.get("/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/".format(
+            self.pizza.id,
+            self.pineapple.id
+        ), follow=True)
+        self.pizza_to_ham.refresh_from_db()
+        self.pizza_to_pineapple.refresh_from_db()
+        self.assertEqual(self.pizza_to_ham.order, 1)
+        self.assertEqual(self.pizza_to_pineapple.order, 0)
+        self.assertEqual(res.status_code, 200)
 
 
 class OrderWithRespectToTestsManyToMany(TestCase):
