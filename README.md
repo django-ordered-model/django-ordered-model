@@ -123,7 +123,7 @@ object itself.
 ```python
 foo.to(12, extra_update={'modified': now()}
 ```
- 
+
 ### Get the previous or next objects
 
 ```python
@@ -299,6 +299,12 @@ Test suite
 Requires Docker.
 
     $ script/test
+
+
+Historical Releases
+-------------------
+For `django` < 2.0, pin requirements.txt to `django-ordered-model` < 3.0.0
+
 
 Maintainers
 -----------
