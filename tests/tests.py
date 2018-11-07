@@ -3,7 +3,8 @@ import uuid
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.test import TestCase
-from ordered_model.management.commands import renumber
+from django.core.management import call_command
+from django.utils.six import StringIO
 
 from tests.models import (
     Answer,
@@ -722,7 +723,7 @@ class PolymorpicOrderGenerationTests(TestCase):
         m1.refresh_from_db()
         self.assertEqual(m1.order, 3)
 
-class AdminCommandTests(TestCase):
+class ManagementCommandTests(TestCase):
 
     fixtures = ['test_items.json']
 
@@ -733,17 +734,24 @@ class AdminCommandTests(TestCase):
 
     def test_model_renumber(self):
         self.assertNames(['1', '2', '3', '4'])
+        self.assertOrder(0, 4)
+
         CustomOrderFieldModel.objects.get(pk=4).up()
         CustomOrderFieldModel.objects.get(pk=2).down()
         CustomOrderFieldModel.objects.get(pk=2).down()
         self.assertNames(['1', '4', '3', '2'])
-
-        r = renumber.Command()
-        r.handle('tests.CustomOrderFieldModel:1')
-        self.assertNames(['1', '4', '3', '2'])
-        self.assertOrder(1, 5)
-        r.handle('tests.CustomOrderFieldModel:5')
-        self.assertOrder(5, 9)
-
-        r.handle('tests.CustomOrderFieldModel')
         self.assertOrder(0, 4)
+
+        call_command('renumber', ['tests.CustomOrderFieldModel'])
+        self.assertNames(['1', '4', '3', '2'])
+        self.assertOrder(0, 4)
+
+        # bypass our OrderedModel delete logic to leave a hole in ordering
+        obj = CustomOrderFieldModel.objects.get(pk=3)
+        super(type(obj), obj).delete()
+
+        self.assertNames(['1', '4', '2'])
+        # repair
+        call_command('renumber', ['tests.CustomOrderFieldModel'])
+        self.assertNames(['1', '4', '2'])
+        self.assertOrder(0, 3)
