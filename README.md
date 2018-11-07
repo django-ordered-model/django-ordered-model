@@ -9,10 +9,7 @@ interface for reordering them.
 Based on https://djangosnippets.org/snippets/998/ and
 https://djangosnippets.org/snippets/259/
 
-Requires:
-
-  * Django >=2.x
-  * Python >=3.4
+See our [compatability notes](#compatibility-with-django-and-python) for the appropriate version to use with older Django and Python releases.
 
 Installation
 ------------
@@ -307,8 +304,9 @@ Compatibility with Django and Python
 
 |django-ordered-model version | Django version      | Python version
 |-----------------------------|---------------------|--------------------
-| **< 3.0.0**                 | **1.x**             | **2.7** to **3.6**
-| **> 3.0.0**                 | **2.x**             | **3.4** and above
+| **2.0.x**                   | **1.x**             | **2.7** to **3.6**
+| **2.1.x**                   | **1.x**             | **2.7** to **3.6**
+| **3.0.x**                   | **2.x**             | **3.4** and above
 
 
 Maintainers
