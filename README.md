@@ -304,9 +304,10 @@ Compatibility with Django and Python
 
 |django-ordered-model version | Django version      | Python version
 |-----------------------------|---------------------|--------------------
-| **2.0.x**                   | **1.x**             | **2.7** to **3.6**
-| **2.1.x**                   | **1.x**             | **2.7** to **3.6**
+| **3.1.x**                   | **2.x**             | **3.4** and above
 | **3.0.x**                   | **2.x**             | **3.4** and above
+| **2.1.x**                   | **1.x**             | **2.7** to **3.6**
+| **2.0.x**                   | **1.x**             | **2.7** to **3.6**
 
 
 Maintainers

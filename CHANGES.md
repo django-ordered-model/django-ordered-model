@@ -1,6 +1,17 @@
 Change log
 ==========
 
+3.1.0 - 2018-11-10
+------------------
+
+- Remove depricated `allow_tags`
+- Add `previous` and `next` methods
+- Add `top` and `bottom` buttons in admin
+- Delete duplicated code from InlineModelAdminMixin
+- Add Simplified Chinese translations
+- Use `import_string` instead of `__import__`
+- Make order field's `verbose_name` translatable(NOTE: this will cause creation of new migration file, which will not affect db state)
+
 3.0.0 - 2018-09-21
 ------------------
 
