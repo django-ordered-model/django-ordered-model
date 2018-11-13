@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='django-ordered-model',
-    version='3.1.0',
+    version='3.1.1',
     description='Allows Django models to be ordered and provides a simple admin interface for reordering them.',
     author='Ben Firshman',
     author_email='ben@firshman.co.uk',
@@ -28,6 +28,8 @@ setup(
     zip_safe = False,
     package_data={'ordered_model': ['static/ordered_model/arrow-up.gif',
                                     'static/ordered_model/arrow-down.gif',
+                                    'static/ordered_model/arrow-top.gif',
+                                    'static/ordered_model/arrow-bottom.gif',
                                     'locale/de/LC_MESSAGES/django.po',
                                     'locale/de/LC_MESSAGES/django.mo',
                                     'locale/pl/LC_MESSAGES/django.po',
