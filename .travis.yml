@@ -1,27 +1,16 @@
 language: python
+# python 3.7 not available for trusty
+dist: xenial
 python:
-- '3.4'
-- '3.5'
-- '3.6'
+  - '3.4'
+  - '3.5'
+  - '3.6'
+  - '3.7'
 env:
-- DJANGO="Django>=2.0,<2.1"
-- DJANGO="Django>=2.1,<2.2"
-- DJANGO="https://github.com/django/django/archive/master.tar.gz"
+  - DJANGO="Django>=2.0,<2.1"
+  - DJANGO="Django>=2.1,<2.2"
+  - DJANGO="https://github.com/django/django/archive/master.tar.gz"
 matrix:
-  # python 3.7 not available for trusty
-  include:
-  - python: '3.7'
-    env: DJANGO="Django>=2.0,<2.1"
-    dist: xenial
-    sudo: required
-  - python: '3.7'
-    env: DJANGO="Django>=2.1,<2.2"
-    dist: xenial
-    sudo: required
-  - python: '3.7'
-    env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
-    dist: xenial
-    sudo: required
   exclude:
   - python: '3.4'
     env: DJANGO="Django>=2.1,<2.2"
@@ -30,14 +19,17 @@ matrix:
   allow_failures:
   - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
 install:
-- pip install $DJANGO
-- python setup.py sdist
-- pip install dist/*
+  - pip install $DJANGO
+  - python setup.py sdist bdist_wheel
+  - pip install dist/*
 script: script/test-command
+
 deploy:
   provider: pypi
   user: "django-ordered-model"
+  distributions: sdist bdist_wheel
   password:
     secure: dmhx2Z6M6k4O0pZsZ6oVpIkWf7/Vv4x36MDX35d8BmaDuD23rQZakm7ScMfHfrnJ8xTVcYsLQSciqMQyov1QfKa4/51YrJrZk63W2iAp1IjTb6FlPofbvworNcuXvEFbemYGHTeRW5S6+T6PPFN7YSJhhMJpyBIVu7rMBTk/bKE=
   on:
     tags: true
+  skip_existing: true
