@@ -701,6 +701,11 @@ class OrderWithRespectToRelatedModelFieldTests(TestCase):
             GroupedItem.objects.filter(group__user=self.u1).values_list('pk', 'order'), [
             (i2.pk, 0), (self.u1_g1_i1.pk, 1), (self.u1_g2_i1.pk, 2)
         ])
+    def test_change_respect_to_related_field(self):
+        self.u2_g2.user = self.u1
+        self.u2_g2.save()
+        self.u2_g2_i1.refresh_from_db()
+        self.assertNotIn(self.u2_g2_i1.order, [self.u1_g1_i1.order, self.u1_g2_i1.order])
 
 class PolymorpicOrderGenerationTests(TestCase):
     def test_order_of_Baselist(self):

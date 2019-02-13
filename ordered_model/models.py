@@ -3,12 +3,39 @@ import warnings
 from functools import reduce
 
 from django.db import models
-from django.db.models import Max, Min, F
+from django.db.models import Max, Min, F, signals
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 
-class OrderedModelBase(models.Model):
+class OrderedModelMeta(models.base.ModelBase):
+    def __new__(cls, name, bases, attrs, **kwargs):
+        new_class = super().__new__(cls, name, bases, attrs, **kwargs)
+        if new_class.order_with_respect_to is not None:
+            if isinstance(new_class.order_with_respect_to, str):
+                new_class.order_with_respect_to = (new_class.order_with_respect_to,)
+            for wrt in new_class.order_with_respect_to:
+                classes = wrt.split('__')
+                if len(classes) == 1:
+                    wrt_class = new_class
+                else:
+                    next_class = new_class
+                    for field_name in classes[:-1]:
+                        next_class = getattr(next_class, field_name).field.remote_field.model
+                    wrt_class = next_class
+                field_name = classes[-1]
+                signals.pre_save.connect(cls.wrap_with_respect_to_change(new_class, wrt), weak=False, sender=wrt_class)
+
+        return new_class
+
+    @classmethod
+    def wrap_with_respect_to_change(cls, new_class, wrt):
+        def inner(*args, **kwargs):
+            return new_class._with_respect_to_change(new_class, wrt, *args, **kwargs)
+
+        return inner
+
+class OrderedModelBase(models.Model, metaclass=OrderedModelMeta):
     """
     An abstract model that allows objects to be ordered relative to each other.
     Usage (See ``OrderedModel``):
@@ -27,6 +54,37 @@ class OrderedModelBase(models.Model):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def _with_respect_to_change(cls, for_model, wrt, sender, instance, raw, using, update_fields, **kwargs):
+        if raw:
+            return
+
+        if instance._state.adding:
+            return
+
+        if update_fields is not None and field_name not in update_fields:
+            return
+
+        fields = wrt.split('__')
+        field_name = fields[-1]
+
+        old_instance = sender.objects.get(pk=instance.pk)
+
+        if getattr(instance, field_name) != getattr(old_instance, field_name):
+            if sender == cls:
+                c = instance.get_ordering_queryset().aggregate(
+                    Max(instance.order_field_name)
+                ).get(instance.order_field_name + '__max')
+                setattr(instance, instance.order_field_name, 0 if c is None else c + 1)
+            else:
+                changing = for_model.objects.filter(**{'__'.join(fields[:-1]): instance})
+                existing = for_model.objects.filter(**{wrt: getattr(instance, field_name)})
+                max_existing = existing.aggregate(Max(for_model.order_field_name))[for_model.order_field_name + '__max']
+                for to_reset in changing:
+                    max_existing += 1
+                    setattr(to_reset, for_model.order_field_name, max_existing)
+                    to_reset.save()
 
     def _get_class_for_ordering_queryset(self):
         if self.order_class_path:
