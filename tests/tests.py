@@ -723,5 +723,22 @@ class PolymorpicOrderGenerationTests(TestCase):
 
 
 class BulkCreateTests(TestCase):
-    def test_bulk_create(self):
-        Item.objects.bulk_create([Item()])
+    def test(self):
+        Item.objects.bulk_create([Item(name='1')])
+        self.assertEqual(Item.objects.get(name='1').order, 0)
+
+    def test_multiple(self):
+        Item.objects.bulk_create([Item(name='1'), Item(name='2')])
+        self.assertEqual(Item.objects.get(name='1').order, 0)
+        self.assertEqual(Item.objects.get(name='2').order, 1)
+
+    def test_with_existing(self):
+        Item.objects.create()
+        Item.objects.bulk_create([Item(name='1')])
+        self.assertEqual(Item.objects.get(name='1').order, 1)
+
+    def test_with_multiple_existing(self):
+        Item.objects.create()
+        Item.objects.create()
+        Item.objects.bulk_create([Item(name='1')])
+        self.assertEqual(Item.objects.get(name='1').order, 2)

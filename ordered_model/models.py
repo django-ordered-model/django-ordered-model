@@ -1,11 +1,22 @@
-import warnings
-
 from functools import reduce
 
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+
+
+class OrderedModelQuerySet(models.QuerySet):
+    def bulk_create(self, objs, batch_size=None):
+        model = self.model
+        initial_order = self.aggregate(Max(model.order_field_name)).get(
+            model.order_field_name + '__max'
+        )
+        initial_order = initial_order + 1 if initial_order is not None else 0
+
+        for order, obj in enumerate(objs, initial_order):
+            obj.order = order
+        super().bulk_create(objs, batch_size=batch_size)
 
 
 class OrderedModelBase(models.Model):
@@ -215,6 +226,7 @@ class OrderedModel(OrderedModelBase):
 
     order = models.PositiveIntegerField(_('order'), editable=False, db_index=True)
     order_field_name = 'order'
+    objects = OrderedModelQuerySet.as_manager()
 
     class Meta:
         abstract = True
