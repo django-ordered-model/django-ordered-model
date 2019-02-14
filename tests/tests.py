@@ -720,3 +720,8 @@ class PolymorpicOrderGenerationTests(TestCase):
         self.assertEqual(o2.order, 2)
         m1.refresh_from_db()
         self.assertEqual(m1.order, 3)
+
+
+class BulkCreateTests(TestCase):
+    def test_bulk_create(self):
+        Item.objects.bulk_create([Item()])
