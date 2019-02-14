@@ -5,6 +5,7 @@ from django.db.models import Max, Min, F
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
+
 class OrderedModelQuerySet(models.QuerySet):
     def get_max_order(self):
         model = self.model
@@ -65,10 +66,18 @@ class OrderedModelBase(models.Model):
             return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
         return list(map(get_field_tuple, self.order_with_respect_to))
 
-    def _valid_ordering_reference(self, reference):
-        return self.order_with_respect_to is None or (
+    def _validate_ordering_reference(self, reference):
+        valid = self.order_with_respect_to is None or (
             self._get_order_with_respect_to() == reference._get_order_with_respect_to()
         )
+        if not valid:
+            raise ValueError(
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
+                    self,
+                    self._get_class_for_ordering_queryset(),
+                    ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                )
+            )
 
     def get_ordering_queryset(self, qs=None):
         qs = qs or self._get_class_for_ordering_queryset().objects.all()
@@ -114,12 +123,8 @@ class OrderedModelBase(models.Model):
         """
         Swap the position of this object with a replacement object.
         """
-        if not self._valid_ordering_reference(replacement):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(replacement)
+
         order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
         setattr(self, self.order_field_name, replacement_order)
         setattr(replacement, self.order_field_name, order)
@@ -174,12 +179,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object above the referenced object.
         """
-        if not self._valid_ordering_reference(ref):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(ref)
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
         if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
@@ -194,12 +194,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object below the referenced object.
         """
-        if not self._valid_ordering_reference(ref):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(ref)
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
         if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
