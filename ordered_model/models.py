@@ -5,18 +5,25 @@ from django.db.models import Max, Min, F
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
-
 class OrderedModelQuerySet(models.QuerySet):
-    def bulk_create(self, objs, batch_size=None):
+    def get_max_order(self):
         model = self.model
-        initial_order = self.aggregate(Max(model.order_field_name)).get(
+        return self.aggregate(Max(model.order_field_name)).get(
             model.order_field_name + '__max'
         )
-        initial_order = initial_order + 1 if initial_order is not None else 0
 
-        for order, obj in enumerate(objs, initial_order):
+    def get_next_order(self):
+        order = self.get_max_order()
+        return order + 1 if order is not None else 0
+
+    def bulk_create(self, objs, batch_size=None):
+        for order, obj in enumerate(objs, self.get_next_order()):
             obj.order = order
         super().bulk_create(objs, batch_size=batch_size)
+
+
+class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
+    pass
 
 
 class OrderedModelBase(models.Model):
@@ -31,6 +38,8 @@ class OrderedModelBase(models.Model):
      - set ``order_with_respect_to`` to limit order to a subset
      - specify ``order_class_path`` in case of polymorpic classes
     """
+
+    objects = OrderedModelManager()
 
     order_field_name = None
     order_with_respect_to = None
@@ -87,8 +96,8 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
-            c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
-            setattr(self, self.order_field_name, 0 if c is None else c + 1)
+            order = self.get_ordering_queryset().get_next_order()
+            setattr(self, self.order_field_name, order)
         super(OrderedModelBase, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -178,8 +187,7 @@ class OrderedModelBase(models.Model):
         else:
             o = self.get_ordering_queryset()\
                     .filter(**{self.order_field_name + '__lt': getattr(ref, self.order_field_name)})\
-                    .aggregate(Max(self.order_field_name))\
-                    .get(self.order_field_name + '__max') or 0
+                    .get_max_order() or 0
         self.to(o, extra_update=extra_update)
 
     def below(self, ref, extra_update=None):
@@ -214,7 +222,7 @@ class OrderedModelBase(models.Model):
         """
         Move this object to the bottom of the ordered stack.
         """
-        o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
+        o = self.get_ordering_queryset().get_max_order()
         self.to(o, extra_update=extra_update)
 
 
@@ -226,7 +234,6 @@ class OrderedModel(OrderedModelBase):
 
     order = models.PositiveIntegerField(_('order'), editable=False, db_index=True)
     order_field_name = 'order'
-    objects = OrderedModelQuerySet.as_manager()
 
     class Meta:
         abstract = True
