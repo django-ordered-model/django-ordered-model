@@ -290,6 +290,22 @@ class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
 admin.site.register(Pizza, PizzaAdmin)
 ```
 
+Re-ordering models
+------------------
+
+In certain cases the models will end up in a not properly ordered state. This can be caused
+by bypassing the 'delete' / 'save' methods, or when a user changes a foreign key of a object
+which is part of the 'order_with_respect_to' fields. You can use the following command to
+re-order one or more models.
+
+    $ ./manage.py reorder_model <app_name>.<model_name> \
+            [<app_name>.<model_name> ... ]
+
+    The arguments are as follows:
+    - `<app_name>`: Name of the application for the model.
+    - `<model_name>`: Name of the model that's an OrderedModel.
+
+
 Test suite
 ----------
 
