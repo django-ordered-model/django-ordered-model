@@ -7,7 +7,8 @@ from django.db.models import F
 @receiver(post_delete, dispatch_uid="on_ordered_model_delete")
 def on_ordered_model_delete(sender, instance, **kwargs):
     """
-    This signal makes sure that when an OrderedModelBase is deleted via cascade database deletes.
+    This signal makes sure that when an OrderedModelBase is deleted via cascade database deletes, the models
+    keep order.
     """
 
     """
