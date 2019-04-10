@@ -63,7 +63,7 @@ class OrderedModelBase(models.Model, metaclass=OrderedModelMeta):
         if instance._state.adding:
             return
 
-        if update_fields is not None and field_name not in update_fields:
+        if update_fields is not None and 'field_name' not in update_fields:
             return
 
         fields = wrt.split('__')
