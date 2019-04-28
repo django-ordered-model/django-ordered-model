@@ -5,8 +5,13 @@ from setuptools import setup
 with open('requirements.txt') as f:
     requires = f.read().splitlines()
 
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='django-ordered-model',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     version='3.1.1',
     description='Allows Django models to be ordered and provides a simple admin interface for reordering them.',
     author='Ben Firshman',
