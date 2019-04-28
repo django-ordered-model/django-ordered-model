@@ -15,11 +15,15 @@ See our [compatability notes](#compatibility-with-django-and-python) for the app
 Installation
 ------------
 
-    $ python setup.py install
+```bash
+$ python setup.py install
+```
 
 You can use Pip:
 
-    $ pip install django-ordered-model
+```bash
+$ pip install django-ordered-model
+```
 
 Usage
 -----
@@ -50,7 +54,7 @@ bar = Item.objects.create(name="Bar")
 
 ### Swap positions
 
-```
+```python
 foo.swap(bar)
 ```
 
@@ -216,9 +220,6 @@ class OpenQuestion(BaseQuestion):
     answer = models.TextField(max_length=100)
 ```
 
-
-
-
 Admin integration
 -----------------
 
@@ -236,7 +237,6 @@ class ItemAdmin(OrderedModelAdmin):
 
 admin.site.register(Item, ItemAdmin)
 ```
-
 
 For a many-to-many relationship you need one of the following inlines.
 
@@ -265,7 +265,6 @@ class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
 
 admin.site.register(Pizza, PizzaAdmin)
 ```
-
 
 For the `OrderedStackedInline` it will look like this:
 
@@ -296,9 +295,9 @@ Test suite
 
 Requires Docker.
 
-    $ script/test
-
-
+```bash
+$ script/test
+```
 
 Compatibility with Django and Python
 -----------------------------------------
