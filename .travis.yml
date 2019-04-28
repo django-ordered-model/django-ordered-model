@@ -27,7 +27,10 @@ install:
   - pip install $DJANGO
   - python setup.py sdist bdist_wheel
   - pip install dist/*
+  - pip install codecov
 script: script/test-command
+after_success:
+  - codecov
 
 deploy:
   provider: pypi
