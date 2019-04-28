@@ -3,6 +3,7 @@ django-ordered-model
 
 [![Build Status](https://secure.travis-ci.org/bfirsh/django-ordered-model.png?branch=master)](https://travis-ci.org/bfirsh/django-ordered-model)
 [![PyPI version](https://badge.fury.io/py/django-ordered-model.svg)](https://badge.fury.io/py/django-ordered-model)
+[![codecov](https://codecov.io/gh/GabLeRoux/django-ordered-model/branch/master/graph/badge.svg)](https://codecov.io/gh/GabLeRoux/django-ordered-model)
 
 django-ordered-model allows models to be ordered and provides a simple admin
 interface for reordering them.
