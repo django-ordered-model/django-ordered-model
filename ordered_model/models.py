@@ -28,6 +28,10 @@ class OrderedModelBase(models.Model):
     class Meta:
         abstract = True
 
+    def __init__(self, *args, **kwargs):
+        super(OrderedModelBase, self).__init__(*args, **kwargs)
+        self._original_order_with_respect_to_fks = {getattr(self, name) for name in self.order_with_respect_to}
+
     def _get_class_for_ordering_queryset(self):
         if self.order_class_path:
             return import_string(self.order_class_path)
@@ -75,10 +79,11 @@ class OrderedModelBase(models.Model):
         ).first()
 
     def save(self, *args, **kwargs):
-        if getattr(self, self.order_field_name) is None:
+        if getattr(self, self.order_field_name) is None or {getattr(self, name) for name in self.order_with_respect_to} != self._original_order_with_respect_to_fks:
             c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
             setattr(self, self.order_field_name, 0 if c is None else c + 1)
         super(OrderedModelBase, self).save(*args, **kwargs)
+        self._original_order_with_respect_to_fks = {getattr(self, name) for name in self.order_with_respect_to}
 
     def delete(self, *args, **kwargs):
         qs = self.get_ordering_queryset()
