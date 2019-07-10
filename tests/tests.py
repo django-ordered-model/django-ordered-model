@@ -742,3 +742,7 @@ class BulkCreateTests(TestCase):
         Item.objects.create()
         Item.objects.bulk_create([Item(name='1')])
         self.assertEqual(Item.objects.get(name='1').order, 2)
+
+    def test_order_field_name(self):
+        CustomOrderFieldModel.objects.bulk_create([CustomOrderFieldModel(name='1')])
+        self.assertEqual(CustomOrderFieldModel.objects.get(name='1').sort_order, 0)
