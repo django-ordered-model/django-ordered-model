@@ -8,15 +8,15 @@ from django.utils.translation import gettext_lazy as _
 
 class OrderedModelQuerySet(models.QuerySet):
     def get_max_order(self):
-        model = self.model
-        return self.aggregate(Max(model.order_field_name)).get(
-            model.order_field_name + '__max'
+        order_field_name = self.model.order_field_name
+        return self.aggregate(Max(order_field_name)).get(
+            order_field_name + '__max'
         )
 
     def get_min_order(self):
-        model = self.model
-        return self.aggregate(Min(model.order_field_name)).get(
-            model.order_field_name + '__min'
+        order_field_name = self.model.order_field_name
+        return self.aggregate(Min(order_field_name)).get(
+            order_field_name + '__min'
         )
 
     def get_next_order(self):
@@ -25,17 +25,18 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def below(self, ref):
         """Filter items below ref's order."""
-        model = self.model
-        return self.filter(**{model.order_field_name + '__gt': getattr(ref, model.order_field_name)})
+        order_field_name = self.model.order_field_name
+        return self.filter(**{order_field_name + '__gt': getattr(ref, order_field_name)})
 
     def above(self, ref):
         """Filter items above ref's order."""
-        model = self.model
-        return self.filter(**{model.order_field_name + '__lt': getattr(ref, model.order_field_name)})
+        order_field_name = self.model.order_field_name
+        return self.filter(**{order_field_name + '__lt': getattr(ref, order_field_name)})
 
     def bulk_create(self, objs, batch_size=None):
+        order_field_name = self.model.order_field_name
         for order, obj in enumerate(objs, self.get_next_order()):
-            obj.order = order
+            setattr(obj, order_field_name, order)
         super().bulk_create(objs, batch_size=batch_size)
 
 

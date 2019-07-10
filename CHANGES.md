@@ -1,6 +1,11 @@
 Change log
 ==========
 
+3.2.0 - 2019-07-10
+------------------
+- Internal refactoring now using `Manager` - probably will break some code
+- provide `bulk_create`
+
 3.1.1 - 2018-11-13
 ------------------
 - Fix arrow-top and arrow-bottom not found
