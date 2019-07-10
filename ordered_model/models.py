@@ -24,10 +24,12 @@ class OrderedModelQuerySet(models.QuerySet):
         return order + 1 if order is not None else 0
 
     def below(self, ref):
+        """Filter items below ref's order."""
         model = self.model
         return self.filter(**{model.order_field_name + '__gt': getattr(ref, model.order_field_name)})
 
     def above(self, ref):
+        """Filter items above ref's order."""
         model = self.model
         return self.filter(**{model.order_field_name + '__lt': getattr(ref, model.order_field_name)})
 
@@ -117,7 +119,7 @@ class OrderedModelBase(models.Model):
         if getattr(self, self.order_field_name) is None:
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, self.order_field_name, order)
-        super(OrderedModelBase, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         qs = self.get_ordering_queryset()
@@ -126,7 +128,7 @@ class OrderedModelBase(models.Model):
         if extra:
             update_kwargs.update(extra)
         qs.below(self).update(**update_kwargs)
-        super(OrderedModelBase, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
     def swap(self, replacement):
         """
