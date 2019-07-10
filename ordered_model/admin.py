@@ -19,7 +19,7 @@ from django.contrib.admin.views.main import ChangeList
 from django import VERSION
 
 
-class BaseOrderedModelAdmin(object):
+class BaseOrderedModelAdmin:
     """
     Functionality common to both OrderedModelAdmin and OrderedInlineMixin.
     """
@@ -50,7 +50,7 @@ class BaseOrderedModelAdmin(object):
     def changelist_view(self, request, extra_context=None):
         cl = self._get_changelist(request)
         self.request_query_string = cl.get_query_string()
-        return super(BaseOrderedModelAdmin, self).changelist_view(request, extra_context)
+        return super().changelist_view(request, extra_context)
 
 
 class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
@@ -68,7 +68,7 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
         return [
             path('<path:object_id>/move-<direction>/', wrap(self.move_view),
                  name='{app}_{model}_change_order'.format(**model_info)),
-        ] + super(OrderedModelAdmin, self).get_urls()
+        ] + super().get_urls()
 
     def move_view(self, request, object_id, direction):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
@@ -123,13 +123,13 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
     move_up_down_links.short_description = _('Move')
 
 
-class OrderedInlineModelAdminMixin(object):
+class OrderedInlineModelAdminMixin:
     """
     ModelAdminMixin for classes that contain OrderedInilines
     """
 
     def get_urls(self):
-        urls = super(OrderedInlineModelAdminMixin, self).get_urls()
+        urls = super().get_urls()
         for inline in self.inlines:
             if issubclass(inline, OrderedInlineMixin):
                 urls = inline(self, self.admin_site).get_urls() + urls

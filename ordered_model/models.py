@@ -1,11 +1,46 @@
-import warnings
-
 from functools import reduce
 
 from django.db import models
 from django.db.models import Max, Min, F
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+
+
+class OrderedModelQuerySet(models.QuerySet):
+    def get_max_order(self):
+        model = self.model
+        return self.aggregate(Max(model.order_field_name)).get(
+            model.order_field_name + '__max'
+        )
+
+    def get_min_order(self):
+        model = self.model
+        return self.aggregate(Min(model.order_field_name)).get(
+            model.order_field_name + '__min'
+        )
+
+    def get_next_order(self):
+        order = self.get_max_order()
+        return order + 1 if order is not None else 0
+
+    def below(self, ref):
+        """Filter items below ref's order."""
+        model = self.model
+        return self.filter(**{model.order_field_name + '__gt': getattr(ref, model.order_field_name)})
+
+    def above(self, ref):
+        """Filter items above ref's order."""
+        model = self.model
+        return self.filter(**{model.order_field_name + '__lt': getattr(ref, model.order_field_name)})
+
+    def bulk_create(self, objs, batch_size=None):
+        for order, obj in enumerate(objs, self.get_next_order()):
+            obj.order = order
+        super().bulk_create(objs, batch_size=batch_size)
+
+
+class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
+    pass
 
 
 class OrderedModelBase(models.Model):
@@ -20,6 +55,8 @@ class OrderedModelBase(models.Model):
      - set ``order_with_respect_to`` to limit order to a subset
      - specify ``order_class_path`` in case of polymorpic classes
     """
+
+    objects = OrderedModelManager()
 
     order_field_name = None
     order_with_respect_to = None
@@ -45,10 +82,18 @@ class OrderedModelBase(models.Model):
             return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
         return list(map(get_field_tuple, self.order_with_respect_to))
 
-    def _valid_ordering_reference(self, reference):
-        return self.order_with_respect_to is None or (
+    def _validate_ordering_reference(self, reference):
+        valid = self.order_with_respect_to is None or (
             self._get_order_with_respect_to() == reference._get_order_with_respect_to()
         )
+        if not valid:
+            raise ValueError(
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
+                    self,
+                    self._get_class_for_ordering_queryset(),
+                    ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                )
+            )
 
     def get_ordering_queryset(self, qs=None):
         qs = qs or self._get_class_for_ordering_queryset().objects.all()
@@ -62,44 +107,35 @@ class OrderedModelBase(models.Model):
         """
         Get previous element in this object's ordered stack.
         """
-        return self.get_ordering_queryset().filter(
-            **{self.order_field_name + '__lt': getattr(self, self.order_field_name)}
-        ).order_by('-' + self.order_field_name).first()
+        return self.get_ordering_queryset().above(self).last()
 
     def next(self):
         """
         Get next element in this object's ordered stack.
         """
-        return self.get_ordering_queryset().filter(
-            **{self.order_field_name + '__gt': getattr(self, self.order_field_name)}
-        ).first()
+        return self.get_ordering_queryset().below(self).first()
 
     def save(self, *args, **kwargs):
         if getattr(self, self.order_field_name) is None:
-            c = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
-            setattr(self, self.order_field_name, 0 if c is None else c + 1)
-        super(OrderedModelBase, self).save(*args, **kwargs)
+            order = self.get_ordering_queryset().get_next_order()
+            setattr(self, self.order_field_name, order)
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         qs = self.get_ordering_queryset()
         update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
         extra = kwargs.pop('extra_update', None)
         if extra:
-            update_kwargs.update(extra) 
-        qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name)})\
-          .update(**update_kwargs)
-        super(OrderedModelBase, self).delete(*args, **kwargs)
+            update_kwargs.update(extra)
+        qs.below(self).update(**update_kwargs)
+        super().delete(*args, **kwargs)
 
     def swap(self, replacement):
         """
         Swap the position of this object with a replacement object.
         """
-        if not self._valid_ordering_reference(replacement):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(replacement)
+
         order, replacement_order = getattr(self, self.order_field_name), getattr(replacement, self.order_field_name)
         setattr(self, self.order_field_name, replacement_order)
         setattr(replacement, self.order_field_name, order)
@@ -137,15 +173,13 @@ class OrderedModelBase(models.Model):
             update_kwargs = {self.order_field_name: F(self.order_field_name) + 1}
             if extra_update:
                 update_kwargs.update(extra_update)
-            qs.filter(**{self.order_field_name + '__lt': getattr(self, self.order_field_name),
-                         self.order_field_name + '__gte': order})\
+            qs.above(self).filter(**{self.order_field_name + '__gte': order})\
               .update(**update_kwargs)
         else:
             update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
             if extra_update:
                 update_kwargs.update(extra_update)
-            qs.filter(**{self.order_field_name + '__gt': getattr(self, self.order_field_name),
-                         self.order_field_name + '__lte': order})\
+            qs.below(self).filter(**{self.order_field_name + '__lte': order})\
               .update(**update_kwargs)
         setattr(self, self.order_field_name, order)
         self.save()
@@ -154,40 +188,28 @@ class OrderedModelBase(models.Model):
         """
         Move this object above the referenced object.
         """
-        if not self._valid_ordering_reference(ref):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(ref)
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
         if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
             o = getattr(ref, self.order_field_name)
         else:
             o = self.get_ordering_queryset()\
-                    .filter(**{self.order_field_name + '__lt': getattr(ref, self.order_field_name)})\
-                    .aggregate(Max(self.order_field_name))\
-                    .get(self.order_field_name + '__max') or 0
+                    .above(ref)\
+                    .get_max_order() or 0
         self.to(o, extra_update=extra_update)
 
     def below(self, ref, extra_update=None):
         """
         Move this object below the referenced object.
         """
-        if not self._valid_ordering_reference(ref):
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self, self._get_class_for_ordering_queryset(), ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
-                )
-            )
+        self._validate_ordering_reference(ref)
         if getattr(self, self.order_field_name) == getattr(ref, self.order_field_name):
             return
         if getattr(self, self.order_field_name) > getattr(ref, self.order_field_name):
             o = self.get_ordering_queryset()\
-                    .filter(**{self.order_field_name + '__gt': getattr(ref, self.order_field_name)})\
-                    .aggregate(Min(self.order_field_name))\
-                    .get(self.order_field_name + '__min') or 0
+                    .below(ref)\
+                    .get_min_order() or 0
         else:
             o = getattr(ref, self.order_field_name)
         self.to(o, extra_update=extra_update)
@@ -196,14 +218,14 @@ class OrderedModelBase(models.Model):
         """
         Move this object to the top of the ordered stack.
         """
-        o = self.get_ordering_queryset().aggregate(Min(self.order_field_name)).get(self.order_field_name + '__min')
+        o = self.get_ordering_queryset().get_min_order()
         self.to(o, extra_update=extra_update)
 
     def bottom(self, extra_update=None):
         """
         Move this object to the bottom of the ordered stack.
         """
-        o = self.get_ordering_queryset().aggregate(Max(self.order_field_name)).get(self.order_field_name + '__max')
+        o = self.get_ordering_queryset().get_max_order()
         self.to(o, extra_update=extra_update)
 
 
