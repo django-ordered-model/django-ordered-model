@@ -12,14 +12,17 @@ def get_order_lookup_value(obj, field):
 
 
 class OrderedModelQuerySet(models.QuerySet):
+    def _get_order_field_name(self):
+        return self.model.order_field_name
+
     def get_max_order(self):
-        order_field_name = self.model.order_field_name
+        order_field_name = self._get_order_field_name()
         return self.aggregate(Max(order_field_name)).get(
             '{0}__max'.format(order_field_name)
         )
 
     def get_min_order(self):
-        order_field_name = self.model.order_field_name
+        order_field_name = self._get_order_field_name()
         return self.aggregate(Min(order_field_name)).get(
             '{0}__min'.format(order_field_name)
         )
@@ -30,16 +33,30 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def below(self, ref):
         """Filter items below ref's order."""
-        order_field_name = self.model.order_field_name
+        order_field_name = self._get_order_field_name()
         return self.filter(**{'{0}__gt'.format(order_field_name): getattr(ref, order_field_name)})
 
     def above(self, ref):
         """Filter items above ref's order."""
-        order_field_name = self.model.order_field_name
+        order_field_name = self._get_order_field_name()
         return self.filter(**{'{0}__lt'.format(order_field_name): getattr(ref, order_field_name)})
 
+    def decrease_order(self, **extra_kwargs):
+        order_field_name = self._get_order_field_name()
+        update_kwargs = {order_field_name: F(order_field_name) - 1}
+        if extra_kwargs:
+            update_kwargs.update(extra_kwargs)
+        return self.update(**update_kwargs)
+
+    def increase_order(self, **extra_kwargs):
+        order_field_name = self._get_order_field_name()
+        update_kwargs = {order_field_name: F(order_field_name) + 1}
+        if extra_kwargs:
+            update_kwargs.update(extra_kwargs)
+        return self.update(**update_kwargs)
+
     def bulk_create(self, objs, batch_size=None):
-        order_field_name = self.model.order_field_name
+        order_field_name = self._get_order_field_name()
         for order, obj in enumerate(objs, self.get_next_order()):
             setattr(obj, order_field_name, order)
         super().bulk_create(objs, batch_size=batch_size)
@@ -135,14 +152,10 @@ class OrderedModelBase(models.Model):
             setattr(self, order_field_name, order)
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
-        order_field_name = self.order_field_name
-        update_kwargs = {order_field_name: F(order_field_name) - 1}
-        extra = kwargs.pop('extra_update', None)
-        if extra:
-            update_kwargs.update(extra)
-        qs.below(self).update(**update_kwargs)
+        extra_update = {} if extra_update is None else extra_update
+        qs.below(self).decrease_order(**extra_update)
         super().delete(*args, **kwargs)
 
     def swap(self, replacement):
@@ -186,18 +199,13 @@ class OrderedModelBase(models.Model):
             # object is already at desired position
             return
         qs = self.get_ordering_queryset()
+        extra_update = {} if extra_update is None else extra_update
         if getattr(self, order_field_name) > order:
-            update_kwargs = {order_field_name: F(order_field_name) + 1}
-            if extra_update:
-                update_kwargs.update(extra_update)
             qs.above(self).filter(**{'{0}__gte'.format(order_field_name): order})\
-              .update(**update_kwargs)
+              .increase_order(**extra_update)
         else:
-            update_kwargs = {order_field_name: F(order_field_name) - 1}
-            if extra_update:
-                update_kwargs.update(extra_update)
             qs.below(self).filter(**{'{0}__lte'.format(order_field_name): order})\
-              .update(**update_kwargs)
+              .decrease_order(**extra_update)
         setattr(self, order_field_name, order)
         self.save()
 
