@@ -31,13 +31,13 @@ class OrderedModelQuerySet(models.QuerySet):
         order = self.get_max_order()
         return order + 1 if order is not None else 0
 
-    def below(self, ref):
-        """Filter items below ref's order."""
+    def above(self, ref):
+        """Filter items above ref's order."""
         order_field_name = self._get_order_field_name()
         return self.filter(**{'{0}__gt'.format(order_field_name): getattr(ref, order_field_name)})
 
-    def above(self, ref):
-        """Filter items above ref's order."""
+    def below(self, ref):
+        """Filter items below ref's order."""
         order_field_name = self._get_order_field_name()
         return self.filter(**{'{0}__lt'.format(order_field_name): getattr(ref, order_field_name)})
 
@@ -137,13 +137,13 @@ class OrderedModelBase(models.Model):
         """
         Get previous element in this object's ordered stack.
         """
-        return self.get_ordering_queryset().above(self).last()
+        return self.get_ordering_queryset().below(self).last()
 
     def next(self):
         """
         Get next element in this object's ordered stack.
         """
-        return self.get_ordering_queryset().below(self).first()
+        return self.get_ordering_queryset().above(self).first()
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
@@ -155,7 +155,7 @@ class OrderedModelBase(models.Model):
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
-        qs.below(self).decrease_order(**extra_update)
+        qs.above(self).decrease_order(**extra_update)
         super().delete(*args, **kwargs)
 
     def swap(self, replacement):
@@ -201,10 +201,10 @@ class OrderedModelBase(models.Model):
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
         if getattr(self, order_field_name) > order:
-            qs.above(self).filter(**{'{0}__gte'.format(order_field_name): order})\
+            qs.below(self).filter(**{'{0}__gte'.format(order_field_name): order})\
               .increase_order(**extra_update)
         else:
-            qs.below(self).filter(**{'{0}__lte'.format(order_field_name): order})\
+            qs.above(self).filter(**{'{0}__lte'.format(order_field_name): order})\
               .decrease_order(**extra_update)
         setattr(self, order_field_name, order)
         self.save()
@@ -221,7 +221,7 @@ class OrderedModelBase(models.Model):
             o = getattr(ref, order_field_name)
         else:
             o = self.get_ordering_queryset()\
-                    .above(ref)\
+                    .below(ref)\
                     .get_max_order() or 0
         self.to(o, extra_update=extra_update)
 
@@ -235,7 +235,7 @@ class OrderedModelBase(models.Model):
             return
         if getattr(self, order_field_name) > getattr(ref, order_field_name):
             o = self.get_ordering_queryset()\
-                    .below(ref)\
+                    .above(ref)\
                     .get_min_order() or 0
         else:
             o = getattr(ref, order_field_name)
