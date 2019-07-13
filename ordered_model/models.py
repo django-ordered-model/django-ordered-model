@@ -41,7 +41,16 @@ class OrderedModelQuerySet(models.QuerySet):
 
 
 class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
-    pass
+    def _get_model(self):
+        order_class_path = self.model.order_class_path
+        if order_class_path:
+            return import_string(order_class_path)
+        return self.model
+
+    def get_queryset(self):
+        model = self._get_model()
+        return self._queryset_class(model=model, using=self._db, hints=self._hints)
+
 
 
 class OrderedModelBase(models.Model):
@@ -66,11 +75,6 @@ class OrderedModelBase(models.Model):
     class Meta:
         abstract = True
 
-    def _get_class_for_ordering_queryset(self):
-        if self.order_class_path:
-            return import_string(self.order_class_path)
-        return self.__class__
-
     def _get_order_with_respect_to(self):
         if isinstance(self.order_with_respect_to, str):
             self.order_with_respect_to = (self.order_with_respect_to,)
@@ -78,29 +82,33 @@ class OrderedModelBase(models.Model):
             raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
                 'should go in the model body, and is not to be confused with the Meta property of the same name, '
                 'which is independent Django functionality').format(self))
+        return self.order_with_respect_to
+
+    def _get_with_respect_to_filter_kwargs(self):
+        order_with_respect_to = self._get_order_with_respect_to()
 
         def get_field_tuple(field):
             return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
-        return list(map(get_field_tuple, self.order_with_respect_to))
+        return list(map(get_field_tuple, order_with_respect_to))
 
     def _validate_ordering_reference(self, reference):
         valid = self.order_with_respect_to is None or (
-            self._get_order_with_respect_to() == reference._get_order_with_respect_to()
+            self._get_with_respect_to_filter_kwargs() == reference._get_with_respect_to_filter_kwargs()
         )
         if not valid:
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self,
-                    self._get_class_for_ordering_queryset(),
-                    ' and '.join(["'{}'".format(o[0]) for o in self._get_order_with_respect_to()])
+                    self._meta.default_manager._get_model(),
+                    ' and '.join(["'{}'".format(o[0]) for o in self._get_with_respect_to_filter_kwargs()])
                 )
             )
 
     def get_ordering_queryset(self, qs=None):
-        qs = qs or self._get_class_for_ordering_queryset().objects.all()
+        qs = qs or self._meta.default_manager.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
-            order_values = self._get_order_with_respect_to()
+            order_values = self._get_with_respect_to_filter_kwargs()
             qs = qs.filter(**dict(order_values))
         return qs
 

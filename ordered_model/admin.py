@@ -176,7 +176,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
 
         # Find the fields which refer to the parent model of this inline, and
         # use one of them if they aren't None.
-        order_with_respect_to = obj._get_order_with_respect_to() or []
+        order_with_respect_to = obj._get_with_respect_to_filter_kwargs() or []
         parent_model = self.parent_model._meta
         fields = [
             str(value.pk) for field_name, value in order_with_respect_to
