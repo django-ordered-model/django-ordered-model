@@ -1,9 +1,14 @@
-from functools import reduce
+from functools import partial, reduce
 
 from django.db import models
 from django.db.models import Max, Min, F
+from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+
+
+def get_order_lookup_value(obj, field):
+    return reduce(lambda i, f: getattr(i, f), field.split(LOOKUP_SEP), obj)
 
 
 class OrderedModelQuerySet(models.QuerySet):
@@ -87,20 +92,19 @@ class OrderedModelBase(models.Model):
     def _get_with_respect_to_filter_kwargs(self):
         order_with_respect_to = self._get_order_with_respect_to()
 
-        def get_field_tuple(field):
-            return (field, reduce(lambda i, f: getattr(i, f), field.split('__'), self))
-        return list(map(get_field_tuple, order_with_respect_to))
+        _get_order_lookup_value = partial(get_order_lookup_value, self)
+        return {field: _get_order_lookup_value(field) for field in order_with_respect_to}
 
-    def _validate_ordering_reference(self, reference):
+    def _validate_ordering_reference(self, ref):
         valid = self.order_with_respect_to is None or (
-            self._get_with_respect_to_filter_kwargs() == reference._get_with_respect_to_filter_kwargs()
+            self._get_with_respect_to_filter_kwargs() == ref._get_with_respect_to_filter_kwargs()
         )
         if not valid:
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self,
                     self._meta.default_manager._get_model(),
-                    ' and '.join(["'{}'".format(o[0]) for o in self._get_with_respect_to_filter_kwargs()])
+                    ' and '.join(["'{}'".format(o) for o in self._get_with_respect_to_filter_kwargs()])
                 )
             )
 
@@ -108,8 +112,8 @@ class OrderedModelBase(models.Model):
         qs = qs or self._meta.default_manager.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
-            order_values = self._get_with_respect_to_filter_kwargs()
-            qs = qs.filter(**dict(order_values))
+            filter_kwargs = self._get_with_respect_to_filter_kwargs()
+            return qs.filter(**filter_kwargs)
         return qs
 
     def previous(self):

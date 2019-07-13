@@ -179,7 +179,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         order_with_respect_to = obj._get_with_respect_to_filter_kwargs() or []
         parent_model = self.parent_model._meta
         fields = [
-            str(value.pk) for field_name, value in order_with_respect_to
+            str(value.pk) for value in order_with_respect_to.values()
             if value.__class__ is self.parent_model and value is not None and value.pk is not None]
         order_obj_name = fields[0] if len(fields) > 0 else None
 
