@@ -19,6 +19,17 @@ class OrderedModelQuerySet(models.QuerySet):
         order_field_name = self._get_order_field_name()
         return LOOKUP_SEP.join([order_field_name, lookup])
 
+    def _get_order_with_respect_to(self):
+        model = self.model
+        order_with_respect_to = model.order_with_respect_to
+        if isinstance(order_with_respect_to, str):
+            order_with_respect_to = (order_with_respect_to,)
+        if order_with_respect_to is None:
+            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
+                'should go in the model body, and is not to be confused with the Meta property of the same name, '
+                'which is independent Django functionality').format(model))
+        return order_with_respect_to
+
     def get_max_order(self):
         order_field_name = self._get_order_field_name()
         return self.aggregate(Max(order_field_name)).get(
@@ -77,6 +88,20 @@ class OrderedModelQuerySet(models.QuerySet):
             setattr(obj, order_field_name, order)
         super().bulk_create(objs, batch_size=batch_size)
 
+    def _get_order_with_respect_to_filter_kwargs(self, ref):
+        order_with_respect_to = self._get_order_with_respect_to()
+        _get_order_lookup_value = partial(get_order_lookup_value, ref)
+        return {field: _get_order_lookup_value(field) for field in order_with_respect_to}
+
+    _get_order_with_respect_to_filter_kwargs.queryset_only = False
+
+    def filter_by_order_with_respect_to(self, ref):
+        order_with_respect_to = self.model.order_with_respect_to
+        if order_with_respect_to:
+            filter_kwargs = self._get_order_with_respect_to_filter_kwargs(ref)
+            return self.filter(**filter_kwargs)
+        return self
+
 
 class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
     def _get_model(self):
@@ -88,7 +113,6 @@ class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
     def get_queryset(self):
         model = self._get_model()
         return self._queryset_class(model=model, using=self._db, hints=self._hints)
-
 
 
 class OrderedModelBase(models.Model):
@@ -113,41 +137,25 @@ class OrderedModelBase(models.Model):
     class Meta:
         abstract = True
 
-    def _get_order_with_respect_to(self):
-        if isinstance(self.order_with_respect_to, str):
-            self.order_with_respect_to = (self.order_with_respect_to,)
-        if self.order_with_respect_to is None:
-            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
-                'should go in the model body, and is not to be confused with the Meta property of the same name, '
-                'which is independent Django functionality').format(self))
-        return self.order_with_respect_to
-
-    def _get_with_respect_to_filter_kwargs(self):
-        order_with_respect_to = self._get_order_with_respect_to()
-
-        _get_order_lookup_value = partial(get_order_lookup_value, self)
-        return {field: _get_order_lookup_value(field) for field in order_with_respect_to}
+    def _get_order_with_respect_to_filter_kwargs(self):
+        return self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
 
     def _validate_ordering_reference(self, ref):
         valid = self.order_with_respect_to is None or (
-            self._get_with_respect_to_filter_kwargs() == ref._get_with_respect_to_filter_kwargs()
+            self._get_order_with_respect_to_filter_kwargs() == ref._get_order_with_respect_to_filter_kwargs()
         )
         if not valid:
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self,
                     self._meta.default_manager._get_model(),
-                    ' and '.join(["'{}'".format(o) for o in self._get_with_respect_to_filter_kwargs()])
+                    ' and '.join(["'{}'".format(o) for o in self._get_order_with_respect_to_filter_kwargs()])
                 )
             )
 
     def get_ordering_queryset(self, qs=None):
         qs = qs or self._meta.default_manager.all()
-        order_with_respect_to = self.order_with_respect_to
-        if order_with_respect_to:
-            filter_kwargs = self._get_with_respect_to_filter_kwargs()
-            return qs.filter(**filter_kwargs)
-        return qs
+        return qs.filter_by_order_with_respect_to(self)
 
     def previous(self):
         """
