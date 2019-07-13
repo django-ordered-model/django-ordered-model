@@ -84,8 +84,20 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def bulk_create(self, objs, batch_size=None):
         order_field_name = self._get_order_field_name()
-        for order, obj in enumerate(objs, self.get_next_order()):
-            setattr(obj, order_field_name, order)
+        order_with_respect_to = self.model.order_with_respect_to
+        if order_with_respect_to:
+            order_with_respect_to_mapping = {}
+            order_with_respect_to = self._get_order_with_respect_to()
+            for obj in objs:
+                key = tuple(get_order_lookup_value(obj, field) for field in order_with_respect_to)
+                if key in order_with_respect_to_mapping:
+                    order_with_respect_to_mapping[key] += 1
+                else:
+                    order_with_respect_to_mapping[key] = self.filter_by_order_with_respect_to(obj).get_next_order()
+                setattr(obj, order_field_name, order_with_respect_to_mapping[key])
+        else:
+            for order, obj in enumerate(objs, self.get_next_order()):
+                setattr(obj, order_field_name, order)
         super().bulk_create(objs, batch_size=batch_size)
 
     def _get_order_with_respect_to_filter_kwargs(self, ref):

@@ -747,9 +747,22 @@ class BulkCreateTests(TestCase):
         CustomOrderFieldModel.objects.bulk_create([CustomOrderFieldModel(name='1')])
         self.assertEqual(CustomOrderFieldModel.objects.get(name='1').sort_order, 0)
 
-    # def test_order_with_respect_to(self):
-    #     user = TestUser.objects.create()
-    #     GroupedItem.objects.create(group=ItemGroup.objects.create(user=user))
-    #     group = ItemGroup.objects.create(user=user)
-    #     GroupedItem.objects.bulk_create([GroupedItem(group=group)])
-    #     self.assertEqual(GroupedItem.objects.get(group=group).order, 0)
+    def test_order_with_respect_to(self):
+        hawaiian_pizza = Pizza.objects.create(name='Hawaiian Pizza')
+        napoli_pizza = Pizza.objects.create(name='Napoli')
+        topping = Topping.objects.create(name='mozarella')
+        PizzaToppingsThroughModel.objects.create(pizza=napoli_pizza, topping=topping)
+        PizzaToppingsThroughModel.objects.bulk_create([PizzaToppingsThroughModel(pizza=hawaiian_pizza, topping=topping)])
+        self.assertEqual(PizzaToppingsThroughModel.objects.get(pizza=hawaiian_pizza).order, 0)
+
+    def test_order_with_respect_to_multiple(self):
+        hawaiian_pizza = Pizza.objects.create(name='Hawaiian Pizza')
+        napoli_pizza = Pizza.objects.create(name='Napoli')
+        mozarella = Topping.objects.create(name='mozarella')
+        pineapple = Topping.objects.create(name='Pineapple')
+        PizzaToppingsThroughModel.objects.create(pizza=napoli_pizza, topping=mozarella)
+        PizzaToppingsThroughModel.objects.bulk_create([
+            PizzaToppingsThroughModel(pizza=hawaiian_pizza, topping=mozarella),
+            PizzaToppingsThroughModel(pizza=hawaiian_pizza, topping=pineapple)
+        ])
+        self.assertSequenceEqual(PizzaToppingsThroughModel.objects.filter(pizza=hawaiian_pizza).values_list('order', flat=True), [0, 1])
