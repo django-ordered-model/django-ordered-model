@@ -1,6 +1,11 @@
 Change log
 ==========
 
+3.3.0 - 2019-07-10
+------------------
+- `bulk_create` now works with `order_with_respect_to`
+- more internal refactoring moved most methods to `OrderedModelQuerySet`
+
 3.2.0 - 2019-07-10
 ------------------
 - Internal refactoring now using `Manager` - probably will break some code
