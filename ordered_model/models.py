@@ -7,7 +7,7 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 
-def get_order_lookup_value(obj, field):
+def get_lookup_value(obj, field):
     return reduce(lambda i, f: getattr(i, f), field.split(LOOKUP_SEP), obj)
 
 
@@ -69,6 +69,7 @@ class OrderedModelQuerySet(models.QuerySet):
         return self.below(order, inclusive=inclusive)
 
     def decrease_order(self, **extra_kwargs):
+        """Decrease `order_field_name` value by 1."""
         order_field_name = self._get_order_field_name()
         update_kwargs = {order_field_name: F(order_field_name) - 1}
         if extra_kwargs:
@@ -76,6 +77,7 @@ class OrderedModelQuerySet(models.QuerySet):
         return self.update(**update_kwargs)
 
     def increase_order(self, **extra_kwargs):
+        """Increase `order_field_name` value by 1."""
         order_field_name = self._get_order_field_name()
         update_kwargs = {order_field_name: F(order_field_name) + 1}
         if extra_kwargs:
@@ -89,7 +91,7 @@ class OrderedModelQuerySet(models.QuerySet):
             order_with_respect_to_mapping = {}
             order_with_respect_to = self._get_order_with_respect_to()
             for obj in objs:
-                key = tuple(get_order_lookup_value(obj, field) for field in order_with_respect_to)
+                key = tuple(get_lookup_value(obj, field) for field in order_with_respect_to)
                 if key in order_with_respect_to_mapping:
                     order_with_respect_to_mapping[key] += 1
                 else:
@@ -102,8 +104,8 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def _get_order_with_respect_to_filter_kwargs(self, ref):
         order_with_respect_to = self._get_order_with_respect_to()
-        _get_order_lookup_value = partial(get_order_lookup_value, ref)
-        return {field: _get_order_lookup_value(field) for field in order_with_respect_to}
+        _get_lookup_value = partial(get_lookup_value, ref)
+        return {field: _get_lookup_value(field) for field in order_with_respect_to}
 
     _get_order_with_respect_to_filter_kwargs.queryset_only = False
 
