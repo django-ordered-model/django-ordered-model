@@ -2,27 +2,33 @@ language: python
 # python 3.7 not available for trusty
 dist: xenial
 python:
-  - '3.4'
-  - '3.5'
-  - '3.6'
-  - '3.7'
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
 env:
   - DJANGO="Django>=2.0,<2.1"
   - DJANGO="Django>=2.1,<2.2"
-  - DJANGO="Django>=2.2a1,<3.0"
+  - DJANGO="Django>=2.2,<3.0"
   - DJANGO="https://github.com/django/django/archive/master.tar.gz"
 matrix:
   exclude:
-  - python: '3.4'
-    env: DJANGO="Django>=2.1,<2.2"
-  - python: '3.4'
-    env: DJANGO="Django>=2.2a1,<3.0"
-  - python: '3.4'
-    env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
-  - python: '3.5'
-    env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+    - python: "3.4"
+      env: DJANGO="Django>=2.1,<2.2"
+    - python: "3.4"
+      env: DJANGO="Django>=2.2,<3.0"
+    - python: "3.4"
+      env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+    - python: "3.5"
+      env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+  include:
+    - name: black
+      python: "3.7"
+      before_script:
+        - pip install black
+      script: black --check --diff ordered_model/ tests/ setup.py
   allow_failures:
-  - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
+    - env: DJANGO="https://github.com/django/django/archive/master.tar.gz"
 install:
   - pip install $DJANGO
   - python setup.py sdist bdist_wheel

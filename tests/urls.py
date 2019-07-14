@@ -3,6 +3,4 @@ from django.contrib import admin
 
 admin.autodiscover()
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-]
+urlpatterns = [path("admin/", admin.site.urls)]
