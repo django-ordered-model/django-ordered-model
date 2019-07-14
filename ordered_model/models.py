@@ -25,21 +25,25 @@ class OrderedModelQuerySet(models.QuerySet):
         if isinstance(order_with_respect_to, str):
             order_with_respect_to = (order_with_respect_to,)
         if order_with_respect_to is None:
-            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
-                'should go in the model body, and is not to be confused with the Meta property of the same name, '
-                'which is independent Django functionality').format(model))
+            raise AssertionError(
+                (
+                    'ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
+                    "should go in the model body, and is not to be confused with the Meta property of the same name, "
+                    "which is independent Django functionality"
+                ).format(model)
+            )
         return order_with_respect_to
 
     def get_max_order(self):
         order_field_name = self._get_order_field_name()
         return self.aggregate(Max(order_field_name)).get(
-            self._get_order_field_lookup('max')
+            self._get_order_field_lookup("max")
         )
 
     def get_min_order(self):
         order_field_name = self._get_order_field_name()
         return self.aggregate(Min(order_field_name)).get(
-            self._get_order_field_lookup('min')
+            self._get_order_field_lookup("min")
         )
 
     def get_next_order(self):
@@ -48,7 +52,7 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def above(self, order, inclusive=False):
         """Filter items above order."""
-        lookup = 'gte' if inclusive else 'gt'
+        lookup = "gte" if inclusive else "gt"
         return self.filter(**{self._get_order_field_lookup(lookup): order})
 
     def above_instance(self, ref, inclusive=False):
@@ -59,7 +63,7 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def below(self, order, inclusive=False):
         """Filter items below order."""
-        lookup = 'lte' if inclusive else 'lt'
+        lookup = "lte" if inclusive else "lt"
         return self.filter(**{self._get_order_field_lookup(lookup): order})
 
     def below_instance(self, ref, inclusive=False):
@@ -91,11 +95,15 @@ class OrderedModelQuerySet(models.QuerySet):
             order_with_respect_to_mapping = {}
             order_with_respect_to = self._get_order_with_respect_to()
             for obj in objs:
-                key = tuple(get_lookup_value(obj, field) for field in order_with_respect_to)
+                key = tuple(
+                    get_lookup_value(obj, field) for field in order_with_respect_to
+                )
                 if key in order_with_respect_to_mapping:
                     order_with_respect_to_mapping[key] += 1
                 else:
-                    order_with_respect_to_mapping[key] = self.filter_by_order_with_respect_to(obj).get_next_order()
+                    order_with_respect_to_mapping[
+                        key
+                    ] = self.filter_by_order_with_respect_to(obj).get_next_order()
                 setattr(obj, order_field_name, order_with_respect_to_mapping[key])
         else:
             for order, obj in enumerate(objs, self.get_next_order()):
@@ -156,14 +164,20 @@ class OrderedModelBase(models.Model):
 
     def _validate_ordering_reference(self, ref):
         valid = self.order_with_respect_to is None or (
-            self._get_order_with_respect_to_filter_kwargs() == ref._get_order_with_respect_to_filter_kwargs()
+            self._get_order_with_respect_to_filter_kwargs()
+            == ref._get_order_with_respect_to_filter_kwargs()
         )
         if not valid:
             raise ValueError(
                 "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                     self,
                     self._meta.default_manager._get_model(),
-                    ' and '.join(["'{}'".format(o) for o in self._get_order_with_respect_to_filter_kwargs()])
+                    " and ".join(
+                        [
+                            "'{}'".format(o)
+                            for o in self._get_order_with_respect_to_filter_kwargs()
+                        ]
+                    ),
                 )
             )
 
@@ -203,7 +217,10 @@ class OrderedModelBase(models.Model):
         self._validate_ordering_reference(replacement)
 
         order_field_name = self.order_field_name
-        order, replacement_order = getattr(self, order_field_name), getattr(replacement, order_field_name)
+        order, replacement_order = (
+            getattr(self, order_field_name),
+            getattr(replacement, order_field_name),
+        )
         setattr(self, order_field_name, replacement_order)
         setattr(replacement, order_field_name, order)
         self.save()
@@ -230,7 +247,11 @@ class OrderedModelBase(models.Model):
         Move object to a certain position, updating all affected objects to move accordingly up or down.
         """
         if not isinstance(order, int):
-            raise TypeError("Order value must be set using an 'int', not using a '{0}'.".format(type(order).__name__))
+            raise TypeError(
+                "Order value must be set using an 'int', not using a '{0}'.".format(
+                    type(order).__name__
+                )
+            )
 
         order_field_name = self.order_field_name
         if order is None or getattr(self, order_field_name) == order:
@@ -239,11 +260,13 @@ class OrderedModelBase(models.Model):
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
         if getattr(self, order_field_name) > order:
-            qs.below_instance(self).above(order, inclusive=True)\
-              .increase_order(**extra_update)
+            qs.below_instance(self).above(order, inclusive=True).increase_order(
+                **extra_update
+            )
         else:
-            qs.above_instance(self).below(order, inclusive=True)\
-              .decrease_order(**extra_update)
+            qs.above_instance(self).below(order, inclusive=True).decrease_order(
+                **extra_update
+            )
         setattr(self, order_field_name, order)
         self.save()
 
@@ -258,9 +281,7 @@ class OrderedModelBase(models.Model):
         if getattr(self, order_field_name) > getattr(ref, order_field_name):
             o = getattr(ref, order_field_name)
         else:
-            o = self.get_ordering_queryset()\
-                    .below_instance(ref)\
-                    .get_max_order() or 0
+            o = self.get_ordering_queryset().below_instance(ref).get_max_order() or 0
         self.to(o, extra_update=extra_update)
 
     def below(self, ref, extra_update=None):
@@ -272,9 +293,7 @@ class OrderedModelBase(models.Model):
         if getattr(self, order_field_name) == getattr(ref, order_field_name):
             return
         if getattr(self, order_field_name) > getattr(ref, order_field_name):
-            o = self.get_ordering_queryset()\
-                    .above_instance(ref)\
-                    .get_min_order() or 0
+            o = self.get_ordering_queryset().above_instance(ref).get_min_order() or 0
         else:
             o = getattr(ref, order_field_name)
         self.to(o, extra_update=extra_update)
@@ -300,9 +319,9 @@ class OrderedModel(OrderedModelBase):
     Provides an ``order`` field.
     """
 
-    order = models.PositiveIntegerField(_('order'), editable=False, db_index=True)
-    order_field_name = 'order'
+    order = models.PositiveIntegerField(_("order"), editable=False, db_index=True)
+    order_field_name = "order"
 
     class Meta:
         abstract = True
-        ordering = ('order',)
+        ordering = ("order",)

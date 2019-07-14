@@ -24,25 +24,32 @@ class BaseOrderedModelAdmin:
     Functionality common to both OrderedModelAdmin and OrderedInlineMixin.
     """
 
-    request_query_string = ''
+    request_query_string = ""
 
     def _get_model_info(self):
-        return {
-            'app': self.model._meta.app_label,
-            'model': self.model._meta.model_name,
-        }
+        return {"app": self.model._meta.app_label, "model": self.model._meta.model_name}
 
     def _get_changelist(self, request):
         list_display = self.get_list_display(request)
         list_display_links = self.get_list_display_links(request, list_display)
 
-        args = (request, self.model, list_display,
-                list_display_links, self.list_filter, self.date_hierarchy,
-                self.search_fields, self.list_select_related,
-                self.list_per_page, self.list_max_show_all, self.list_editable, self)
+        args = (
+            request,
+            self.model,
+            list_display,
+            list_display_links,
+            self.list_filter,
+            self.date_hierarchy,
+            self.search_fields,
+            self.list_select_related,
+            self.list_per_page,
+            self.list_max_show_all,
+            self.list_editable,
+            self,
+        )
 
         if VERSION >= (2, 1):
-            args = args + (self.sortable_by, )
+            args = args + (self.sortable_by,)
 
         return ChangeList(*args)
 
@@ -60,67 +67,80 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+
             wrapper.model_admin = self
             return update_wrapper(wrapper, view)
 
         model_info = self._get_model_info()
 
         return [
-            path('<path:object_id>/move-<direction>/', wrap(self.move_view),
-                 name='{app}_{model}_change_order'.format(**model_info)),
+            path(
+                "<path:object_id>/move-<direction>/",
+                wrap(self.move_view),
+                name="{app}_{model}_change_order".format(**model_info),
+            )
         ] + super().get_urls()
 
     def move_view(self, request, object_id, direction):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
 
-        if direction not in ('up', 'down', 'top', 'bottom'):
+        if direction not in ("up", "down", "top", "bottom"):
             raise Http404
 
         getattr(obj, direction)()
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
-        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-3])
-        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
-            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+        mangled = "/".join(escape_uri_path(request.path).split("/")[0:-3])
+        redir_path = "%s%s%s" % (
+            mangled,
+            "/" if not mangled.endswith("/") else "",
+            ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
+            if request.META.get("QUERY_STRING", "")
+            else "",
+        )
 
         return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
         model_info = self._get_model_info()
-        return render_to_string("ordered_model/admin/order_controls.html", {
-            'app_label': model_info['app'],
-            'model_name': model_info['model'],
-            'module_name': model_info['model'], # for backwards compatibility
-            'object_id': obj.pk,
-            'urls': {
-                'up': reverse(
-                    "{admin_name}:{app}_{model}_change_order".format(
-                        admin_name=self.admin_site.name, **model_info
+        return render_to_string(
+            "ordered_model/admin/order_controls.html",
+            {
+                "app_label": model_info["app"],
+                "model_name": model_info["model"],
+                "module_name": model_info["model"],  # for backwards compatibility
+                "object_id": obj.pk,
+                "urls": {
+                    "up": reverse(
+                        "{admin_name}:{app}_{model}_change_order".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[obj.pk, "up"],
                     ),
-                    args=[obj.pk, 'up']
-                ),
-                'down': reverse(
-                    "{admin_name}:{app}_{model}_change_order".format(
-                        admin_name=self.admin_site.name, **model_info
+                    "down": reverse(
+                        "{admin_name}:{app}_{model}_change_order".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[obj.pk, "down"],
                     ),
-                    args=[obj.pk, 'down']
-                ),
-                'top': reverse(
-                    "{admin_name}:{app}_{model}_change_order".format(
-                        admin_name=self.admin_site.name, **model_info
+                    "top": reverse(
+                        "{admin_name}:{app}_{model}_change_order".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[obj.pk, "top"],
                     ),
-                    args=[obj.pk, 'top']
-                ),
-                'bottom': reverse(
-                    "{admin_name}:{app}_{model}_change_order".format(
-                        admin_name=self.admin_site.name, **model_info
+                    "bottom": reverse(
+                        "{admin_name}:{app}_{model}_change_order".format(
+                            admin_name=self.admin_site.name, **model_info
+                        ),
+                        args=[obj.pk, "bottom"],
                     ),
-                    args=[obj.pk, 'bottom']
-                ),
+                },
+                "query_string": self.request_query_string,
             },
-            'query_string': self.request_query_string
-        })
-    move_up_down_links.short_description = _('Move')
+        )
+
+    move_up_down_links.short_description = _("Move")
 
 
 class OrderedInlineModelAdminMixin:
@@ -143,82 +163,98 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         def wrap(view):
             def wrapper(*args, **kwargs):
                 return self.admin_site.admin_view(view)(*args, **kwargs)
+
             wrapper.model_admin = self
             return update_wrapper(wrapper, view)
 
         model_info = self._get_model_info()
         return [
             path(
-                '<path:admin_id>/{model}/<path:object_id>/move-<direction>/'.format(**model_info),
+                "<path:admin_id>/{model}/<path:object_id>/move-<direction>/".format(
+                    **model_info
+                ),
                 wrap(self.move_view),
-                name='{app}_{model}_change_order_inline'.format(**model_info)
-            ),
+                name="{app}_{model}_change_order_inline".format(**model_info),
+            )
         ]
 
     def move_view(self, request, admin_id, object_id, direction):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
 
-        if direction not in ('up', 'down', 'top', 'bottom'):
+        if direction not in ("up", "down", "top", "bottom"):
             raise Http404
 
         getattr(obj, direction)()
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
-        mangled = '/'.join(escape_uri_path(request.path).split('/')[0:-4] + ['change'])
-        redir_path = '%s%s%s' % (mangled, '/' if not mangled.endswith('/') else '',
-            ('?' + iri_to_uri(request.META.get('QUERY_STRING', ''))) if request.META.get('QUERY_STRING', '') else '')
+        mangled = "/".join(escape_uri_path(request.path).split("/")[0:-4] + ["change"])
+        redir_path = "%s%s%s" % (
+            mangled,
+            "/" if not mangled.endswith("/") else "",
+            ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
+            if request.META.get("QUERY_STRING", "")
+            else "",
+        )
 
         return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
         if not obj.id:
-            return ''
+            return ""
 
         # Find the fields which refer to the parent model of this inline, and
         # use one of them if they aren't None.
         order_with_respect_to = obj._get_order_with_respect_to_filter_kwargs() or []
         fields = [
-            str(value.pk) for value in order_with_respect_to.values()
-            if value.__class__ is self.parent_model and value is not None and value.pk is not None]
+            str(value.pk)
+            for value in order_with_respect_to.values()
+            if value.__class__ is self.parent_model
+            and value is not None
+            and value.pk is not None
+        ]
         order_obj_name = fields[0] if len(fields) > 0 else None
 
         model_info = self._get_model_info()
         if order_obj_name:
-            return render_to_string("ordered_model/admin/order_controls.html", {
-                'app_label': model_info['app'],
-                'model_name': model_info['model'],
-                'module_name': model_info['model'],  # backwards compat
-                'object_id': obj.pk,
-                'urls': {
-                    'up': reverse(
-                        "{admin_name}:{app}_{model}_change_order_inline".format(
-                            admin_name=self.admin_site.name, **model_info
+            return render_to_string(
+                "ordered_model/admin/order_controls.html",
+                {
+                    "app_label": model_info["app"],
+                    "model_name": model_info["model"],
+                    "module_name": model_info["model"],  # backwards compat
+                    "object_id": obj.pk,
+                    "urls": {
+                        "up": reverse(
+                            "{admin_name}:{app}_{model}_change_order_inline".format(
+                                admin_name=self.admin_site.name, **model_info
+                            ),
+                            args=[order_obj_name, obj.id, "up"],
                         ),
-                        args=[order_obj_name, obj.id, 'up']
-                    ),
-                    'down': reverse(
-                        "{admin_name}:{app}_{model}_change_order_inline".format(
-                            admin_name=self.admin_site.name, **model_info
+                        "down": reverse(
+                            "{admin_name}:{app}_{model}_change_order_inline".format(
+                                admin_name=self.admin_site.name, **model_info
+                            ),
+                            args=[order_obj_name, obj.id, "down"],
                         ),
-                        args=[order_obj_name, obj.id, 'down']
-                    ),
-                    'top': reverse(
-                        "{admin_name}:{app}_{model}_change_order_inline".format(
-                            admin_name=self.admin_site.name, **model_info
+                        "top": reverse(
+                            "{admin_name}:{app}_{model}_change_order_inline".format(
+                                admin_name=self.admin_site.name, **model_info
+                            ),
+                            args=[order_obj_name, obj.id, "top"],
                         ),
-                        args=[order_obj_name, obj.id, 'top']
-                    ),
-                    'bottom': reverse(
-                        "{admin_name}:{app}_{model}_change_order_inline".format(
-                            admin_name=self.admin_site.name, **model_info
+                        "bottom": reverse(
+                            "{admin_name}:{app}_{model}_change_order_inline".format(
+                                admin_name=self.admin_site.name, **model_info
+                            ),
+                            args=[order_obj_name, obj.id, "bottom"],
                         ),
-                        args=[order_obj_name, obj.id, 'bottom']
-                    ),
+                    },
+                    "query_string": self.request_query_string,
                 },
-                'query_string': self.request_query_string
-            })
-        return ''
-    move_up_down_links.short_description = _('Move')
+            )
+        return ""
+
+    move_up_down_links.short_description = _("Move")
 
 
 class OrderedTabularInline(OrderedInlineMixin, admin.TabularInline):
