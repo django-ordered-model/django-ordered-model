@@ -90,13 +90,16 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
         getattr(obj, direction)()
 
         # guts from request.get_full_path(), calculating ../../ and restoring GET arguments
-        mangled = "/".join(escape_uri_path(request.path).split("/")[0:-3])
+        get_params = request.GET.copy()
+        if "_redirect" in request.GET:
+            mangled = get_params['_redirect']
+            del get_params['_redirect']
+        else:
+            mangled = "/".join(escape_uri_path(request.path).split("/")[0:-3])
         redir_path = "%s%s%s" % (
             mangled,
             "/" if not mangled.endswith("/") else "",
-            ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
-            if request.META.get("QUERY_STRING", "")
-            else "",
+            "?" + get_params.urlencode(),
         )
 
         return HttpResponseRedirect(redir_path)
