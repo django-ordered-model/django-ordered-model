@@ -92,3 +92,10 @@ class ItemGroup(models.Model):
 class GroupedItem(OrderedModel):
     group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, related_name="items")
     order_with_respect_to = "group__user"
+
+
+class CustomMetaItem(OrderedModel):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'custom_meta_item'

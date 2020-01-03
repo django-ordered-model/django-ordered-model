@@ -4,6 +4,7 @@ docker build -t django-ordered-model -f - . << EOS
 FROM python:3
 WORKDIR /code
 RUN pip install django==2.0
+RUN pip install coverage
 VOLUME /code
 EOS
 docker run -v $PWD:/code django-ordered-model script/test-command
@@ -13,6 +14,7 @@ docker build -t django-ordered-model -f - . << EOS
 FROM python:3
 WORKDIR /code
 RUN pip install django==2.1
+RUN pip install coverage
 VOLUME /code
 EOS
 docker run -v $PWD:/code django-ordered-model script/test-command
