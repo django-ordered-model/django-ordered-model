@@ -53,7 +53,9 @@ class OrderedModelQuerySet(models.QuerySet):
     def above(self, order, inclusive=False):
         """Filter items above order."""
         lookup = "gte" if inclusive else "gt"
-        return self.filter(**{self._get_order_field_lookup(lookup): order}).order_by(self._get_order_field_name())
+        return self.filter(**{self._get_order_field_lookup(lookup): order}).order_by(
+            self._get_order_field_name()
+        )
 
     def above_instance(self, ref, inclusive=False):
         """Filter items above ref's order."""
@@ -64,7 +66,9 @@ class OrderedModelQuerySet(models.QuerySet):
     def below(self, order, inclusive=False):
         """Filter items below order."""
         lookup = "lte" if inclusive else "lt"
-        return self.filter(**{self._get_order_field_lookup(lookup): order}).order_by(self._get_order_field_name())
+        return self.filter(**{self._get_order_field_lookup(lookup): order}).order_by(
+            self._get_order_field_name()
+        )
 
     def below_instance(self, ref, inclusive=False):
         """Filter items below ref's order."""

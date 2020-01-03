@@ -98,4 +98,4 @@ class CustomMetaItem(OrderedModel):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = 'custom_meta_item'
+        db_table = "custom_meta_item"

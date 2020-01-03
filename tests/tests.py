@@ -926,40 +926,43 @@ class BulkCreateTests(TestCase):
 
 class CustomMetaTest(TestCase):
     def setUp(self):
-        self.item1 = CustomMetaItem.objects.create(name='one')
-        self.item2 = CustomMetaItem.objects.create(name='two')
-        self.item3 = CustomMetaItem.objects.create(name='three')
-        self.item4 = CustomMetaItem.objects.create(name='four')
+        self.item1 = CustomMetaItem.objects.create(name="one")
+        self.item2 = CustomMetaItem.objects.create(name="two")
+        self.item3 = CustomMetaItem.objects.create(name="three")
+        self.item4 = CustomMetaItem.objects.create(name="four")
 
     def test_saved_order(self):
         self.assertSequenceEqual(
-            CustomMetaItem.objects.order_by('order').values_list('pk', 'order'), [
+            CustomMetaItem.objects.order_by("order").values_list("pk", "order"),
+            [
                 (self.item1.pk, 0),
                 (self.item2.pk, 1),
                 (self.item3.pk, 2),
-                (self.item4.pk, 3)
-            ]
+                (self.item4.pk, 3),
+            ],
         )
 
     def test_next_order(self):
         self.item1.bottom()
         self.assertSequenceEqual(
-            CustomMetaItem.objects.order_by('order').values_list('pk', 'order'), [
+            CustomMetaItem.objects.order_by("order").values_list("pk", "order"),
+            [
                 (self.item2.pk, 0),
                 (self.item3.pk, 1),
                 (self.item4.pk, 2),
-                (self.item1.pk, 3)
-            ]
+                (self.item1.pk, 3),
+            ],
         )
 
-        top = CustomMetaItem.objects.order_by('order').first()
+        top = CustomMetaItem.objects.order_by("order").first()
 
         top.down()
         self.assertSequenceEqual(
-            CustomMetaItem.objects.order_by('order').values_list('pk', 'order'), [
+            CustomMetaItem.objects.order_by("order").values_list("pk", "order"),
+            [
                 (self.item3.pk, 0),
                 (self.item2.pk, 1),
                 (self.item4.pk, 2),
-                (self.item1.pk, 3)
-            ]
+                (self.item1.pk, 3),
+            ],
         )
