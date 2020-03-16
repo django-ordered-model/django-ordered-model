@@ -106,8 +106,14 @@ class OrderedModelQuerySet(models.QuerySet):
                     ] = self.filter_by_order_with_respect_to(obj).get_next_order()
                 setattr(obj, order_field_name, order_with_respect_to_mapping[key])
         else:
-            for order, obj in enumerate(objs, self.get_next_order()):
-                setattr(obj, order_field_name, order)
+            next_order = self.get_next_order()
+            for obj in objs:
+                orig_order = getattr(obj, order_field_name)
+                if orig_order is None:
+                    setattr(obj, order_field_name, next_order)
+                    next_order += 1
+                else:
+                    next_order = max(next_order, orig_order + 1)
         super().bulk_create(objs, batch_size=batch_size)
 
     def _get_order_with_respect_to_filter_kwargs(self, ref):
