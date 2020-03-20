@@ -3,3 +3,4 @@
 MANIFEST
 /dist
 /django_ordered_model.egg-info
+.idea
