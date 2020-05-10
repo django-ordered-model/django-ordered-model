@@ -1,10 +1,12 @@
 from functools import partial, reduce
+from operator import xor
 
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Max, Min, F
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+import xxhash
 
 
 def get_lookup_value(obj, field):
@@ -140,7 +142,8 @@ class OrderedModelBase(models.Model):
      - use the same field name in ``Meta.ordering``
     [optional]
      - set ``order_with_respect_to`` to limit order to a subset
-     - specify ``order_class_path`` in case of polymorphic classes
+     - specify ``order_class_path`` in case of polymorpic classes
+     - set ``use_order_mutex`` to True to get mutex lock before modifying order
     """
 
     objects = OrderedModelManager()
@@ -148,9 +151,21 @@ class OrderedModelBase(models.Model):
     order_field_name = None
     order_with_respect_to = None
     order_class_path = None
+    use_order_mutex = False
 
     class Meta:
         abstract = True
+
+    def _get_mutex(self):
+        hashes = [xxhash.xxh32_intdigest(self._meta.db_table)]
+        if self.order_with_respect_to:
+            order_with_respect_to = [self.order_with_respect_to] if isinstance(self.order_with_respect_to, str) \
+                else self.order_with_respect_to
+            hashes.extend([xxhash.xxh32_intdigest(str(getattr(self, attr))) for attr in order_with_respect_to])
+        return OrderedMutex.objects.select_for_update().get_or_create(key=reduce(xor, hashes))[0]
+
+    def _get_order_with_respect_to_filter_kwargs(self):
+        return self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
@@ -190,19 +205,30 @@ class OrderedModelBase(models.Model):
         """
         return self.get_ordering_queryset().above_instance(self).first()
 
+    @transaction.atomic()
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
         if getattr(self, order_field_name) is None:
+
+            if self.use_order_mutex:
+                mutex = self._get_mutex()
+
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, order_field_name, order)
         super().save(*args, **kwargs)
 
+    @transaction.atomic()
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
+
+        if self.use_order_mutex:
+            mutex = self._get_mutex()
+
         qs.above_instance(self).decrease_order(**extra_update)
         super().delete(*args, **kwargs)
 
+    @transaction.atomic()
     def swap(self, replacement):
         """
         Swap the position of this object with a replacement object.
@@ -210,6 +236,12 @@ class OrderedModelBase(models.Model):
         self._validate_ordering_reference(replacement)
 
         order_field_name = self.order_field_name
+
+        if self.use_order_mutex:
+            mutex = self._get_mutex()
+            self.refresh_from_db(fields=[order_field_name])
+            replacement.refresh_from_db(fields=[order_field_name])
+
         order, replacement_order = (
             getattr(self, order_field_name),
             getattr(replacement, order_field_name),
@@ -235,6 +267,7 @@ class OrderedModelBase(models.Model):
         if _next:
             self.swap(_next)
 
+    @transaction.atomic()
     def to(self, order, extra_update=None):
         """
         Move object to a certain position, updating all affected objects to move accordingly up or down.
@@ -247,6 +280,11 @@ class OrderedModelBase(models.Model):
             )
 
         order_field_name = self.order_field_name
+
+        if self.use_order_mutex:
+            mutex = self._get_mutex()
+            self.refresh_from_db(fields=[order_field_name])
+
         if order is None or getattr(self, order_field_name) == order:
             # object is already at desired position
             return
@@ -263,12 +301,19 @@ class OrderedModelBase(models.Model):
         setattr(self, order_field_name, order)
         self.save()
 
+    @transaction.atomic()
     def above(self, ref, extra_update=None):
         """
         Move this object above the referenced object.
         """
         self._validate_ordering_reference(ref)
         order_field_name = self.order_field_name
+
+        if self.use_order_mutex:
+            mutex = self._get_mutex()
+            self.refresh_from_db(fields=[order_field_name])
+            ref.refresh_from_db(fields=[order_field_name])
+
         if getattr(self, order_field_name) == getattr(ref, order_field_name):
             return
         if getattr(self, order_field_name) > getattr(ref, order_field_name):
@@ -277,12 +322,19 @@ class OrderedModelBase(models.Model):
             o = self.get_ordering_queryset().below_instance(ref).get_max_order() or 0
         self.to(o, extra_update=extra_update)
 
+    @transaction.atomic()
     def below(self, ref, extra_update=None):
         """
         Move this object below the referenced object.
         """
         self._validate_ordering_reference(ref)
         order_field_name = self.order_field_name
+
+        if self.use_order_mutex:
+            mutex = self._get_mutex()
+            self.refresh_from_db(fields=[order_field_name])
+            ref.refresh_from_db(fields=[order_field_name])
+
         if getattr(self, order_field_name) == getattr(ref, order_field_name):
             return
         if getattr(self, order_field_name) > getattr(ref, order_field_name):
@@ -318,3 +370,11 @@ class OrderedModel(OrderedModelBase):
     class Meta:
         abstract = True
         ordering = ("order",)
+
+
+class OrderedMutex(models.Model):
+    """
+    Mutex model that ensures ordering integrity
+    """
+
+    key = models.PositiveIntegerField(editable=False, primary_key=True)
