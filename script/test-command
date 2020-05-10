@@ -1,2 +1,0 @@
-#!/bin/sh
-coverage run `which django-admin.py` test --pythonpath=. --settings=tests.settings
