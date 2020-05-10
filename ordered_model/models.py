@@ -224,6 +224,8 @@ class OrderedModelBase(models.Model):
 
         if self.use_order_mutex:
             mutex = self._get_mutex()
+            order_field_name = self.order_field_name
+            self.refresh_from_db(fields=[order_field_name])
 
         qs.above_instance(self).decrease_order(**extra_update)
         super().delete(*args, **kwargs)
