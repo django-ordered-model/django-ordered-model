@@ -6,7 +6,6 @@ from django.db.models import Max, Min, F
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
-import xxhash
 
 
 def get_lookup_value(obj, field):
@@ -157,12 +156,12 @@ class OrderedModelBase(models.Model):
         abstract = True
 
     def _get_mutex(self):
-        hashes = [xxhash.xxh32_intdigest(self._meta.db_table)]
+        hashes = [hash(self._meta.db_table)]
         if self.order_with_respect_to:
             order_with_respect_to = [self.order_with_respect_to] if isinstance(self.order_with_respect_to, str) \
                 else self.order_with_respect_to
-            hashes.extend([xxhash.xxh32_intdigest(str(getattr(self, attr))) for attr in order_with_respect_to])
-        return OrderedMutex.objects.select_for_update().get_or_create(key=reduce(xor, hashes))[0]
+            hashes.extend([hash(getattr(self, attr)) for attr in order_with_respect_to])
+        return OrderedMutex.objects.select_for_update().get_or_create(key=reduce(xor, hashes) & 0xFFFFFFFF)[0]
 
     def _get_order_with_respect_to_filter_kwargs(self):
         return self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
