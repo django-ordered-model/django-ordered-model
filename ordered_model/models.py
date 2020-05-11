@@ -160,7 +160,7 @@ class OrderedModelBase(models.Model):
         if self.order_with_respect_to:
             order_with_respect_to = [self.order_with_respect_to] if isinstance(self.order_with_respect_to, str) \
                 else self.order_with_respect_to
-            hashes.extend([hash(getattr(self, attr)) for attr in order_with_respect_to])
+            hashes.extend([hash(get_lookup_value(self, attr)) for attr in order_with_respect_to])
         return OrderedMutex.objects.select_for_update().get_or_create(key=reduce(xor, hashes) & 0xFFFFFFFF)[0]
 
     def _get_order_with_respect_to_filter_kwargs(self):
