@@ -841,8 +841,8 @@ class OrderWithRespectToRelatedModelFieldTests(TestCase):
         )
 
 
-class PolymorpicOrderGenerationTests(TestCase):
-    def test_order_of_Baselist(self):
+class PolymorphicOrderGenerationTests(TestCase):
+    def test_order_of_baselist(self):
         o1 = OpenQuestion.objects.create()
         self.assertEqual(o1.order, 0)
         o1.save()
@@ -864,6 +864,10 @@ class PolymorpicOrderGenerationTests(TestCase):
         self.assertEqual(o2.order, 2)
         m1.refresh_from_db()
         self.assertEqual(m1.order, 3)
+
+    def test_returns_polymorphic(self):
+        o1 = OpenQuestion.objects.create()
+        self.assertIsInstance(o1, OpenQuestion)
 
 
 class BulkCreateTests(TestCase):

@@ -148,7 +148,7 @@ class OrderedModelBase(models.Model):
      - use the same field name in ``Meta.ordering``
     [optional]
      - set ``order_with_respect_to`` to limit order to a subset
-     - specify ``order_class_path`` in case of polymorpic classes
+     - specify ``order_class_path`` in case of polymorphic classes
     """
 
     objects = OrderedModelManager()
