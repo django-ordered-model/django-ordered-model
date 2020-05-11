@@ -1,18 +1,29 @@
 Change log
 ==========
 
+3.4.0 - 2020-05-11
+------------------
+
+- Fix `bulk_create` not returning
+- Fix `OrderedModelQuerySet` returning parent class instances for polymorphic cases
+- Support django 3.0
+- Drop support python 3.4
+
 3.3.0 - 2019-07-10
 ------------------
+
 - `bulk_create` now works with `order_with_respect_to`
 - more internal refactoring moved most methods to `OrderedModelQuerySet`
 
 3.2.0 - 2019-07-10
 ------------------
+
 - Internal refactoring now using `Manager` - probably will break some code
 - provide `bulk_create`
 
 3.1.1 - 2018-11-13
 ------------------
+
 - Fix arrow-top and arrow-bottom not found
 
 3.1.0 - 2018-11-10
@@ -39,7 +50,7 @@ Change log
 ------------------
 
 - Add support for Django 2.1
-- Support order_with_respect_to on related fields
+- Support `order_with_respect_to` on related fields
 - Add Tabular and Stacked inline 
 
 2.0.0 - 2018-06-07
