@@ -127,15 +127,7 @@ class OrderedModelQuerySet(models.QuerySet):
 
 
 class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
-    def _get_model(self):
-        order_class_path = self.model.order_class_path
-        if order_class_path:
-            return import_string(order_class_path)
-        return self.model
-
-    def get_queryset(self):
-        model = self._get_model()
-        return self._queryset_class(model=model, using=self._db, hints=self._hints)
+    pass
 
 
 class OrderedModelBase(models.Model):
@@ -168,7 +160,7 @@ class OrderedModelBase(models.Model):
                 raise ValueError(
                     "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                         self,
-                        self._meta.default_manager._get_model(),
+                        self._meta.default_manager.model,
                         " and ".join(
                             [
                                 "'{}'".format(o)
@@ -179,7 +171,12 @@ class OrderedModelBase(models.Model):
                 )
 
     def get_ordering_queryset(self, qs=None):
-        qs = qs or self._meta.default_manager.all()
+        if qs is None:
+            if self.order_class_path:
+                model = import_string(self.order_class_path)
+                qs = model._meta.default_manager.all()
+            else:
+                qs = self._meta.default_manager.all()
         return qs.filter_by_order_with_respect_to(self)
 
     def previous(self):
