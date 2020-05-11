@@ -160,27 +160,23 @@ class OrderedModelBase(models.Model):
     class Meta:
         abstract = True
 
-    def _get_order_with_respect_to_filter_kwargs(self):
-        return self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
-
     def _validate_ordering_reference(self, ref):
-        valid = self.order_with_respect_to is None or (
-            self._get_order_with_respect_to_filter_kwargs()
-            == ref._get_order_with_respect_to_filter_kwargs()
-        )
-        if not valid:
-            raise ValueError(
-                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                    self,
-                    self._meta.default_manager._get_model(),
-                    " and ".join(
-                        [
-                            "'{}'".format(o)
-                            for o in self._get_order_with_respect_to_filter_kwargs()
-                        ]
-                    ),
+        if self.order_with_respect_to is not None:
+            self_kwargs = self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
+            ref_kwargs = ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(ref)
+            if self_kwargs != ref_kwargs:
+                raise ValueError(
+                    "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
+                        self,
+                        self._meta.default_manager._get_model(),
+                        " and ".join(
+                            [
+                                "'{}'".format(o)
+                                for o in self_kwargs
+                            ]
+                        ),
+                    )
                 )
-            )
 
     def get_ordering_queryset(self, qs=None):
         qs = qs or self._meta.default_manager.all()
