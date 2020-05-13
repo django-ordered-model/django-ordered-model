@@ -1,6 +1,11 @@
 Change log
 ==========
 
+3.4.1 - 2020-05-11
+------------------
+
+- Fix regression in admin OrderedInlineMixin after refactor in 3.4.0
+
 3.4.0 - 2020-05-11
 ------------------
 

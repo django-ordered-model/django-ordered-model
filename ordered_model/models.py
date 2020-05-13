@@ -154,19 +154,18 @@ class OrderedModelBase(models.Model):
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
-            self_kwargs = self._meta.default_manager._get_order_with_respect_to_filter_kwargs(self)
-            ref_kwargs = ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(ref)
+            self_kwargs = self._meta.default_manager._get_order_with_respect_to_filter_kwargs(
+                self
+            )
+            ref_kwargs = ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(
+                ref
+            )
             if self_kwargs != ref_kwargs:
                 raise ValueError(
                     "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
                         self,
                         self._meta.default_manager.model,
-                        " and ".join(
-                            [
-                                "'{}'".format(o)
-                                for o in self_kwargs
-                            ]
-                        ),
+                        " and ".join(["'{}'".format(o) for o in self_kwargs]),
                     )
                 )
 
