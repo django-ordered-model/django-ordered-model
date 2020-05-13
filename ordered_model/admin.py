@@ -1,11 +1,5 @@
-import operator
+from functools import update_wrapper
 
-from functools import update_wrapper, reduce
-
-from urllib.parse import urlencode
-
-from django.db import models
-from django.core.paginator import Paginator
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -13,7 +7,7 @@ from django.utils.encoding import escape_uri_path, iri_to_uri
 from django.utils.translation import gettext_lazy as _
 from django.template.loader import render_to_string
 from django.contrib import admin
-from django.contrib.admin.utils import unquote, lookup_needs_distinct
+from django.contrib.admin.utils import unquote
 from django.contrib.admin.options import csrf_protect_m
 from django.contrib.admin.views.main import ChangeList
 from django import VERSION
@@ -204,7 +198,10 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
 
         # Find the fields which refer to the parent model of this inline, and
         # use one of them if they aren't None.
-        order_with_respect_to = obj._get_order_with_respect_to_filter_kwargs() or []
+        order_with_respect_to = (
+            obj._meta.default_manager._get_order_with_respect_to_filter_kwargs(obj)
+            or []
+        )
         fields = [
             str(value.pk)
             for value in order_with_respect_to.values()
