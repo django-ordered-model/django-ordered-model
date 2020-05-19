@@ -115,17 +115,17 @@ the order value of all objects that were below the moved object by one.
 
 ### Updating fields that would be updated during save()
 
-For performance reasons, the delete(), to(), below(), above(), top(), and bottom()
-methods use Django's update() method to change the order of other objects that
-are shifted as a result of one of these calls. If the model has fields that
+For performance reasons, the `delete()`, `to()`, `below()`, `above()`, `top()`, and
+`bottom()` methods use Django's `update()` method to change the order of other objects
+that are shifted as a result of one of these calls. If the model has fields that
 are typically updated in a customized save() method, or through other app level
-functionality such as DateTimeField(auto_now=True), you can add additional fields
-to be passed through to update(). This will only impact objects where their order
+functionality such as `DateTimeField(auto_now=True)`, you can add additional fields
+to be passed through to `update()`. This will only impact objects where their order
 is being shifted as a result of an operation on the target object, not the target
 object itself.
 
 ```python
-foo.to(12, extra_update={'modified': now()}
+foo.to(12, extra_update={'modified': now()})
 ```
 
 ### Get the previous or next objects
