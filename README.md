@@ -244,6 +244,7 @@ Extending `OrderedModel` creates a `models.PositiveIntegerField` field called `o
 ```python
 class MyModel(OrderedModelBase):
     ...
+    sort_order = models.PositiveIntegerField(editable=False, db_index=True)
     order_field_name = "sort_order"
 
     class Meta:
