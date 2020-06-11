@@ -236,6 +236,24 @@ class Item(OrderedModel):
     objects = ItemManager()
 ```
 
+
+Custom ordering field
+---------------------
+Extending `OrderedModel` creates a `models.PositiveIntegerField` field called `order` and the appropriate migrations. If you wish to use an existing model field to store the ordering, you can set the attribute `order_field_name` to match your field name:
+
+```python
+class MyModel(OrderedModelBase):
+    ...
+    sort_order = models.PositiveIntegerField(editable=False, db_index=True)
+    order_field_name = "sort_order"
+
+    class Meta:
+        ordering = ("sort_order",)
+```
+
+See `tests/models.py` object `CustomOrderFieldModel` for an example.
+
+
 Admin integration
 -----------------
 
