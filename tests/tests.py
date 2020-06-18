@@ -925,3 +925,9 @@ class BulkCreateTests(TestCase):
             ),
             [0, 1],
         )
+
+
+class TestDiangoSerializer(TestCase):
+    def test(self):
+        Item.objects.bulk_create([Item(name="1", order=1), Item(name="2", order=0)])
+        self.assertSequenceEqual(Item.objects.all().values_list("name", flat=True), ["2", "1"])
