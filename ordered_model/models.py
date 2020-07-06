@@ -5,6 +5,7 @@ from django.db.models import Max, Min, F
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+import django
 
 
 def get_lookup_value(obj, field):
@@ -88,7 +89,7 @@ class OrderedModelQuerySet(models.QuerySet):
             update_kwargs.update(extra_kwargs)
         return self.update(**update_kwargs)
 
-    def bulk_create(self, objs, batch_size=None):
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False):
         order_field_name = self._get_order_field_name()
         order_with_respect_to = self.model.order_with_respect_to
         objs = list(objs)
@@ -109,7 +110,11 @@ class OrderedModelQuerySet(models.QuerySet):
         else:
             for order, obj in enumerate(objs, self.get_next_order()):
                 setattr(obj, order_field_name, order)
-        return super().bulk_create(objs, batch_size=batch_size)
+                
+        if django.VERSION[0] >= 3:
+            return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts)
+        else:
+            return super().bulk_create(objs, batch_size=batch_size)
 
     def _get_order_with_respect_to_filter_kwargs(self, ref):
         order_with_respect_to = self._get_order_with_respect_to()
