@@ -1,6 +1,11 @@
 Change log
 ==========
 
+Unreleased
+----------
+
+- Fix `OrderedTabularInline` for models with custom primary key field (#233)
+
 3.4.1 - 2020-05-11
 ------------------
 
