@@ -193,7 +193,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         return HttpResponseRedirect(redir_path)
 
     def move_up_down_links(self, obj):
-        if not obj.id:
+        if not obj.pk:
             return ""
 
         # Find the fields which refer to the parent model of this inline, and
@@ -225,25 +225,25 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                             "{admin_name}:{app}_{model}_change_order_inline".format(
                                 admin_name=self.admin_site.name, **model_info
                             ),
-                            args=[order_obj_name, obj.id, "up"],
+                            args=[order_obj_name, obj.pk, "up"],
                         ),
                         "down": reverse(
                             "{admin_name}:{app}_{model}_change_order_inline".format(
                                 admin_name=self.admin_site.name, **model_info
                             ),
-                            args=[order_obj_name, obj.id, "down"],
+                            args=[order_obj_name, obj.pk, "down"],
                         ),
                         "top": reverse(
                             "{admin_name}:{app}_{model}_change_order_inline".format(
                                 admin_name=self.admin_site.name, **model_info
                             ),
-                            args=[order_obj_name, obj.id, "top"],
+                            args=[order_obj_name, obj.pk, "top"],
                         ),
                         "bottom": reverse(
                             "{admin_name}:{app}_{model}_change_order_inline".format(
                                 admin_name=self.admin_site.name, **model_info
                             ),
-                            args=[order_obj_name, obj.id, "bottom"],
+                            args=[order_obj_name, obj.pk, "bottom"],
                         ),
                     },
                     "query_string": self.request_query_string,
