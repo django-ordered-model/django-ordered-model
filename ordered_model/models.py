@@ -190,7 +190,7 @@ class OrderedModelBase(models.Model):
                 qs = model._meta.default_manager.all()
             else:
                 qs = self._meta.default_manager.all()
-        return qs.filter_by_order_with_respect_to(self)
+        return qs.filter_by_order_with_respect_to(self).order_by(self.order_field_name)
 
     def previous(self):
         """
