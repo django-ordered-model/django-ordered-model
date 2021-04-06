@@ -5,10 +5,11 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
+  - "3.9"
 install:
   - python setup.py sdist bdist_wheel
-  - pip install dist/*
-  - pip install tox-travis codecov
+  - python -m pip install dist/*.whl
+  - python -m pip install tox-travis codecov
 script: tox
 after_success:
   - codecov
