@@ -335,10 +335,17 @@ admin.site.register(Pizza, PizzaAdmin)
 Test suite
 ----------
 
-Requires Docker.
+To run the tests against your current environment, use:
 
 ```bash
-$ script/test
+$ django-admin test --pythonpath=. --settings=tests.settings
+```
+
+Otherwise please install `tox` and run the tests for a specific environment with `-e` or all environments:
+
+```bash
+$ tox -e py36-django30
+$ tox
 ```
 
 Compatibility with Django and Python
