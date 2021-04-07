@@ -32,11 +32,13 @@ class Answer(OrderedModel):
             self.order, self.question_id, self.user_id
         )
 
+
 # test ordering whilst overriding the automatic primary key (ie. not models.Model.id)
 class CustomItem(OrderedModel):
     pkid = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=100)
     modified = models.DateTimeField(null=True, blank=True)
+
 
 # test ordering over custom ordering field (ie. not OrderedModel.order)
 class CustomOrderFieldModel(OrderedModelBase):
@@ -67,6 +69,21 @@ class PizzaToppingsThroughModel(OrderedModel):
         ordering = ("pizza", "order")
 
 
+# test many-one where the item has custom PK
+
+
+class CustomPKGroup(models.Model):
+    name = models.CharField(max_length=100)
+
+
+class CustomPKGroupItem(OrderedModel):
+    group = models.ForeignKey(CustomPKGroup, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, primary_key=True)
+    order_with_respect_to = "group"
+
+
+# test ordering on a base class (with order_class_path)
+# ie. OpenQuestion and GroupedItem can be ordered wrt each other
 class BaseQuestion(OrderedModel):
     order_class_path = __module__ + ".BaseQuestion"
     question = models.TextField(max_length=100)
