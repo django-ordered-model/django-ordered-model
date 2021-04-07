@@ -17,14 +17,16 @@ See our [compatability notes](#compatibility-with-django-and-python) for the app
 Installation
 ------------
 
-```bash
-$ python setup.py install
-```
-
-You can use Pip:
+Please install using Pip:
 
 ```bash
 $ pip install django-ordered-model
+```
+
+Or if you have checked out the repository:
+
+```bash
+$ python setup.py install
 ```
 
 Usage
