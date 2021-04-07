@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.test import TestCase
+from django import VERSION
 
 from tests.models import (
     Answer,
@@ -10,6 +11,8 @@ from tests.models import (
     Question,
     CustomItem,
     CustomOrderFieldModel,
+    CustomPKGroupItem,
+    CustomPKGroup,
     Pizza,
     Topping,
     PizzaToppingsThroughModel,
@@ -924,4 +927,44 @@ class BulkCreateTests(TestCase):
                 "order", flat=True
             ),
             [0, 1],
+        )
+
+
+class OrderedModelAdminWithCustomPKInlineTest(TestCase):
+    def setUp(self):
+        User.objects.create_superuser("admin", "a@example.com", "admin")
+        self.assertTrue(self.client.login(username="admin", password="admin"))
+        group = CustomPKGroup.objects.create(name="g1")
+        CustomPKGroupItem.objects.create(name="g1 i1", group=group)
+        CustomPKGroupItem.objects.create(name="g1 i2", group=group)
+        group = CustomPKGroup.objects.create(name="g2")
+        CustomPKGroupItem.objects.create(name="g2 i1", group=group)
+
+    def test_move_links(self):
+        res = self.client.get("/admin/tests/custompkgroup/1/change", follow=True)
+        self.assertContains(res, text="CustomPKGroupItem object (g1 i1)")
+        self.assertContains(res, text="CustomPKGroupItem object (g1 i2)")
+
+        # Check for the inline column header
+        # see Django release notes https://docs.djangoproject.com/en/dev/releases/2.2/#django-contrib-admin
+        # What’s new in Django 2.2 > Minor features > django.contrib.admin > Addd a CSS class to the column headers of TabularInline
+        if VERSION >= (2, 2):
+            self.assertContains(
+                res, text='<th class="column-move_up_down_links">Move</th>', html=True
+            )
+        else:
+            self.assertContains(
+                res, text="<th>Move</th>", html=True
+            )  # pragma: no cover
+
+        # Check move up/down links
+        self.assertContains(
+            res,
+            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-up/"><img src="ordered_model/arrow-up.gif"></a>',
+            html=True,
+        )
+        self.assertContains(
+            res,
+            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-down/"><img src="ordered_model/arrow-down.gif"></a>',
+            html=True,
         )
