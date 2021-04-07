@@ -137,8 +137,8 @@ foo.previous()
 foo.next()
 ```
 
-previous() and next() get the neighbouring objects directly above of below
-within the ordered stack depending on the direction.
+The `previous()` and `next()` methods return the neighbouring objects directly above or below
+within the ordered stack.
 
 ## Subset Ordering
 
