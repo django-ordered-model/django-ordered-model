@@ -3,10 +3,12 @@ from django.db import models
 from ordered_model.models import OrderedModel, OrderedModelBase
 
 
+# test simple automatic ordering
 class Item(OrderedModel):
     name = models.CharField(max_length=100)
 
 
+# test Answer.order_with_respect_to being a tuple
 class Question(models.Model):
     pass
 
@@ -30,13 +32,13 @@ class Answer(OrderedModel):
             self.order, self.question_id, self.user_id
         )
 
-
+# test ordering whilst overriding the automatic primary key (ie. not models.Model.id)
 class CustomItem(OrderedModel):
-    id = models.CharField(max_length=100, primary_key=True)
+    pkid = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=100)
     modified = models.DateTimeField(null=True, blank=True)
 
-
+# test ordering over custom ordering field (ie. not OrderedModel.order)
 class CustomOrderFieldModel(OrderedModelBase):
     sort_order = models.PositiveIntegerField(editable=False, db_index=True)
     name = models.CharField(max_length=100)
@@ -46,6 +48,7 @@ class CustomOrderFieldModel(OrderedModelBase):
         ordering = ("sort_order",)
 
 
+# test ThroughModel ordering with Pizzas/Topping
 class Topping(models.Model):
     name = models.CharField(max_length=100)
 
@@ -83,6 +86,7 @@ class OpenQuestion(BaseQuestion):
     answer = models.TextField(max_length=100)
 
 
+# test grouping by a foreign model field (group__user)
 class ItemGroup(models.Model):
     user = models.ForeignKey(
         TestUser, on_delete=models.CASCADE, related_name="item_groups"
