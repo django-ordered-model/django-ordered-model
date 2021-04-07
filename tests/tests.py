@@ -273,10 +273,10 @@ class OrderWithRespectToTests(TestCase):
 
 class CustomPKTest(TestCase):
     def setUp(self):
-        self.item1 = CustomItem.objects.create(id=str(uuid.uuid4()), name="1")
-        self.item2 = CustomItem.objects.create(id=str(uuid.uuid4()), name="2")
-        self.item3 = CustomItem.objects.create(id=str(uuid.uuid4()), name="3")
-        self.item4 = CustomItem.objects.create(id=str(uuid.uuid4()), name="4")
+        self.item1 = CustomItem.objects.create(pkid=str(uuid.uuid4()), name="1")
+        self.item2 = CustomItem.objects.create(pkid=str(uuid.uuid4()), name="2")
+        self.item3 = CustomItem.objects.create(pkid=str(uuid.uuid4()), name="3")
+        self.item4 = CustomItem.objects.create(pkid=str(uuid.uuid4()), name="4")
 
     def test_saved_order(self):
         self.assertSequenceEqual(
