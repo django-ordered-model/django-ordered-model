@@ -5,6 +5,7 @@ Unreleased
 ----------
 
 - Fix `OrderedTabularInline` for models with custom primary key field (#233)
+- Add management command `reorder_model` that can re-order most models with a broken ordering
 
 3.4.1 - 2020-05-11
 ------------------

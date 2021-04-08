@@ -1,4 +1,5 @@
 import uuid
+from io import StringIO
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -979,12 +980,15 @@ class ReorderModelTestCase(TestCase):
         """
         OpenQuestion.objects.create(order=0)
         OpenQuestion.objects.create(order=0)
-
-        call_command("reorder_model", "tests.OpenQuestion", verbosity=0)
+        out = StringIO()
+        call_command("reorder_model", "tests.OpenQuestion", verbosity=1, stdout=out)
 
         self.assertSequenceEqual(
             OpenQuestion.objects.values_list("order", flat=True).order_by("order"),
             [0, 1],
+        )
+        self.assertIn(
+            "changing order of tests.OpenQuestion (2) from 0 to 1", out.getvalue()
         )
 
     def test_reorder_with_respect_to(self):
@@ -1008,7 +1012,8 @@ class ReorderModelTestCase(TestCase):
         GroupedItem.objects.create(group=group2)
         GroupedItem.objects.create(group=group2)
 
-        call_command("reorder_model", "tests.GroupedItem", verbosity=0)
+        out = StringIO()
+        call_command("reorder_model", "tests.GroupedItem", verbosity=1, stdout=out)
 
         self.assertSequenceEqual(
             GroupedItem.objects.filter(group=group1)
@@ -1022,6 +1027,10 @@ class ReorderModelTestCase(TestCase):
             .values_list("order", flat=True)
             .order_by("order"),
             [0, 1, 2],
+        )
+
+        self.assertEquals(
+            "changing order of tests.GroupedItem (3) from 1 to 2\n", out.getvalue()
         )
 
     def test_delete_bypass(self):
@@ -1039,9 +1048,14 @@ class ReorderModelTestCase(TestCase):
         )
 
         # repair
-        call_command("reorder_model", "tests.OpenQuestion")
+        out = StringIO()
+        call_command("reorder_model", "tests.OpenQuestion", stdout=out)
 
         self.assertEqual([0, 1, 2], [i.order for i in OpenQuestion.objects.all()])
         self.assertEqual(
             ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
+        )
+
+        self.assertEquals(
+            "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
