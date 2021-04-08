@@ -980,11 +980,11 @@ class ReorderModelTestCase(TestCase):
         OpenQuestion.objects.create(order=0)
         OpenQuestion.objects.create(order=0)
 
-        call_command('reorder_model', 'tests.OpenQuestion', verbosity=0)
+        call_command("reorder_model", "tests.OpenQuestion", verbosity=0)
 
         self.assertSequenceEqual(
-            OpenQuestion.objects.values_list('order', flat=True).order_by('order'),
-            [0, 1]
+            OpenQuestion.objects.values_list("order", flat=True).order_by("order"),
+            [0, 1],
         )
 
     def test_reorder_with_respect_to(self):
@@ -1008,32 +1008,40 @@ class ReorderModelTestCase(TestCase):
         GroupedItem.objects.create(group=group2)
         GroupedItem.objects.create(group=group2)
 
-        call_command('reorder_model', 'tests.GroupedItem', verbosity=0)
+        call_command("reorder_model", "tests.GroupedItem", verbosity=0)
 
         self.assertSequenceEqual(
-            GroupedItem.objects.filter(group=group1).values_list('order', flat=True).order_by('order'),
-            [0, 1, 2, 3, 4]
+            GroupedItem.objects.filter(group=group1)
+            .values_list("order", flat=True)
+            .order_by("order"),
+            [0, 1, 2, 3, 4],
         )
 
         self.assertSequenceEqual(
-            GroupedItem.objects.filter(group=group2).values_list('order', flat=True).order_by('order'),
-            [0, 1, 2]
+            GroupedItem.objects.filter(group=group2)
+            .values_list("order", flat=True)
+            .order_by("order"),
+            [0, 1, 2],
         )
 
     def test_delete_bypass(self):
-        OpenQuestion.objects.create(answer='1', order=0)
-        OpenQuestion.objects.create(answer='2', order=1)
-        OpenQuestion.objects.create(answer='3', order=2)
-        OpenQuestion.objects.create(answer='4', order=3)
+        OpenQuestion.objects.create(answer="1", order=0)
+        OpenQuestion.objects.create(answer="2", order=1)
+        OpenQuestion.objects.create(answer="3", order=2)
+        OpenQuestion.objects.create(answer="4", order=3)
 
         # bypass our OrderedModel delete logic to leave a hole in ordering
-        OpenQuestion.objects.filter(answer='3').delete()
+        OpenQuestion.objects.filter(answer="3").delete()
 
         self.assertEqual([0, 1, 3], [i.order for i in OpenQuestion.objects.all()])
-        self.assertEqual(['1', '2', '4'], [i.answer for i in OpenQuestion.objects.all()])
+        self.assertEqual(
+            ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
+        )
 
         # repair
-        call_command('reorder_model', 'tests.OpenQuestion')
+        call_command("reorder_model", "tests.OpenQuestion")
 
         self.assertEqual([0, 1, 2], [i.order for i in OpenQuestion.objects.all()])
-        self.assertEqual(['1', '2', '4'], [i.answer for i in OpenQuestion.objects.all()])
+        self.assertEqual(
+            ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
+        )
