@@ -1,14 +1,13 @@
 from django.apps import apps
 from django.core.management import BaseCommand, CommandError
 
-import six
 from ordered_model.models import OrderedModelBase
 
 
 def get_order_with_respect_to(model):
     if not model.order_with_respect_to:
         return None
-    if isinstance(model.order_with_respect_to, six.string_types):
+    if isinstance(model.order_with_respect_to, str):
         return model.order_with_respect_to
     assert (
         len(model.order_with_respect_to) <= 1
