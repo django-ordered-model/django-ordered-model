@@ -154,11 +154,13 @@ class OrderedModelBase(models.Model):
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
-            self_kwargs = self._meta.default_manager._get_order_with_respect_to_filter_kwargs(
-                self
+            self_kwargs = (
+                self._meta.default_manager._get_order_with_respect_to_filter_kwargs(
+                    self
+                )
             )
-            ref_kwargs = ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(
-                ref
+            ref_kwargs = (
+                ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(ref)
             )
             if self_kwargs != ref_kwargs:
                 raise ValueError(
