@@ -19,7 +19,7 @@ class Command(BaseCommand):
     help = "Re-do the ordering of a certain Model"
 
     def add_arguments(self, parser):
-        parser.add_argument("model_name", type=str, nargs="+")
+        parser.add_argument("model_name", type=str, nargs="*")
 
     def handle(self, *args, **options):
         """
@@ -27,7 +27,21 @@ class Command(BaseCommand):
         try re-ordering to a working state.
         """
         self.verbosity = options["verbosity"]
+        orderedmodels = [
+            m._meta.label for m in apps.get_models() if issubclass(m, OrderedModelBase)
+        ]
+        candidates = "\n   {}".format("\n   ".join(orderedmodels))
+        if not options["model_name"]:
+            return self.stdout.write("No model specified, try: {}".format(candidates))
+
         for model_name in options["model_name"]:
+            if model_name not in orderedmodels:
+                self.stdout.write(
+                    "Model '{}' is not an ordered model, try: {}".format(
+                        model_name, candidates
+                    )
+                )
+                break
             model = apps.get_model(model_name)
             if not issubclass(model, OrderedModelBase):
                 raise CommandError(

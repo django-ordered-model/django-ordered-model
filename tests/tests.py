@@ -1045,6 +1045,16 @@ class ReorderModelTestCase(TestCase):
             "reorder_model", "tests.CustomOrderFieldModel", verbosity=1, stdout=out
         )
 
+    def test_shows_alternatives(self):
+        out = StringIO()
+        call_command("reorder_model", "test.Missing", verbosity=1, stdout=out)
+        self.assertIn("Model 'test.Missing' is not an ordered model", out.getvalue())
+        self.assertIn("tests.BaseQuestion", out.getvalue())
+
+        out = StringIO()
+        call_command("reorder_model", verbosity=1, stdout=out)
+        self.assertIn("tests.BaseQuestion", out.getvalue())
+
     def test_delete_bypass(self):
         OpenQuestion.objects.create(answer="1", order=0)
         OpenQuestion.objects.create(answer="2", order=1)
