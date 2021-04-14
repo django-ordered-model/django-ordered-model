@@ -1,6 +1,8 @@
 import uuid
+from io import StringIO
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.utils.timezone import now
 from django.test import TestCase
 from django import VERSION
@@ -967,4 +969,115 @@ class OrderedModelAdminWithCustomPKInlineTest(TestCase):
             res,
             text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-down/"><img src="ordered_model/arrow-down.gif"></a>',
             html=True,
+        )
+
+
+class ReorderModelTestCase(TestCase):
+    fixtures = ["test_items.json"]
+
+    def test_reorder_with_no_respect_to(self):
+        """
+        Test that 'reorder_model' changes the order of OpenQuestions
+        when they overlap.
+        """
+        OpenQuestion.objects.create(order=0)
+        OpenQuestion.objects.create(order=0)
+        out = StringIO()
+        call_command("reorder_model", "tests.OpenQuestion", verbosity=1, stdout=out)
+
+        self.assertSequenceEqual(
+            OpenQuestion.objects.values_list("order", flat=True).order_by("order"),
+            [0, 1],
+        )
+        self.assertIn(
+            "changing order of tests.OpenQuestion (2) from 0 to 1", out.getvalue()
+        )
+
+    def test_reorder_with_respect_to(self):
+        """
+        Test that when 'with_respect_to' is used 'reorder_model' changes to
+        values of the 'order' field to unique values.
+        """
+        user1 = TestUser.objects.create()
+        group1 = ItemGroup.objects.create(user=user1)
+
+        GroupedItem.objects.create(group=group1, order=0)
+        GroupedItem.objects.create(group=group1, order=1)
+        GroupedItem.objects.create(group=group1, order=1)
+        GroupedItem.objects.create(group=group1, order=3)
+        GroupedItem.objects.create(group=group1, order=4)
+
+        user2 = TestUser.objects.create()
+        group2 = ItemGroup.objects.create(user=user2)
+
+        GroupedItem.objects.create(group=group2)
+        GroupedItem.objects.create(group=group2)
+        GroupedItem.objects.create(group=group2)
+
+        out = StringIO()
+        call_command("reorder_model", "tests.GroupedItem", verbosity=1, stdout=out)
+
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group=group1)
+            .values_list("order", flat=True)
+            .order_by("order"),
+            [0, 1, 2, 3, 4],
+        )
+
+        self.assertSequenceEqual(
+            GroupedItem.objects.filter(group=group2)
+            .values_list("order", flat=True)
+            .order_by("order"),
+            [0, 1, 2],
+        )
+
+        self.assertEquals(
+            "changing order of tests.GroupedItem (3) from 1 to 2\n", out.getvalue()
+        )
+
+    def test_reorder_with_custom_order_field(self):
+        """
+        Test that 'reorder_model' changes the order of OpenQuestions
+        when they overlap.
+        """
+        out = StringIO()
+        call_command(
+            "reorder_model", "tests.CustomOrderFieldModel", verbosity=1, stdout=out
+        )
+
+    def test_shows_alternatives(self):
+        out = StringIO()
+        call_command("reorder_model", "test.Missing", verbosity=1, stdout=out)
+        self.assertIn("Model 'test.Missing' is not an ordered model", out.getvalue())
+        self.assertIn("tests.BaseQuestion", out.getvalue())
+
+        out = StringIO()
+        call_command("reorder_model", verbosity=1, stdout=out)
+        self.assertIn("tests.BaseQuestion", out.getvalue())
+
+    def test_delete_bypass(self):
+        OpenQuestion.objects.create(answer="1", order=0)
+        OpenQuestion.objects.create(answer="2", order=1)
+        OpenQuestion.objects.create(answer="3", order=2)
+        OpenQuestion.objects.create(answer="4", order=3)
+
+        # bypass our OrderedModel delete logic to leave a hole in ordering
+        OpenQuestion.objects.filter(answer="3").delete()
+
+        self.assertEqual([0, 1, 3], [i.order for i in OpenQuestion.objects.all()])
+        self.assertEqual(
+            ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
+        )
+
+        # repair
+        out = StringIO()
+        call_command("reorder_model", "tests.OpenQuestion", stdout=out)
+
+        self.assertEqual([0, 1, 2], [i.order for i in OpenQuestion.objects.all()])
+        self.assertEqual(
+            ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
+        )
+
+        self.assertEquals(
+            "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
