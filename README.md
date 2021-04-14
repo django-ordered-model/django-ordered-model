@@ -334,7 +334,7 @@ class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
 admin.site.register(Pizza, PizzaAdmin)
 ```
 
-**Note:** `OrderedModelAdmin` requires the inline subclasses of `OrderedTabularInline` and `OrderedStackedInline` to be listed on `inlines`. If you are using `get_inlines()` or `get_inline_instances()` to return the list of inlines, make sure that the returned inlines are defined in `inlines` too or you might encounter a “No Reverse Match” error when accessing model change view.
+**Note:** `OrderedModelAdmin` requires the inline subclasses of `OrderedTabularInline` and `OrderedStackedInline` to be listed on `inlines` so that we register appropriate URL routes. If you are using Django 3.0 feature `get_inlines()` or `get_inline_instances()` to return the list of inlines dynamically, consider it a filter and still add them to `inlines` or you might encounter a “No Reverse Match” error when accessing model change view.
 
 Re-ordering models
 ------------------
