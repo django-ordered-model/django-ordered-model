@@ -65,11 +65,11 @@ class Command(BaseCommand):
             )
             for relation_to in relation_to_list:
                 kwargs = {order_with_respect_to: relation_to}
-                with transaction.atomic():
-                    self.reorder_queryset(model.objects.filter(**kwargs))
+                self.reorder_queryset(model.objects.filter(**kwargs))
         else:
             self.reorder_queryset(model.objects.all())
 
+    @transaction.atomic
     def reorder_queryset(self, queryset):
         model = queryset.model
         order_field_name = model.order_field_name
