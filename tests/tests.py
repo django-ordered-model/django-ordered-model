@@ -973,6 +973,8 @@ class OrderedModelAdminWithCustomPKInlineTest(TestCase):
 
 
 class ReorderModelTestCase(TestCase):
+    fixtures = ["test_items.json"]
+
     def test_reorder_with_no_respect_to(self):
         """
         Test that 'reorder_model' changes the order of OpenQuestions
@@ -1031,6 +1033,16 @@ class ReorderModelTestCase(TestCase):
 
         self.assertEquals(
             "changing order of tests.GroupedItem (3) from 1 to 2\n", out.getvalue()
+        )
+
+    def test_reorder_with_custom_order_field(self):
+        """
+        Test that 'reorder_model' changes the order of OpenQuestions
+        when they overlap.
+        """
+        out = StringIO()
+        call_command(
+            "reorder_model", "tests.CustomOrderFieldModel", verbosity=1, stdout=out
         )
 
     def test_delete_bypass(self):

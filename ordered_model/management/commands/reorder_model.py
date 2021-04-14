@@ -59,7 +59,7 @@ class Command(BaseCommand):
         order_field_name = model.order_field_name
 
         for order, obj in enumerate(queryset):
-            if obj.order != order:
+            if getattr(obj, order_field_name) != order:
                 if self.verbosity:
                     self.stdout.write(
                         "changing order of {} ({}) from {} to {}".format(
