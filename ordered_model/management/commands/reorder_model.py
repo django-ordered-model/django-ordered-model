@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.core.management import BaseCommand, CommandError
+from django.db import DatabaseError, transaction
 
 from ordered_model.models import OrderedModelBase
 
@@ -64,7 +65,8 @@ class Command(BaseCommand):
             )
             for relation_to in relation_to_list:
                 kwargs = {order_with_respect_to: relation_to}
-                self.reorder_queryset(model.objects.filter(**kwargs))
+                with transaction.atomic():
+                    self.reorder_queryset(model.objects.filter(**kwargs))
         else:
             self.reorder_queryset(model.objects.all())
 
