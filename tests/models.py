@@ -54,10 +54,16 @@ class CustomOrderFieldModel(OrderedModelBase):
 class Topping(models.Model):
     name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+
 
 class Pizza(models.Model):
     name = models.CharField(max_length=100)
     toppings = models.ManyToManyField(Topping, through="PizzaToppingsThroughModel")
+
+    def __str__(self):
+        return self.name
 
 
 class PizzaToppingsThroughModel(OrderedModel):
@@ -69,9 +75,16 @@ class PizzaToppingsThroughModel(OrderedModel):
         ordering = ("pizza", "order")
 
 
+# Admin only allows each model class to be registered once. However you can register a proxy class,
+# and (for presentation purposes only) rename it to match the existing in Admin
+class PizzaProxy(Pizza):
+    class Meta:
+        proxy = True
+        verbose_name = "Pizza"
+        verbose_name_plural = "Pizzas"
+
+
 # test many-one where the item has custom PK
-
-
 class CustomPKGroup(models.Model):
     name = models.CharField(max_length=100)
 
