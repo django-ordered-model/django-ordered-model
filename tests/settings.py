@@ -1,6 +1,6 @@
 import django
 
-DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "testdb"}}
+DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "db.sqlite3"}}
 ROOT_URLCONF = "tests.urls"
 INSTALLED_APPS = [
     "django.contrib.admin",
