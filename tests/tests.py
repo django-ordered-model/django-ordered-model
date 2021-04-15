@@ -1091,9 +1091,9 @@ class TestFixInOrdering(TestCase):
         We want to ensure consistency.
         """
         # Three items are created here
-        item0 = CustomItem.objects.create(id="0", name='0')
-        item1 = CustomItem.objects.create(id="1", name='1')
-        item2 = CustomItem.objects.create(id="2", name='2')
+        item0 = CustomItem.objects.create(pkid="0", name='0')
+        item1 = CustomItem.objects.create(pkid="1", name='1')
+        item2 = CustomItem.objects.create(pkid="2", name='2')
 
         # Moving item 0 to position 2. This works fine, and moves item 1 to position 0
         item0.to(2)

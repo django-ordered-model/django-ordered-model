@@ -270,7 +270,7 @@ class OrderedModelBase(models.Model):
         moved in the database since being fetched - while it thinks it's in position 2 it's actually in position 3, 4,
         etc. See https://github.com/bfirsh/django-ordered-model/issues/184
         """
-        current_order_value_in_db = self._get_class_for_ordering_queryset().objects.filter(pk=self.pk).values(self.order_field_name)
+        current_order_value_in_db = self.get_ordering_queryset().filter(pk=self.pk).values(self.order_field_name)
 
         if getattr(self, self.order_field_name) > order:
             update_kwargs = {self.order_field_name: F(self.order_field_name) + 1}
