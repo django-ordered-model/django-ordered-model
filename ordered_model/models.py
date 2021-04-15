@@ -264,28 +264,37 @@ class OrderedModelBase(models.Model):
             return
         qs = self.get_ordering_queryset()
 
-
         """
         Get current value in database of our object. Necessary to prevent race conditions, where our model has been
         moved in the database since being fetched - while it thinks it's in position 2 it's actually in position 3, 4,
         etc. See https://github.com/bfirsh/django-ordered-model/issues/184
         """
-        current_order_value_in_db = self.get_ordering_queryset().filter(pk=self.pk).values(self.order_field_name)
+        current_order_value_in_db = (
+            self.get_ordering_queryset()
+            .filter(pk=self.pk)
+            .values(self.order_field_name)
+        )
 
         if getattr(self, self.order_field_name) > order:
             update_kwargs = {self.order_field_name: F(self.order_field_name) + 1}
             if extra_update:
                 update_kwargs.update(extra_update)
-            qs.filter(**{self.order_field_name + '__lt': Subquery(current_order_value_in_db),
-                         self.order_field_name + '__gte': order})\
-              .update(**update_kwargs)
+            qs.filter(
+                **{
+                    self.order_field_name + "__lt": Subquery(current_order_value_in_db),
+                    self.order_field_name + "__gte": order,
+                }
+            ).update(**update_kwargs)
         else:
             update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
             if extra_update:
                 update_kwargs.update(extra_update)
-            qs.filter(**{self.order_field_name + '__gt': Subquery(current_order_value_in_db),
-                         self.order_field_name + '__lte': order})\
-              .update(**update_kwargs)
+            qs.filter(
+                **{
+                    self.order_field_name + "__gt": Subquery(current_order_value_in_db),
+                    self.order_field_name + "__lte": order,
+                }
+            ).update(**update_kwargs)
         setattr(self, order_field_name, order)
         self.save()
 
