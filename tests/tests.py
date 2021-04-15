@@ -576,14 +576,21 @@ class OrderedModelAdminTest(TestCase):
         self.assertEqual(Item.objects.get(name="item3").order, 1)
 
     def test_move_up_down_links_ordered_inline(self):
+        # model list
         res = self.client.get("/admin/tests/pizza/")
-        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, text='/admin/tests/pizza/{}/change/'.format(self.pizza.id))
+
+        # model page including inlines
+        res = self.client.get("/admin/tests/pizza/{}/change/".format(self.pizza.id))
+        self.assertContains(res, text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_ham.id))
+        self.assertContains(res, text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_pineapple.id))
+
+        # click the move-up link
         self.assertEqual(self.pizza_to_ham.order, 0)
         self.assertEqual(self.pizza_to_pineapple.order, 1)
-
         res = self.client.get(
             "/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/".format(
-                self.pizza.id, self.pineapple.id
+                self.pizza.id, self.pizza_to_pineapple.id
             ),
             follow=True,
         )
@@ -593,6 +600,12 @@ class OrderedModelAdminTest(TestCase):
         self.assertEqual(self.pizza_to_pineapple.order, 0)
         self.assertEqual(res.status_code, 200)
 
+    def test_move_up_down_proxy_stacked_inline(self):
+        res = self.client.get("/admin/tests/pizzaproxy/")
+        self.assertContains(res, text='/admin/tests/pizzaproxy/{}/change/'.format(self.pizza.id))
+
+        res = self.client.get('/admin/tests/pizzaproxy/{}/change/'.format(self.pizza.id))
+        self.assertContains(res, text='<a href="/admin/tests/pizzaproxy/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_ham.id))
 
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
