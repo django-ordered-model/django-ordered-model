@@ -168,6 +168,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
             return update_wrapper(wrapper, view)
 
         model_info = self._get_model_info()
+
         return [
             path(
                 "<path:admin_id>/{model}/<path:object_id>/move-<direction>/".format(
@@ -210,10 +211,14 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
             obj._meta.default_manager._get_order_with_respect_to_filter_kwargs(obj)
             or []
         )
+
         fields = [
             str(value.pk)
             for value in order_with_respect_to.values()
-            if value.__class__ is self.parent_model
+            if (
+                type(value) == self.parent_model
+                or issubclass(self.parent_model, type(value))
+            )
             and value is not None
             and value.pk is not None
         ]
