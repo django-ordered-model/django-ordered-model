@@ -997,13 +997,11 @@ class OrderedModelAdminWithCustomPKInlineTest(TestCase):
         # Check move up/down links
         self.assertContains(
             res,
-            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-up/"><img src="ordered_model/arrow-up.gif"></a>',
-            html=True,
+            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-up/">',
         )
         self.assertContains(
             res,
-            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-down/"><img src="ordered_model/arrow-down.gif"></a>',
-            html=True,
+            text='<a href="/admin/tests/custompkgroup/1/custompkgroupitem/g1%20i1/move-down/">',
         )
 
 
