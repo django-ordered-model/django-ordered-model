@@ -578,12 +578,24 @@ class OrderedModelAdminTest(TestCase):
     def test_move_up_down_links_ordered_inline(self):
         # model list
         res = self.client.get("/admin/tests/pizza/")
-        self.assertContains(res, text='/admin/tests/pizza/{}/change/'.format(self.pizza.id))
+        self.assertContains(
+            res, text="/admin/tests/pizza/{}/change/".format(self.pizza.id)
+        )
 
         # model page including inlines
         res = self.client.get("/admin/tests/pizza/{}/change/".format(self.pizza.id))
-        self.assertContains(res, text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_ham.id))
-        self.assertContains(res, text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_pineapple.id))
+        self.assertContains(
+            res,
+            text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(
+                self.pizza.id, self.pizza_to_ham.id
+            ),
+        )
+        self.assertContains(
+            res,
+            text='<a href="/admin/tests/pizza/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(
+                self.pizza.id, self.pizza_to_pineapple.id
+            ),
+        )
 
         # click the move-up link
         self.assertEqual(self.pizza_to_ham.order, 0)
@@ -602,10 +614,20 @@ class OrderedModelAdminTest(TestCase):
 
     def test_move_up_down_proxy_stacked_inline(self):
         res = self.client.get("/admin/tests/pizzaproxy/")
-        self.assertContains(res, text='/admin/tests/pizzaproxy/{}/change/'.format(self.pizza.id))
+        self.assertContains(
+            res, text="/admin/tests/pizzaproxy/{}/change/".format(self.pizza.id)
+        )
 
-        res = self.client.get('/admin/tests/pizzaproxy/{}/change/'.format(self.pizza.id))
-        self.assertContains(res, text='<a href="/admin/tests/pizzaproxy/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(self.pizza.id, self.pizza_to_ham.id))
+        res = self.client.get(
+            "/admin/tests/pizzaproxy/{}/change/".format(self.pizza.id)
+        )
+        self.assertContains(
+            res,
+            text='<a href="/admin/tests/pizzaproxy/{}/pizzatoppingsthroughmodel/{}/move-up/">'.format(
+                self.pizza.id, self.pizza_to_ham.id
+            ),
+        )
+
 
 class OrderWithRespectToTestsManyToMany(TestCase):
     def setUp(self):
