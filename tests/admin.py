@@ -21,6 +21,7 @@ from .models import (
 class ItemAdmin(OrderedModelAdmin):
     list_display = ("name", "move_up_down_links")
 
+
 # README example for TabularInline
 class PizzaToppingTabularInline(OrderedTabularInline):
     model = PizzaToppingsThroughModel
@@ -35,6 +36,7 @@ class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     list_display = ("name",)
     inlines = (PizzaToppingTabularInline,)
 
+
 # README example for StackedInline
 class PizzaToppingStackedInline(OrderedStackedInline):
     model = PizzaToppingsThroughModel
@@ -48,7 +50,6 @@ class PizzaProxyAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     model = PizzaProxy
     list_display = ("name",)
     inlines = (PizzaToppingStackedInline,)
-
 
 
 class CustomPKGroupItemInline(OrderedTabularInline):
