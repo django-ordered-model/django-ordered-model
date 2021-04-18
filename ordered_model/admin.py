@@ -146,7 +146,7 @@ class OrderedInlineModelAdminMixin:
         urls = super().get_urls()
         for inline in self.inlines:
             if issubclass(inline, OrderedInlineMixin):
-                urls = inline(self, self.admin_site).get_urls() + urls
+                urls = inline(self.model, self.admin_site).get_urls() + urls
         return urls
 
 
