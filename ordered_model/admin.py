@@ -151,6 +151,12 @@ class OrderedInlineModelAdminMixin:
 
 
 class OrderedInlineMixin(BaseOrderedModelAdmin):
+    def _get_model_info(self):
+        return dict(
+            **super()._get_model_info(),
+            parent_model=self.parent_model._meta.model_name,
+        )
+
     def get_urls(self):
         from django.urls import path
 
@@ -168,7 +174,9 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                     **model_info
                 ),
                 wrap(self.move_view),
-                name="{app}_{model}_change_order_inline".format(**model_info),
+                name="{app}_{parent_model}_{model}_change_order_inline".format(
+                    **model_info
+                ),
             )
         ]
 
@@ -212,44 +220,29 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         order_obj_name = fields[0] if len(fields) > 0 else None
 
         model_info = self._get_model_info()
-        if order_obj_name:
-            return render_to_string(
-                "ordered_model/admin/order_controls.html",
-                {
-                    "app_label": model_info["app"],
-                    "model_name": model_info["model"],
-                    "module_name": model_info["model"],  # backwards compat
-                    "object_id": obj.pk,
-                    "urls": {
-                        "up": reverse(
-                            "{admin_name}:{app}_{model}_change_order_inline".format(
-                                admin_name=self.admin_site.name, **model_info
-                            ),
-                            args=[order_obj_name, obj.pk, "up"],
-                        ),
-                        "down": reverse(
-                            "{admin_name}:{app}_{model}_change_order_inline".format(
-                                admin_name=self.admin_site.name, **model_info
-                            ),
-                            args=[order_obj_name, obj.pk, "down"],
-                        ),
-                        "top": reverse(
-                            "{admin_name}:{app}_{model}_change_order_inline".format(
-                                admin_name=self.admin_site.name, **model_info
-                            ),
-                            args=[order_obj_name, obj.pk, "top"],
-                        ),
-                        "bottom": reverse(
-                            "{admin_name}:{app}_{model}_change_order_inline".format(
-                                admin_name=self.admin_site.name, **model_info
-                            ),
-                            args=[order_obj_name, obj.pk, "bottom"],
-                        ),
-                    },
-                    "query_string": self.request_query_string,
+        if not order_obj_name:
+            return ""
+
+        name = "{admin_name}:{app}_{parent_model}_{model}_change_order_inline".format(
+            admin_name=self.admin_site.name, **model_info
+        )
+
+        return render_to_string(
+            "ordered_model/admin/order_controls.html",
+            {
+                "app_label": model_info["app"],
+                "model_name": model_info["model"],
+                "module_name": model_info["model"],  # backwards compat
+                "object_id": obj.pk,
+                "urls": {
+                    "up": reverse(name, args=[order_obj_name, obj.pk, "up"]),
+                    "down": reverse(name, args=[order_obj_name, obj.pk, "down"]),
+                    "top": reverse(name, args=[order_obj_name, obj.pk, "top"]),
+                    "bottom": reverse(name, args=[order_obj_name, obj.pk, "bottom"]),
                 },
-            )
-        return ""
+                "query_string": self.request_query_string,
+            },
+        )
 
     move_up_down_links.short_description = _("Move")
 
