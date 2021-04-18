@@ -136,3 +136,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Ignore static content for our test app
+tests/migrations
+tests/staticfiles

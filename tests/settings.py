@@ -1,4 +1,5 @@
 import django
+import os
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "db.sqlite3"}}
 ROOT_URLCONF = "tests.urls"
@@ -7,12 +8,13 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.messages",
+    "django.contrib.staticfiles",
     "django.contrib.sessions",
     "ordered_model",
     "tests",
 ]
 SECRET_KEY = "topsecret"
-
+DEBUG = True
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -34,3 +36,5 @@ TEMPLATES = [
         },
     }
 ]
+STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "staticfiles")
+STATIC_URL = "/static/"
