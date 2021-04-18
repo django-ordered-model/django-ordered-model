@@ -213,7 +213,10 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         fields = [
             str(value.pk)
             for value in order_with_respect_to.values()
-            if value.__class__ is self.parent_model
+            if (
+                type(value) == self.parent_model
+                or issubclass(self.parent_model, type(value))
+            )
             and value is not None
             and value.pk is not None
         ]
