@@ -8,6 +8,7 @@ Unreleased
 - Add management command `reorder_model` that can re-order most models with a broken ordering
 - Fix handling of keyword arguments passed to  `bulk_create` by Django 3 (#235)
 - Fix inline admin support for Proxy Models by adding parent model to url name (#242)
+- Add admin screenshots to README
 
 3.4.1 - 2020-05-11
 ------------------
