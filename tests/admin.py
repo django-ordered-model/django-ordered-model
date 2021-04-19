@@ -40,8 +40,8 @@ class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
 # README example for StackedInline
 class PizzaToppingStackedInline(OrderedStackedInline):
     model = PizzaToppingsThroughModel
-    fields = ("topping", "order", "move_up_down_links")
-    readonly_fields = ("order", "move_up_down_links")
+    fields = ("topping", "move_up_down_links")
+    readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
 
