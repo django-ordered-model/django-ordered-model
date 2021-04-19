@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from ordered_model.admin import (
     OrderedModelAdmin,
+    DragDropOrderedModelAdmin,
     OrderedTabularInline,
     OrderedStackedInline,
     OrderedInlineModelAdminMixin,
@@ -9,6 +10,7 @@ from ordered_model.admin import (
 
 from .models import (
     Item,
+    ItemProxy,
     PizzaToppingsThroughModel,
     Pizza,
     PizzaProxy,
@@ -63,7 +65,13 @@ class CustomPKGroupAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     inlines = (CustomPKGroupItemInline,)
 
 
+class DragDropItemAdmin(DragDropOrderedModelAdmin):
+    model = ItemProxy
+    list_display = ("name", "pk", "make_draggable")
+
+
 admin.site.register(Item, ItemAdmin)
+admin.site.register(ItemProxy, DragDropItemAdmin)
 admin.site.register(Pizza, PizzaAdmin)
 admin.site.register(PizzaProxy, PizzaProxyAdmin)
 admin.site.register(Topping)
