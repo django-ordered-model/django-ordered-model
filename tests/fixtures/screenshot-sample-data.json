@@ -1,0 +1,105 @@
+[
+{
+    "model": "tests.item",
+    "pk": 1,
+    "fields": {
+        "order": 0,
+        "name": "John Lennon"
+    }
+},
+{
+    "model": "tests.item",
+    "pk": 2,
+    "fields": {
+        "order": 1,
+        "name": "Paul McCartney"
+    }
+},
+{
+    "model": "tests.item",
+    "pk": 3,
+    "fields": {
+        "order": 2,
+        "name": "George Harrison"
+    }
+},
+{
+    "model": "tests.item",
+    "pk": 4,
+    "fields": {
+        "order": 3,
+        "name": "Ringo Starr"
+    }
+},
+{
+    "model": "tests.topping",
+    "pk": 1,
+    "fields": {
+        "name": "Mozzarella"
+    }
+},
+{
+    "model": "tests.topping",
+    "pk": 2,
+    "fields": {
+        "name": "Gorgonzola"
+    }
+},
+{
+    "model": "tests.topping",
+    "pk": 3,
+    "fields": {
+        "name": "Fontina"
+    }
+},
+{
+    "model": "tests.topping",
+    "pk": 4,
+    "fields": {
+        "name": "Parmigiano"
+    }
+},
+{
+    "model": "tests.pizza",
+    "pk": 1,
+    "fields": {
+        "name": "Quattro Formaggi"
+    }
+},
+{
+    "model": "tests.pizzatoppingsthroughmodel",
+    "pk": 1,
+    "fields": {
+        "order": 0,
+        "pizza": 1,
+        "topping": 1
+    }
+},
+{
+    "model": "tests.pizzatoppingsthroughmodel",
+    "pk": 2,
+    "fields": {
+        "order": 1,
+        "pizza": 1,
+        "topping": 2
+    }
+},
+{
+    "model": "tests.pizzatoppingsthroughmodel",
+    "pk": 3,
+    "fields": {
+        "order": 2,
+        "pizza": 1,
+        "topping": 3
+    }
+},
+{
+    "model": "tests.pizzatoppingsthroughmodel",
+    "pk": 4,
+    "fields": {
+        "order": 3,
+        "pizza": 1,
+        "topping": 4
+    }
+}
+]
