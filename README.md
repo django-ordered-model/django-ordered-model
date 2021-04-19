@@ -44,8 +44,6 @@ from ordered_model.models import OrderedModel
 class Item(OrderedModel):
     name = models.CharField(max_length=100)
 
-    class Meta(OrderedModel.Meta):
-        pass
 ```
 
 Model instances now have a set of methods to move them relative to each other.
@@ -249,7 +247,7 @@ class Item(OrderedModel):
 
 Custom ordering field
 ---------------------
-Extending `OrderedModel` creates a `models.PositiveIntegerField` field called `order` and the appropriate migrations. If you wish to use an existing model field to store the ordering, you can set the attribute `order_field_name` to match your field name:
+Extending `OrderedModel` creates a `models.PositiveIntegerField` field called `order` and the appropriate migrations. It customises the default `class Meta` to then order returned querysets by this field. If you wish to use an existing model field to store the ordering, subclass `OrderedModelBase` instead and set the attribute `order_field_name` to match your field name and the `ordering` attribute on `Meta`:
 
 ```python
 class MyModel(OrderedModelBase):
@@ -260,7 +258,7 @@ class MyModel(OrderedModelBase):
     class Meta:
         ordering = ("sort_order",)
 ```
-
+Setting `order_field_name` is specific for this library to know which field to change when ordering actions are taken. The `Meta` `ordering` line is existing Django functionality to use a field for sorting.
 See `tests/models.py` object `CustomOrderFieldModel` for an example.
 
 
@@ -282,6 +280,9 @@ class ItemAdmin(OrderedModelAdmin):
 admin.site.register(Item, ItemAdmin)
 ```
 
+![ItemAdmin screenshot](./static/items.png)
+
+
 For a many-to-many relationship you need one of the following inlines.
 
 `OrderedTabularInline` or `OrderedStackedInline` just like the django admin.
@@ -294,21 +295,25 @@ from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMix
 from models import Pizza, PizzaToppingsThroughModel
 
 
-class PizzaToppingsThroughModelTabularInline(OrderedTabularInline):
+class PizzaToppingsTabularInline(OrderedTabularInline):
     model = PizzaToppingsThroughModel
     fields = ('topping', 'order', 'move_up_down_links',)
     readonly_fields = ('order', 'move_up_down_links',)
-    extra = 1
     ordering = ('order',)
+    extra = 1
 
 
 class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
+    model = Pizza
     list_display = ('name', )
-    inlines = (PizzaToppingsThroughModelTabularInline, )
+    inlines = (PizzaToppingsTabularInline, )
 
 
 admin.site.register(Pizza, PizzaAdmin)
 ```
+
+![PizzaAdmin screenshot](./static/pizza.png)
+
 
 For the `OrderedStackedInline` it will look like this:
 
@@ -318,21 +323,23 @@ from ordered_model.admin import OrderedStackedInline, OrderedInlineModelAdminMix
 from models import Pizza, PizzaToppingsThroughModel
 
 
-class PizzaToppingsThroughModelStackedInline(OrderedStackedInline):
+class PizzaToppingsStackedInline(OrderedStackedInline):
     model = PizzaToppingsThroughModel
-    fields = ('topping', 'order', 'move_up_down_links',)
-    readonly_fields = ('order', 'move_up_down_links',)
-    extra = 1
+    fields = ('topping', 'move_up_down_links',)
+    readonly_fields = ('move_up_down_links',)
     ordering = ('order',)
+    extra = 1
 
 
 class PizzaAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     list_display = ('name', )
-    inlines = (PizzaToppingsThroughModelStackedInline, )
+    inlines = (PizzaToppingsStackedInline, )
 
 
 admin.site.register(Pizza, PizzaAdmin)
 ```
+
+![PizzaAdmin screenshot](./static/pizza-stacked.png)
 
 **Note:** `OrderedModelAdmin` requires the inline subclasses of `OrderedTabularInline` and `OrderedStackedInline` to be listed on `inlines` so that we register appropriate URL routes. If you are using Django 3.0 feature `get_inlines()` or `get_inline_instances()` to return the list of inlines dynamically, consider it a filter and still add them to `inlines` or you might encounter a “No Reverse Match” error when accessing model change view.
 

@@ -6,6 +6,7 @@ Unreleased
 
 - Django 4.0 compatibility: Fix ChangeList constructor for Admin (#256)
 - Remove usage of `assertEquals` in tests (#255)
+- Add admin screenshots to README
 
 
 3.4.3 - 2021-04-20
