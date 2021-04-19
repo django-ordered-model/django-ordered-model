@@ -84,6 +84,11 @@ class PizzaProxy(Pizza):
         verbose_name_plural = "Pizzas"
 
 
+class ItemProxy(Item):
+    class Meta:
+        proxy = True
+
+
 # test many-one where the item has custom PK
 class CustomPKGroup(models.Model):
     name = models.CharField(max_length=100)
