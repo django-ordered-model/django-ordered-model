@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("requirements.txt") as f:
     requires = f.read().splitlines()
@@ -17,7 +17,11 @@ setup(
     author="Ben Firshman",
     author_email="ben@firshman.co.uk",
     url="http://github.com/django-ordered-model/django-ordered-model",
-    packages=find_packages(),
+    packages=[
+        "ordered_model",
+        "ordered_model.management",
+        "ordered_model.management.commands",
+    ],
     requires=requires,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
