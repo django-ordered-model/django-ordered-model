@@ -24,10 +24,14 @@ jobs:
       with:
         name: django-ordered-model-dist
         path: dist
-    - name: Run twine upload
-      env: 
+    - name: Run twine upload (prerelease to test pypi)
+      env:
+        TWINE_PASSWORD: ${{ secrets.TWINE_TEST_PASSWORD }}
+      if: env.TWINE_PASSWORD != null and "github.event.release.prerelease"
+      run: twine upload --username __token__ --non-interactive --r testpypi
+    - name: Run twine upload (release)
+      env:
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-      if: env.TWINE_PASSWORD != null
-      run: twine upload --username __token__ --non-interactive --repository testpypi 
-
+      if: env.TWINE_PASSWORD != null and "!github.event.release.prerelease"
+      run: twine upload --username __token__ --non-interactive --r pypi
 
