@@ -28,10 +28,10 @@ jobs:
       env:
         TWINE_PASSWORD: ${{ secrets.TWINE_TEST_PASSWORD }}
       if: env.TWINE_PASSWORD != null and "github.event.release.prerelease"
-      run: twine upload --username __token__ --non-interactive --r testpypi
+      run: twine upload --username __token__ --non-interactive --r testpypi dist/*
     - name: Run twine upload (release)
       env:
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
       if: env.TWINE_PASSWORD != null and "!github.event.release.prerelease"
-      run: twine upload --username __token__ --non-interactive --r pypi
+      run: twine upload --username __token__ --non-interactive --r pypi dist/*
 
