@@ -12,11 +12,11 @@ setup(
     name="django-ordered-model",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version="3.4.1",
+    version="3.4.2",
     description="Allows Django models to be ordered and provides a simple admin interface for reordering them.",
     author="Ben Firshman",
     author_email="ben@firshman.co.uk",
-    url="http://github.com/bfirsh/django-ordered-model",
+    url="http://github.com/django-ordered-model/django-ordered-model",
     packages=["ordered_model"],
     requires=requires,
     classifiers=[
