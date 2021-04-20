@@ -1,6 +1,12 @@
 Change log
 ==========
 
+3.4.3 - 2021-04-20
+------------------
+
+- Fix packaging, setup.py was missing management command package path
+
+
 3.4.2 - 2021-04-20
 ------------------
 
