@@ -1,6 +1,7 @@
 from functools import partial, reduce
 
 from django.core import checks
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Max, Min, F
 from django.db.models.constants import LOOKUP_SEP
@@ -9,7 +10,10 @@ from django.utils.translation import gettext_lazy as _
 
 
 def get_lookup_value(obj, field):
-    return reduce(lambda i, f: getattr(i, f), field.split(LOOKUP_SEP), obj)
+    try:
+        return reduce(lambda i, f: getattr(i, f), field.split(LOOKUP_SEP), obj)
+    except ObjectDoesNotExist:
+        return None
 
 
 class OrderedModelQuerySet(models.QuerySet):
@@ -149,9 +153,27 @@ class OrderedModelBase(models.Model):
     order_field_name = None
     order_with_respect_to = None
     order_class_path = None
+    original_order_with_respect_to_fks = None
 
     class Meta:
         abstract = True
+
+    def __init__(self, *args, **kwargs):
+        super(OrderedModelBase, self).__init__(*args, **kwargs)
+        attrs = self._attrs()
+        self._original_order_with_respect_to_fks = (
+            {get_lookup_value(self, name) for name in self._attrs()} if attrs else set()
+        )
+
+    def _attrs(self):
+        if not self.order_with_respect_to:
+            return None
+        t = (
+            self.order_with_respect_to
+            if type(self.order_with_respect_to) is tuple
+            else (self.order_with_respect_to,)
+        )
+        return t
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
@@ -195,10 +217,18 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
-        if getattr(self, order_field_name) is None:
+        if getattr(self, order_field_name) is None or (
+            self._attrs() is not None
+            and {get_lookup_value(self, name) for name in self._attrs()}
+            != self._original_order_with_respect_to_fks
+        ):
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, order_field_name, order)
         super().save(*args, **kwargs)
+        attrs = self._attrs()
+        self._original_order_with_respect_to_fks = (
+            {get_lookup_value(self, name) for name in attrs} if attrs else set()
+        )
 
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
