@@ -285,6 +285,34 @@ class OrderWithRespectToTests(TestCase):
         )
 
 
+class OrderWithRespectToReorderTests(TestCase):
+    def setUp(self):
+        q1 = Question.objects.create()
+        self.u0 = TestUser.objects.create()
+        self.u1 = TestUser.objects.create()
+        self.u0_a1 = q1.answers.create(user=self.u0)
+        self.u0_a2 = q1.answers.create(user=self.u0)
+        self.u0_a3 = q1.answers.create(user=self.u0)
+        self.u1_a1 = q1.answers.create(user=self.u1)
+        self.u1_a2 = q1.answers.create(user=self.u1)
+        self.u1_a3 = q1.answers.create(user=self.u1)
+
+    def test_reorder_when_field_value_changed(self):
+        self.u0_a2.user = self.u1
+        self.u0_a2.save()
+        self.assertSequenceEqual(
+            Answer.objects.values_list("pk", "order"),
+            [
+                (self.u0_a1.pk, 0),
+                (self.u0_a3.pk, 2),
+                (self.u1_a1.pk, 0),
+                (self.u1_a2.pk, 1),
+                (self.u1_a3.pk, 2),
+                (self.u0_a2.pk, 3),
+            ],
+        )
+
+
 class CustomPKTest(TestCase):
     def setUp(self):
         self.item1 = CustomItem.objects.create(pkid=str(uuid.uuid4()), name="1")
