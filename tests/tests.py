@@ -1064,7 +1064,7 @@ class ReorderModelTestCase(TestCase):
             [0, 1, 2],
         )
 
-        self.assertEquals(
+        self.assertEqual(
             "changing order of tests.GroupedItem (3) from 1 to 2\n", out.getvalue()
         )
 
@@ -1111,6 +1111,6 @@ class ReorderModelTestCase(TestCase):
             ["1", "2", "4"], [i.answer for i in OpenQuestion.objects.all()]
         )
 
-        self.assertEquals(
+        self.assertEqual(
             "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
