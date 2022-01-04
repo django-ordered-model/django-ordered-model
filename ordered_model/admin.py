@@ -47,7 +47,7 @@ class BaseOrderedModelAdmin:
 
         if VERSION >= (4, 0):
             args = args + (self.search_help_text,)
-            
+ 
         return ChangeList(*args)
 
     @csrf_protect_m
