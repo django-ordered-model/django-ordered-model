@@ -1,6 +1,12 @@
 Change log
 ==========
 
+Unreleased
+----------
+
+- Django 4.0 compatibility: Fix ChangeList constructor for Admin (#256)
+
+
 3.4.3 - 2021-04-20
 ------------------
 
