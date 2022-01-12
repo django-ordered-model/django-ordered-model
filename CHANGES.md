@@ -1,12 +1,12 @@
 Change log
 ==========
 
-Unreleased
-----------
+3.5 - 2022-01-12
+----------------
 
 - Django 4.0 compatibility: Fix ChangeList constructor for Admin (#256)
 - Remove usage of `assertEquals` in tests (#255)
-- Add admin screenshots to README
+- Add admin screenshots to README (#245)
 - Fix reorder command for custom order field models (#257)
 
 
