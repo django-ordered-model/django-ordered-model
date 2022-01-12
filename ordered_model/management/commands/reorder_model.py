@@ -79,7 +79,10 @@ class Command(BaseCommand):
                 if self.verbosity:
                     self.stdout.write(
                         "changing order of {} ({}) from {} to {}".format(
-                            model._meta.label, obj.pk, getattr(obj, order_field_name), order
+                            model._meta.label,
+                            obj.pk,
+                            getattr(obj, order_field_name),
+                            order,
                         )
                     )
                 setattr(obj, order_field_name, order)

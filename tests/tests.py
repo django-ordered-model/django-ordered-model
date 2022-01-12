@@ -1079,11 +1079,14 @@ class ReorderModelTestCase(TestCase):
             "reorder_model", "tests.CustomOrderFieldModel", verbosity=1, stdout=out
         )
         self.assertSequenceEqual(
-            CustomOrderFieldModel.objects.values_list("sort_order", flat=True).order_by("sort_order"),
+            CustomOrderFieldModel.objects.values_list("sort_order", flat=True).order_by(
+                "sort_order"
+            ),
             [0, 1, 2, 3, 4],
         )
         self.assertIn(
-            "changing order of tests.CustomOrderFieldModel (5) from 0 to 1", out.getvalue()
+            "changing order of tests.CustomOrderFieldModel (5) from 0 to 1",
+            out.getvalue(),
         )
 
     def test_shows_alternatives(self):
