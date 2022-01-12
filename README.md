@@ -380,6 +380,7 @@ Compatibility with Django and Python
 
 |django-ordered-model version | Django version      | Python version
 |-----------------------------|---------------------|--------------------
+| **3.5.x**                   | **3.x**, **4.x**    | **3.5** and above
 | **3.4.x**                   | **2.x**, **3.x**    | **3.5** and above
 | **3.3.x**                   | **2.x**             | **3.4** and above
 | **3.2.x**                   | **2.x**             | **3.4** and above
