@@ -192,11 +192,17 @@ class OrderedModelBase(models.Model):
         """
         return self.get_ordering_queryset().above_instance(self).first()
 
-    def save(self, *args, **kwargs):
+    def set_ordered_field(self):
+        """
+        Set the value of the ordered field if it isnt set.
+        """
         order_field_name = self.order_field_name
         if getattr(self, order_field_name) is None:
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, order_field_name, order)
+
+    def save(self, *args, **kwargs):
+        self.set_ordered_field()
         super().save(*args, **kwargs)
 
     def delete(self, *args, extra_update=None, **kwargs):
