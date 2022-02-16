@@ -224,7 +224,7 @@ class OpenQuestion(BaseQuestion):
 
 Custom Manager and QuerySet
 -----------------
-When your model your extends `OrderedModel`, it inherits a custom `ModelManager` instance, `OrderedModelManager`, which provides additional  operations on the resulting `QuerySet`. For example an `OrderedModel` subclass called `Item` that returns a queryset from `Item.objects.all()` supports the following functions:
+When your model your extends `OrderedModel`, it inherits a custom `ModelManager` instance which in turn provides additional operations on the resulting `QuerySet`. For example if `Item` is an `OrderedModel` subclass, the  queryset `Item.objects.all()` has functions:
 
 * `above_instance(object)`,
 * `below_instance(object)`,
@@ -233,17 +233,24 @@ When your model your extends `OrderedModel`, it inherits a custom `ModelManager`
 * `above(index)`,
 * `below(index)`
 
-If your model defines a custom `ModelManager` such as `ItemManager` below, you may wish to extend `OrderedModelManager` to retain those functions, as follows:
+If your `Model` uses a custom `ModelManager` (such as `ItemManager` below) please have it extend `OrderedModelManager`.
+
+If your `ModelManager` returns a custom `QuerySet` (such as `ItemQuerySet` below) please have it extend `OrderedModelQuerySet`.
 
 ```python
-from ordered_model.models import OrderedModelManager, OrderedModel
+from ordered_model.models import OrderedModel, OrderedModelManager, OrderedModelQuerySet
+
+class ItemQuerySet(OrderedModelQuerySet):
+    pass
 
 class ItemManager(OrderedModelManager):
-    pass
+    def get_queryset(self):
+        return ItemQuerySet(self.model, using=self._db)
 
 class Item(OrderedModel):
     objects = ItemManager()
 ```
+
 
 Custom ordering field
 ---------------------
