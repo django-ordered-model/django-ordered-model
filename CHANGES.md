@@ -1,6 +1,12 @@
 Change log
 ==========
 
+Unreleased
+----------
+
+- Add `serializers.OrderedModelSerializer` to allow Django Rest Framework to re-order models (#251 #264)
+
+
 3.5 - 2022-01-12
 ----------------
 

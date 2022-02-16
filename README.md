@@ -368,6 +368,29 @@ re-order one or more models.
     - `<model_name>`: Name of the model that's an OrderedModel.
 
 
+Django Rest Framework
+---------------------
+
+To support updating ordering fields by Django Rest Framework, we include a serializer `OrderedModelSerializer` that intercepts writes to the ordering field, and calls `OrderedModel.to()` method to effect a re-ordering:
+
+    from rest_framework import routers, serializers, viewsets
+    from ordered_model.serializers import OrderedModelSerializer
+    from tests.models import CustomItem
+
+    class ItemSerializer(serializers.HyperlinkedModelSerializer, OrderedModelSerializer):
+        class Meta:
+            model = CustomItem
+            fields = ['pkid', 'name', 'modified', 'order']
+
+    class ItemViewSet(viewsets.ModelViewSet):
+        queryset = CustomItem.objects.all()
+        serializer_class = ItemSerializer
+
+    router = routers.DefaultRouter()
+    router.register(r'items', ItemViewSet)
+
+Note that you need to include the 'order' field (or your custom field name) in the `Serializer`'s `fields` list, either explicitly or using `__all__`. See [ordered_model/serializers.py](ordered_model/serializers.py) for the implementation.
+
 Test suite
 ----------
 

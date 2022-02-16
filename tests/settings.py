@@ -11,6 +11,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sessions",
     "ordered_model",
+    "rest_framework",
     "tests",
 ]
 SECRET_KEY = "topsecret"
@@ -36,5 +37,6 @@ TEMPLATES = [
         },
     }
 ]
+REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"]}
 STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "staticfiles")
 STATIC_URL = "/static/"
