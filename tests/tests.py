@@ -4,8 +4,13 @@ from io import StringIO
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.utils.timezone import now
+from django.urls import reverse
 from django.test import TestCase
 from django import VERSION
+
+from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework import status
+from tests.drf import ItemViewSet, router
 
 from tests.models import (
     Answer,
@@ -1125,3 +1130,84 @@ class ReorderModelTestCase(TestCase):
         self.assertEqual(
             "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
+
+
+class DRFTestCase(APITestCase):
+    fixtures = ["test_items.json"]
+
+    def setUp(self):
+        self.item1 = CustomItem.objects.create(pkid="a", name="1")
+        self.item2 = CustomItem.objects.create(pkid="b", name="2")
+
+    def test_create_shuffles_down(self):
+        data = {"name": "3", "pkid": "c", "order": "0"}
+        response = self.client.post(reverse("customitem-list"), data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(CustomItem.objects.count(), 3)
+        self.assertEqual(
+            response.data, {"pkid": "c", "name": "3", "modified": None, "order": 0}
+        )
+        self.assertEqual(CustomItem.objects.get(pkid="a").order, 1)
+        self.assertEqual(CustomItem.objects.get(pkid="b").order, 2)
+
+        # check DRF exposes the modified value
+        response = self.client.get(
+            reverse("customitem-detail", kwargs={"pk": "b"}), {}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data, {"pkid": "b", "name": "2", "modified": None, "order": 2}
+        )
+
+    def test_patch_shuffles_down(self):
+        self.item3 = CustomItem.objects.create(pkid="c", name="3")
+
+        # re-order an item
+        response = self.client.patch(
+            reverse("customitem-detail", kwargs={"pk": "b"}),
+            {"order": 2, "name": "x"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data, {"pkid": "b", "name": "x", "modified": None, "order": 2}
+        )
+        self.assertEqual(CustomItem.objects.count(), 3)
+        self.assertEqual(CustomItem.objects.get(pkid="a").order, 0)
+        self.assertEqual(CustomItem.objects.get(pkid="c").order, 1)
+        self.assertEqual(CustomItem.objects.get(pkid="b").order, 2)
+
+    def test_custom_order_field_model(self):
+        response = self.client.get(
+            reverse("customorderfieldmodel-detail", kwargs={"pk": 1}), {}, format="json"
+        )
+        self.assertEqual(response.data, {"id": 1, "name": "1", "sort_order": 0})
+        # re-order a lower item to top
+        response = self.client.patch(
+            reverse("customorderfieldmodel-detail", kwargs={"pk": 2}),
+            {"sort_order": 0},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"id": 2, "name": "2", "sort_order": 0})
+        # check old first item is pushed down
+        response = self.client.get(
+            reverse("customorderfieldmodel-detail", kwargs={"pk": 1}), {}, format="json"
+        )
+        self.assertEqual(response.data, {"id": 1, "name": "1", "sort_order": 1})
+
+    def test_serializer_renames_order_field(self):
+        response = self.client.get(
+            reverse("renameditem-detail", kwargs={"pk": "b"}), {}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"pkid": "b", "name": "2", "renamedOrder": 1})
+        # move b to top
+        response = self.client.patch(
+            reverse("renameditem-detail", kwargs={"pk": "b"}),
+            {"renamedOrder": 0},
+            format="json",
+        )
+        self.assertEqual(response.data, {"pkid": "b", "name": "2", "renamedOrder": 0})
+        self.assertEqual(CustomItem.objects.get(pkid="b").order, 0)
+        self.assertEqual(CustomItem.objects.get(pkid="a").order, 1)
