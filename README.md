@@ -46,6 +46,8 @@ class Item(OrderedModel):
 
 ```
 
+Then run the usual `$ ./manage.py makemigrations` and `$ ./manage.py migrate` to update your database schema.
+
 Model instances now have a set of methods to move them relative to each other.
 To demonstrate those methods we create two instances of `Item`:
 
