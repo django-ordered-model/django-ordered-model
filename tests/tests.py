@@ -1125,3 +1125,33 @@ class ReorderModelTestCase(TestCase):
         self.assertEqual(
             "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
+
+
+class TestFixInOrdering(TestCase):
+    def test_multiple_models_updated_simultaneously(self):
+        """
+        This is a test that tests the case where:
+        Request 1 and 2 happen simultaneously.
+        They both load a CustomItem into memory from database, and try to move them around.
+        We want to ensure consistency.
+        """
+        # Three items are created here
+        item0 = CustomItem.objects.create(pkid="0", name="0")
+        item1 = CustomItem.objects.create(pkid="1", name="1")
+        item2 = CustomItem.objects.create(pkid="2", name="2")
+
+        # Moving item 0 to position 2. This works fine, and moves item 1 to position 0
+        item0.to(2)
+
+        # Item 1 now is *actually* in position 0, but thinks it's in position 1. As we refresh
+        # the value from the database, this is not a problem
+        item1.to(2)
+
+        item0.refresh_from_db()
+        item1.refresh_from_db()
+        item2.refresh_from_db()
+
+        # All orders are correct now.
+        self.assertEqual(item2.order, 0)
+        self.assertEqual(item0.order, 1)
+        self.assertEqual(item1.order, 2)

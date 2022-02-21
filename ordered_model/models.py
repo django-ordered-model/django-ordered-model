@@ -1,7 +1,7 @@
 from functools import partial, reduce
 
 from django.db import models
-from django.db.models import Max, Min, F
+from django.db.models import Max, Min, F, Subquery
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
@@ -178,7 +178,17 @@ class OrderedModelBase(models.Model):
                 qs = model._meta.default_manager.all()
             else:
                 qs = self._meta.default_manager.all()
-        return qs.filter_by_order_with_respect_to(self)
+        qs = qs.filter_by_order_with_respect_to(self)
+
+        # We need to lock the rows we're interested in, to ensure that we don't end up with deadlocks
+        # when two processes try to update the same rows concurrently.
+        # See https://github.com/bfirsh/django-ordered-model/issues/184
+        qs = qs.select_for_update()
+        # Django does not generate the SELECT ... FOR UPDATE if the queryset is simply .updated(), we need
+        # to force the evaluation here, to get the lock
+        len(qs)
+
+        return qs
 
     def previous(self):
         """
@@ -253,15 +263,38 @@ class OrderedModelBase(models.Model):
             # object is already at desired position
             return
         qs = self.get_ordering_queryset()
-        extra_update = {} if extra_update is None else extra_update
-        if getattr(self, order_field_name) > order:
-            qs.below_instance(self).above(order, inclusive=True).increase_order(
-                **extra_update
-            )
+
+        """
+        Get current value in database of our object. Necessary to prevent race conditions, where our model has been
+        moved in the database since being fetched - while it thinks it's in position 2 it's actually in position 3, 4,
+        etc. See https://github.com/bfirsh/django-ordered-model/issues/184
+        """
+        current_order_value_in_db = (
+            self.get_ordering_queryset()
+            .filter(pk=self.pk)
+            .values(self.order_field_name)
+        )
+
+        if getattr(self, self.order_field_name) > order:
+            update_kwargs = {self.order_field_name: F(self.order_field_name) + 1}
+            if extra_update:
+                update_kwargs.update(extra_update)
+            qs.filter(
+                **{
+                    self.order_field_name + "__lt": Subquery(current_order_value_in_db),
+                    self.order_field_name + "__gte": order,
+                }
+            ).update(**update_kwargs)
         else:
-            qs.above_instance(self).below(order, inclusive=True).decrease_order(
-                **extra_update
-            )
+            update_kwargs = {self.order_field_name: F(self.order_field_name) - 1}
+            if extra_update:
+                update_kwargs.update(extra_update)
+            qs.filter(
+                **{
+                    self.order_field_name + "__gt": Subquery(current_order_value_in_db),
+                    self.order_field_name + "__lte": order,
+                }
+            ).update(**update_kwargs)
         setattr(self, order_field_name, order)
         self.save()
 
