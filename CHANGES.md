@@ -5,7 +5,7 @@ Unreleased
 ----------
 
 - Add `serializers.OrderedModelSerializer` to allow Django Rest Framework to re-order models (#251 #264)
-
+- Add tox builder for Django 4.0, drop building against 2.0 and 2.1 due to DRF compatibility.
 
 3.5 - 2022-01-12
 ----------------
