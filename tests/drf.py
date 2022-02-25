@@ -38,7 +38,22 @@ class RenamedItemViewSet(viewsets.ModelViewSet):
     serializer_class = RenamedItemSerializer
 
 
+# bulk item test
+class BulkOrderedModelSerializer(serializers.ModelSerializer):
+    orderedmodels = ItemSerializer(many=True)
+    class Meta:
+        fields = ['orderedmodels']
+
+    def create(self, validated_data):
+        create_models = []
+        #for data in validated_data:
+        #       create_models.append(OrderedModelSerializer(**data))
+
+        return BulkItem.objects.bulk_create(create_models)
+
+
 router = routers.DefaultRouter()
 router.register(r"items", ItemViewSet)
 router.register(r"customorderfieldmodels", CustomOrderFieldModelViewSet)
 router.register(r"renameditems", RenamedItemViewSet, basename="renameditem")
+router.register(r"bulkitems", BulkOrderedModelSerializer)

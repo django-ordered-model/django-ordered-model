@@ -1,6 +1,7 @@
 from django.db import models
 
-from ordered_model.models import OrderedModel, OrderedModelBase
+from ordered_model.models import OrderedModel, OrderedModelBase, OrderedModelQuerySet, OrderedModelManager
+
 
 
 # test simple automatic ordering
@@ -126,3 +127,24 @@ class ItemGroup(models.Model):
 class GroupedItem(OrderedModel):
     group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, related_name="items")
     order_with_respect_to = "group__user"
+
+
+# Experiment: try a bulk_create that allows positions to be set rather than
+# appending new entries to the end
+#
+class BulkItemQuerySet(OrderedModelQuerySet):
+    def bulk_create(self, objs, *args, **kwargs):
+        order_field_name = self._get_order_field_name()
+        desired_order = [getattr(o, order_field_name) for o in objs]
+        obs = super().bulk_create(objs, *args, **kwargs)
+        for o,i in zip(obs, desired_order):
+            o.to(i)
+
+class BulkItemManager(OrderedModelManager):
+    def get_queryset(self):
+        return BulkItemQuerySet(self.model, using=self._db)
+
+class BulkItem(OrderedModel):
+    name = models.CharField(max_length=100)
+    objects = BulkItemManager()
+
