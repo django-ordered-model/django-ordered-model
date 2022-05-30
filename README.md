@@ -29,6 +29,13 @@ Or if you have checked out the repository:
 $ python setup.py install
 ```
 
+Or to use the latest development code from our master branch:
+
+```bash
+$ pip uninstall django-ordered-model
+$ pip install git+git://github.com/django-ordered-model/django-ordered-model.git
+```
+
 Usage
 -----
 
