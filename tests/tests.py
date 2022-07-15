@@ -8,13 +8,13 @@ from django.urls import reverse
 from django.test import TestCase
 from django import VERSION
 
-from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework.test import APITestCase
 from rest_framework import status
-from tests.drf import ItemViewSet, router
 
 from tests.models import (
     Answer,
     Item,
+    PrependItem,
     Question,
     CustomItem,
     CustomOrderFieldModel,
@@ -142,6 +142,22 @@ class ModelTestCase(TestCase):
         self.assertNames(["1", "3", "4"])
         Item.objects.get(pk=3).up()
         self.assertNames(["3", "1", "4"])
+    
+    def test_save(self):
+        # New item without specifying order
+        item = Item(name="5")
+        item.save()
+        self.assertNames(["1", "2", "3", "4", "5"])
+        # Order cannot be greater than max_order
+        item.order = 10
+        item.save()
+        self.assertNames(["1", "2", "3", "4", "5"])
+        item.refresh_from_db()
+        self.assertEqual(item.order, 4)
+        # Save with specified order
+        item.order = 1
+        item.save()
+        self.assertNames(["1", "5", "2", "3", "4"])
 
 
 class OrderWithRespectToTests(TestCase):
@@ -1018,8 +1034,9 @@ class ReorderModelTestCase(TestCase):
         Test that 'reorder_model' changes the order of OpenQuestions
         when they overlap.
         """
-        OpenQuestion.objects.create(order=0)
-        OpenQuestion.objects.create(order=0)
+        OpenQuestion.objects.create()
+        OpenQuestion.objects.create()
+        OpenQuestion.objects.update(order=0)
         out = StringIO()
         call_command("reorder_model", "tests.OpenQuestion", verbosity=1, stdout=out)
 
@@ -1041,9 +1058,10 @@ class ReorderModelTestCase(TestCase):
 
         GroupedItem.objects.create(group=group1, order=0)
         GroupedItem.objects.create(group=group1, order=1)
-        GroupedItem.objects.create(group=group1, order=1)
+        GroupedItem.objects.create(group=group1, order=2)
         GroupedItem.objects.create(group=group1, order=3)
         GroupedItem.objects.create(group=group1, order=4)
+        GroupedItem.objects.filter(pk=3).update(order=1)
 
         user2 = TestUser.objects.create()
         group2 = ItemGroup.objects.create(user=user2)
@@ -1079,7 +1097,8 @@ class ReorderModelTestCase(TestCase):
         when they overlap.
         """
         out = StringIO()
-        CustomOrderFieldModel.objects.create(name="5", sort_order=0)
+        CustomOrderFieldModel.objects.create(name="5")
+        CustomOrderFieldModel.objects.filter(name="5").update(sort_order=0)
         call_command(
             "reorder_model", "tests.CustomOrderFieldModel", verbosity=1, stdout=out
         )
@@ -1211,3 +1230,13 @@ class DRFTestCase(APITestCase):
         self.assertEqual(response.data, {"pkid": "b", "name": "2", "renamedOrder": 0})
         self.assertEqual(CustomItem.objects.get(pkid="b").order, 0)
         self.assertEqual(CustomItem.objects.get(pkid="a").order, 1)
+
+
+class PrependOrderGenerationTests(TestCase):
+    def test_order_generation_with_default_value(self):
+        first_item = PrependItem.objects.create()
+        self.assertEqual(first_item.order, 0)
+        second_item = PrependItem.objects.create()
+        self.assertEqual(second_item.order, 0)
+        first_item.refresh_from_db()
+        self.assertEqual(first_item.order, 1)

@@ -192,12 +192,37 @@ class OrderedModelBase(models.Model):
         """
         return self.get_ordering_queryset().above_instance(self).first()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, extra_update=None, **kwargs):
         order_field_name = self.order_field_name
-        if getattr(self, order_field_name) is None:
-            order = self.get_ordering_queryset().get_next_order()
+        order = getattr(self, order_field_name)
+        max_order = None
+        if self.pk:
+            try:
+                self.refresh_from_db(fields=[order_field_name])
+                prev_order = getattr(self, order_field_name)
+            except self.DoesNotExist:
+                max_order = self.get_ordering_queryset().get_next_order()
+                prev_order = max_order
+        else:
+            max_order = self.get_ordering_queryset().get_next_order()
+            prev_order = max_order
+        if order != prev_order:
+            if max_order is None:
+                max_order = self.get_ordering_queryset().get_max_order()
+            if order is None or order > max_order:
+                order = max_order
             setattr(self, order_field_name, order)
-        super().save(*args, **kwargs)
+            extra_update = {} if extra_update is None else extra_update
+            qs = self.get_ordering_queryset()
+            if prev_order > order:
+                qs.below(prev_order).above(order, inclusive=True).increase_order(
+                    **extra_update
+                )
+            elif prev_order < order:
+                qs.above(prev_order).below(order, inclusive=True).decrease_order(
+                    **extra_update
+                )
+        return super().save(*args, **kwargs)
 
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
@@ -247,23 +272,8 @@ class OrderedModelBase(models.Model):
                     type(order).__name__
                 )
             )
-
-        order_field_name = self.order_field_name
-        if order is None or getattr(self, order_field_name) == order:
-            # object is already at desired position
-            return
-        qs = self.get_ordering_queryset()
-        extra_update = {} if extra_update is None else extra_update
-        if getattr(self, order_field_name) > order:
-            qs.below_instance(self).above(order, inclusive=True).increase_order(
-                **extra_update
-            )
-        else:
-            qs.above_instance(self).below(order, inclusive=True).decrease_order(
-                **extra_update
-            )
-        setattr(self, order_field_name, order)
-        self.save()
+        setattr(self, self.order_field_name, order)
+        self.save(extra_update=extra_update)
 
     def above(self, ref, extra_update=None):
         """

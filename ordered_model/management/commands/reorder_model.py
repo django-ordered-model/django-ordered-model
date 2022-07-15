@@ -73,7 +73,7 @@ class Command(BaseCommand):
     def reorder_queryset(self, queryset):
         model = queryset.model
         order_field_name = model.order_field_name
-
+        bulk_update_list = []
         for order, obj in enumerate(queryset):
             if getattr(obj, order_field_name) != order:
                 if self.verbosity:
@@ -86,4 +86,5 @@ class Command(BaseCommand):
                         )
                     )
                 setattr(obj, order_field_name, order)
-                obj.save()
+                bulk_update_list.append(obj)
+        model.objects.bulk_update(bulk_update_list, [order_field_name])
