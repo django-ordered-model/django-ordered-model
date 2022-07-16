@@ -126,3 +126,12 @@ class ItemGroup(models.Model):
 class GroupedItem(OrderedModel):
     group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, related_name="items")
     order_with_respect_to = "group__user"
+
+
+class PrependItem(OrderedModelBase):
+    # default order is 0, so new items would be inserted to the head
+    order = models.PositiveIntegerField(editable=False, db_index=True, default=0)
+    order_field_name = "order"
+
+    class Meta:
+        ordering = ("order",)

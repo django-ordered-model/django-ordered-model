@@ -1,10 +1,13 @@
 from functools import partial, reduce
 
 from django.db import models
-from django.db.models import Max, Min, F
+from django.db.models import F, Max, Min
 from django.db.models.constants import LOOKUP_SEP
+from django.db.models.signals import pre_save
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+
+from ordered_model.signals import pre_save_ordered_model
 
 
 def get_lookup_value(obj, field):
@@ -148,9 +151,15 @@ class OrderedModelBase(models.Model):
     order_field_name = None
     order_with_respect_to = None
     order_class_path = None
+    _extra_update = None
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        pre_save.connect(pre_save_ordered_model, sender=cls)
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
@@ -191,13 +200,6 @@ class OrderedModelBase(models.Model):
         Get next element in this object's ordered stack.
         """
         return self.get_ordering_queryset().above_instance(self).first()
-
-    def save(self, *args, **kwargs):
-        order_field_name = self.order_field_name
-        if getattr(self, order_field_name) is None:
-            order = self.get_ordering_queryset().get_next_order()
-            setattr(self, order_field_name, order)
-        super().save(*args, **kwargs)
 
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
@@ -247,22 +249,8 @@ class OrderedModelBase(models.Model):
                     type(order).__name__
                 )
             )
-
-        order_field_name = self.order_field_name
-        if order is None or getattr(self, order_field_name) == order:
-            # object is already at desired position
-            return
-        qs = self.get_ordering_queryset()
-        extra_update = {} if extra_update is None else extra_update
-        if getattr(self, order_field_name) > order:
-            qs.below_instance(self).above(order, inclusive=True).increase_order(
-                **extra_update
-            )
-        else:
-            qs.above_instance(self).below(order, inclusive=True).decrease_order(
-                **extra_update
-            )
-        setattr(self, order_field_name, order)
+        setattr(self, self.order_field_name, order)
+        self._extra_update = extra_update
         self.save()
 
     def above(self, ref, extra_update=None):
