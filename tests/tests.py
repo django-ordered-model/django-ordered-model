@@ -142,7 +142,7 @@ class ModelTestCase(TestCase):
         self.assertNames(["1", "3", "4"])
         Item.objects.get(pk=3).up()
         self.assertNames(["3", "1", "4"])
-    
+
     def test_save(self):
         # New item without specifying order
         item = Item(name="5")
