@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.core.management import BaseCommand, CommandError
-from django.db import DatabaseError, transaction
+from django.db import transaction
 
 from ordered_model.models import OrderedModelBase
 

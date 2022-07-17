@@ -1,5 +1,16 @@
-def pre_save_ordered_model(sender, instance, **kwargs):
+import sys
+
+from django.db.models.signals import pre_save
+
+
+def pre_save_ordered_model(sender, instance, update_fields=None, **kwargs):
+    from ordered_model.models import OrderedModelBase
+
+    if not issubclass(sender, OrderedModelBase):
+        return
     order_field_name = sender.order_field_name
+    if update_fields and order_field_name not in update_fields:
+        return
     order = getattr(instance, order_field_name)
     max_order = None
     if instance.pk:
@@ -29,3 +40,7 @@ def pre_save_ordered_model(sender, instance, **kwargs):
                 **extra_update
             )
         instance._extra_update = None
+
+
+if sys.version_info < (3, 6):
+    pre_save.connect(pre_save_ordered_model, dispatch_uid="pre_save_ordered_model")
