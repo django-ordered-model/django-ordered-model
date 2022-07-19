@@ -170,6 +170,19 @@ class OrderWithRespectToTests(TestCase):
         self.q1_a2 = q1.answers.create(user=u0)
         self.q2_a2 = q2.answers.create(user=u0)
 
+    def test_respect_to_changed(self):
+        self.q1_a1.question = self.q2_a1.question
+        self.q1_a1.save()
+        self.assertSequenceEqual(
+            Answer.objects.values_list("pk", "order"),
+            [
+                (self.q1_a2.pk, 0),
+                (self.q1_a1.pk, 0),
+                (self.q2_a1.pk, 1),
+                (self.q2_a2.pk, 2),
+            ],
+        )
+
     def test_saved_order(self):
         self.assertSequenceEqual(
             Answer.objects.values_list("pk", "order"),

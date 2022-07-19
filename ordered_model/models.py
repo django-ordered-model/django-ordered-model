@@ -22,21 +22,6 @@ class OrderedModelQuerySet(models.QuerySet):
         order_field_name = self._get_order_field_name()
         return LOOKUP_SEP.join([order_field_name, lookup])
 
-    def _get_order_with_respect_to(self):
-        model = self.model
-        order_with_respect_to = model.order_with_respect_to
-        if isinstance(order_with_respect_to, str):
-            order_with_respect_to = (order_with_respect_to,)
-        if order_with_respect_to is None:
-            raise AssertionError(
-                (
-                    'ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
-                    "should go in the model body, and is not to be confused with the Meta property of the same name, "
-                    "which is independent Django functionality"
-                ).format(model)
-            )
-        return order_with_respect_to
-
     def get_max_order(self):
         order_field_name = self._get_order_field_name()
         return self.aggregate(Max(order_field_name)).get(
@@ -93,11 +78,10 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def bulk_create(self, objs, *args, **kwargs):
         order_field_name = self._get_order_field_name()
-        order_with_respect_to = self.model.order_with_respect_to
+        order_with_respect_to = self.model.get_order_with_respect_to()
         objs = list(objs)
         if order_with_respect_to:
             order_with_respect_to_mapping = {}
-            order_with_respect_to = self._get_order_with_respect_to()
             for obj in objs:
                 key = tuple(
                     get_lookup_value(obj, field) for field in order_with_respect_to
@@ -115,7 +99,7 @@ class OrderedModelQuerySet(models.QuerySet):
         return super().bulk_create(objs, *args, **kwargs)
 
     def _get_order_with_respect_to_filter_kwargs(self, ref):
-        order_with_respect_to = self._get_order_with_respect_to()
+        order_with_respect_to = self.model.get_order_with_respect_to()
         _get_lookup_value = partial(get_lookup_value, ref)
         return {field: _get_lookup_value(field) for field in order_with_respect_to}
 
@@ -160,6 +144,12 @@ class OrderedModelBase(models.Model):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         pre_save.connect(pre_save_ordered_model, sender=cls)
+
+    @classmethod
+    def get_order_with_respect_to(cls):
+        if cls.order_with_respect_to and isinstance(cls.order_with_respect_to, str):
+            return [cls.order_with_respect_to]
+        return list(cls.order_with_respect_to or [])
 
     def _validate_ordering_reference(self, ref):
         if self.order_with_respect_to is not None:
