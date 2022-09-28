@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.core.management import BaseCommand, CommandError
-from django.db import DatabaseError, transaction
+from django.db import transaction
 
 from ordered_model.models import OrderedModelBase
 
@@ -73,6 +73,7 @@ class Command(BaseCommand):
     def reorder_queryset(self, queryset):
         model = queryset.model
         order_field_name = model.order_field_name
+        bulk_update_list = []
 
         for order, obj in enumerate(queryset):
             if getattr(obj, order_field_name) != order:
@@ -86,4 +87,5 @@ class Command(BaseCommand):
                         )
                     )
                 setattr(obj, order_field_name, order)
-                obj.save()
+                bulk_update_list.append(obj)
+        model.objects.bulk_update(bulk_update_list, [order_field_name])
