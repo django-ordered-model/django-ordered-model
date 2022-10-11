@@ -1,6 +1,12 @@
 Change log
 ==========
 
+Unreleased
+----------
+
+- Use bulk update method in `reorder_model` management command for performance (#273)
+- Add tox builder for python 3.10, use upstream DRF with upstream django
+
 3.6 - 2022-05-30
 ----------
 
