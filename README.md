@@ -292,6 +292,7 @@ from models import Item
 
 class ItemAdmin(OrderedModelAdmin):
     list_display = ('name', 'move_up_down_links')
+    ordering = ('order',)
 
 admin.site.register(Item, ItemAdmin)
 ```
