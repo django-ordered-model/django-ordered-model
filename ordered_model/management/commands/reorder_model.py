@@ -74,6 +74,7 @@ class Command(BaseCommand):
         model = queryset.model
         order_field_name = model.order_field_name
         bulk_update_list = []
+
         for order, obj in enumerate(queryset):
             if getattr(obj, order_field_name) != order:
                 if self.verbosity:
