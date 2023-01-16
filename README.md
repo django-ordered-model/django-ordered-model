@@ -260,6 +260,7 @@ class Item(OrderedModel):
     objects = ItemManager()
 ```
 
+If another Django plugin requires you to use specific `Model`, `QuerySet` or `ModelManager` classes, you might need to construct intermediate classes using multiple inheritance, [see an example in issue 270](https://github.com/django-ordered-model/django-ordered-model/issues/270).
 
 Custom ordering field
 ---------------------
