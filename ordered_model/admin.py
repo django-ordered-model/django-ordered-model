@@ -58,6 +58,15 @@ class BaseOrderedModelAdmin:
 
 
 class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
+    def get_ordering(self, request):
+        ordering = list(super().get_ordering(request))
+
+        order_field_name = getattr(self.opts.model, "order_field_name", None)
+        if order_field_name and order_field_name not in ordering:
+            ordering.insert(0, order_field_name)
+
+        return ordering
+
     def get_urls(self):
         from django.urls import path
 
