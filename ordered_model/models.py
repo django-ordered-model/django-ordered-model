@@ -27,7 +27,7 @@ class OrderedModelQuerySet(models.QuerySet):
         if order_with_respect_to is None:
             raise AssertionError(
                 (
-                    'ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
+                    'ordered admin "{0}" has not specified "order_with_respect_to"; note that this '
                     "should go in the model body, and is not to be confused with the Meta property of the same name, "
                     "which is independent Django functionality"
                 ).format(model)
