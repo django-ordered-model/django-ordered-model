@@ -17,6 +17,7 @@ from .models import (
     CustomPKGroup,
 )
 
+
 # README example for OrderedModelAdmin
 class ItemAdmin(OrderedModelAdmin):
     list_display = ("name", "move_up_down_links")
