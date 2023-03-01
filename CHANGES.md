@@ -6,6 +6,7 @@ Unreleased
 
 - Use bulk update method in `reorder_model` management command for performance (#273)
 - Add tox builder for python 3.10, use upstream DRF with upstream django
+- Emit a system Check failure if a subclass of `OrderedModelBase` fails to specify `Meta.ordering`
 
 3.6 - 2022-05-30
 ----------
