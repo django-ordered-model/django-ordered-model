@@ -40,3 +40,4 @@ TEMPLATES = [
 REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"]}
 STATIC_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "staticfiles")
 STATIC_URL = "/static/"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
