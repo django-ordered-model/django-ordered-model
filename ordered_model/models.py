@@ -1,5 +1,6 @@
 from functools import partial, reduce
 
+from django.core import checks
 from django.db import models
 from django.db.models import Max, Min, F
 from django.db.models.constants import LOOKUP_SEP
@@ -306,6 +307,22 @@ class OrderedModelBase(models.Model):
         """
         o = self.get_ordering_queryset().get_max_order()
         self.to(o, extra_update=extra_update)
+
+    @classmethod
+    def check(cls, **kwargs):
+        errors = super().check(**kwargs)
+
+        ordering = getattr(cls._meta, "ordering", None)
+        if ordering is None or len(ordering) < 1:
+            errors.append(
+                checks.Warning(
+                    "OrderedModelBase subclass needs Meta.ordering specified.",
+                    hint="If you have overwritten Meta, try inheriting with Meta(OrderedModel.Meta).",
+                    obj=str(cls.__qualname__),
+                    id="ordered_model.W001",
+                )
+            )
+        return errors
 
 
 class OrderedModel(OrderedModelBase):

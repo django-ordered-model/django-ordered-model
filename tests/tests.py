@@ -3,14 +3,18 @@ from io import StringIO
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
+from django.core import checks
 from django.utils.timezone import now
 from django.urls import reverse
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
+from django.test.utils import isolate_apps, override_system_checks
 from django import VERSION
 
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework import status
 from tests.drf import ItemViewSet, router
+
+from ordered_model.models import OrderedModel
 
 from tests.models import (
     Answer,
@@ -1211,3 +1215,40 @@ class DRFTestCase(APITestCase):
         self.assertEqual(response.data, {"pkid": "b", "name": "2", "renamedOrder": 0})
         self.assertEqual(CustomItem.objects.get(pkid="b").order, 0)
         self.assertEqual(CustomItem.objects.get(pkid="a").order, 1)
+
+
+@isolate_apps("tests", attr_name="apps")
+@override_system_checks([checks.model_checks.check_all_models])
+class ChecksTest(SimpleTestCase):
+    def test_no_inherited_ordering(self):
+        class TestModel(OrderedModel):
+            class Meta:
+                verbose_name = "unordered"
+
+        self.maxDiff = None
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Warning(
+                    msg="OrderedModelBase subclass needs Meta.ordering specified.",
+                    hint="If you have overwritten Meta, try inheriting with Meta(OrderedModel.Meta).",
+                    obj="ChecksTest.test_no_inherited_ordering.<locals>.TestModel",
+                    id="ordered_model.W001",
+                )
+            ],
+        )
+
+    def test_explicit_ordering(self):
+        class TestModel2(OrderedModel):
+            class Meta:
+                verbose_name = "unordered"
+                ordering = ["order"]
+
+        self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
+
+    def test_inherited_ordering(self):
+        class TestModel(OrderedModel):
+            class Meta(OrderedModel.Meta):
+                verbose_name = "unordered"
+
+        self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
