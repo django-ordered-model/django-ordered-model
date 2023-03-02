@@ -209,10 +209,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
 
         # Find the fields which refer to the parent model of this inline, and
         # use one of them if they aren't None.
-        order_with_respect_to = (
-            obj._meta.default_manager._get_order_with_respect_to_filter_kwargs(obj)
-            or []
-        )
+        order_with_respect_to = obj._wrt_map() or []
         fields = [
             str(value.pk)
             for value in order_with_respect_to.values()

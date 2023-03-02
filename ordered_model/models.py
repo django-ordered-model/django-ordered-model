@@ -84,11 +84,13 @@ class OrderedModelQuerySet(models.QuerySet):
         objs = list(objs)
         order_with_respect_to_mapping = {}
         for obj in objs:
-            key = obj._wrt_map()
+            key = frozenset(obj._wrt_map().items())
             if key in order_with_respect_to_mapping:
                 order_with_respect_to_mapping[key] += 1
             else:
-                order_with_respect_to_mapping[key] = self.filter(**key).get_next_order()
+                order_with_respect_to_mapping[key] = self.filter(
+                    **obj._wrt_map()
+                ).get_next_order()
             setattr(obj, order_field_name, order_with_respect_to_mapping[key])
         return super().bulk_create(objs, *args, **kwargs)
 
