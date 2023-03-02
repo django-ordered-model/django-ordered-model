@@ -304,7 +304,7 @@ class OrderWithRespectToReorderTests(TestCase):
             Answer.objects.values_list("pk", "order"),
             [
                 (self.u0_a1.pk, 0),
-                (self.u0_a3.pk, 2),
+                (self.u0_a3.pk, 1),
                 (self.u1_a1.pk, 0),
                 (self.u1_a2.pk, 1),
                 (self.u1_a3.pk, 2),

@@ -24,21 +24,6 @@ class OrderedModelQuerySet(models.QuerySet):
         order_field_name = self._get_order_field_name()
         return LOOKUP_SEP.join([order_field_name, lookup])
 
-    def _get_order_with_respect_to(self):
-        model = self.model
-        order_with_respect_to = model.order_with_respect_to
-        if isinstance(order_with_respect_to, str):
-            order_with_respect_to = (order_with_respect_to,)
-        if order_with_respect_to is None:
-            raise AssertionError(
-                (
-                    'ordered model "{0}" has not specified "order_with_respect_to"; note that this '
-                    "should go in the model body, and is not to be confused with the Meta property of the same name, "
-                    "which is independent Django functionality"
-                ).format(model)
-            )
-        return order_with_respect_to
-
     def get_max_order(self):
         order_field_name = self._get_order_field_name()
         return self.aggregate(Max(order_field_name)).get(
@@ -95,40 +80,17 @@ class OrderedModelQuerySet(models.QuerySet):
 
     def bulk_create(self, objs, *args, **kwargs):
         order_field_name = self._get_order_field_name()
-        order_with_respect_to = self.model.order_with_respect_to
+        order_with_respect_to = self.model.get_order_with_respect_to()
         objs = list(objs)
-        if order_with_respect_to:
-            order_with_respect_to_mapping = {}
-            order_with_respect_to = self._get_order_with_respect_to()
-            for obj in objs:
-                key = tuple(
-                    get_lookup_value(obj, field) for field in order_with_respect_to
-                )
-                if key in order_with_respect_to_mapping:
-                    order_with_respect_to_mapping[key] += 1
-                else:
-                    order_with_respect_to_mapping[
-                        key
-                    ] = self.filter_by_order_with_respect_to(obj).get_next_order()
-                setattr(obj, order_field_name, order_with_respect_to_mapping[key])
-        else:
-            for order, obj in enumerate(objs, self.get_next_order()):
-                setattr(obj, order_field_name, order)
+        order_with_respect_to_mapping = {}
+        for obj in objs:
+            key = obj._wrt_map()
+            if key in order_with_respect_to_mapping:
+                order_with_respect_to_mapping[key] += 1
+            else:
+                order_with_respect_to_mapping[key] = self.filter(**key).get_next_order()
+            setattr(obj, order_field_name, order_with_respect_to_mapping[key])
         return super().bulk_create(objs, *args, **kwargs)
-
-    def _get_order_with_respect_to_filter_kwargs(self, ref):
-        order_with_respect_to = self._get_order_with_respect_to()
-        _get_lookup_value = partial(get_lookup_value, ref)
-        return {field: _get_lookup_value(field) for field in order_with_respect_to}
-
-    _get_order_with_respect_to_filter_kwargs.queryset_only = False
-
-    def filter_by_order_with_respect_to(self, ref):
-        order_with_respect_to = self.model.order_with_respect_to
-        if order_with_respect_to:
-            filter_kwargs = self._get_order_with_respect_to_filter_kwargs(ref)
-            return self.filter(**filter_kwargs)
-        return self
 
 
 class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
@@ -153,55 +115,53 @@ class OrderedModelBase(models.Model):
     order_field_name = None
     order_with_respect_to = None
     order_class_path = None
-    original_order_with_respect_to_fks = None
 
     class Meta:
         abstract = True
 
     def __init__(self, *args, **kwargs):
         super(OrderedModelBase, self).__init__(*args, **kwargs)
-        attrs = self._attrs()
-        self._original_order_with_respect_to_fks = (
-            {get_lookup_value(self, name) for name in self._attrs()} if attrs else set()
-        )
+        self._original_wrt_map = self._wrt_map()
 
-    def _attrs(self):
-        if not self.order_with_respect_to:
-            return None
-        t = (
-            self.order_with_respect_to
-            if type(self.order_with_respect_to) is tuple
-            else (self.order_with_respect_to,)
-        )
-        return t
+    def _wrt_map(self):
+        d = {}
+        for a in self.get_order_with_respect_to():
+            d[a] = get_lookup_value(self, a)
+        return d
+
+    @classmethod
+    def get_order_with_respect_to(cls):
+        if type(cls.order_with_respect_to) is tuple:
+            return cls.order_with_respect_to
+        elif type(cls.order_with_respect_to) is str:
+            return (cls.order_with_respect_to,)
+        elif cls.order_with_respect_to is None:
+            return tuple()
+        else:
+            raise AssertionError("Invalid value for model.order_with_respect_to")
 
     def _validate_ordering_reference(self, ref):
-        if self.order_with_respect_to is not None:
-            self_kwargs = (
-                self._meta.default_manager._get_order_with_respect_to_filter_kwargs(
-                    self
+        if self._wrt_map() != ref._wrt_map():
+            raise ValueError(
+                "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
+                    self,
+                    self._meta.default_manager.model,
+                    " and ".join(
+                        ["'{}'".format(o) for o in self.get_order_with_respect_to()]
+                    ),
                 )
             )
-            ref_kwargs = (
-                ref._meta.default_manager._get_order_with_respect_to_filter_kwargs(ref)
-            )
-            if self_kwargs != ref_kwargs:
-                raise ValueError(
-                    "{0!r} can only be swapped with instances of {1!r} with equal {2!s} fields.".format(
-                        self,
-                        self._meta.default_manager.model,
-                        " and ".join(["'{}'".format(o) for o in self_kwargs]),
-                    )
-                )
 
-    def get_ordering_queryset(self, qs=None):
+    def get_ordering_queryset(self, qs=None, wrt=None):
         if qs is None:
             if self.order_class_path:
                 model = import_string(self.order_class_path)
                 qs = model._meta.default_manager.all()
             else:
                 qs = self._meta.default_manager.all()
-        return qs.filter_by_order_with_respect_to(self)
+        if wrt:
+            return qs.filter(**wrt)
+        return qs.filter(**self._wrt_map())
 
     def previous(self):
         """
@@ -217,18 +177,19 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
-        if getattr(self, order_field_name) is None or (
-            self._attrs() is not None
-            and {get_lookup_value(self, name) for name in self._attrs()}
-            != self._original_order_with_respect_to_fks
-        ):
+        wrt_changed = self._wrt_map() != self._original_wrt_map
+
+        if wrt_changed:
+            # do 'delete' using old wrt values!
+            qs = self.get_ordering_queryset(wrt=self._original_wrt_map)
+            qs.above_instance(self).decrease_order()
+
+        if getattr(self, order_field_name) is None or wrt_changed:
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, order_field_name, order)
         super().save(*args, **kwargs)
-        attrs = self._attrs()
-        self._original_order_with_respect_to_fks = (
-            {get_lookup_value(self, name) for name in attrs} if attrs else set()
-        )
+
+        self._original_wrt_map = self._wrt_map()
 
     def delete(self, *args, extra_update=None, **kwargs):
         qs = self.get_ordering_queryset()
@@ -350,6 +311,15 @@ class OrderedModelBase(models.Model):
                     hint="If you have overwritten Meta, try inheriting with Meta(OrderedModel.Meta).",
                     obj=str(cls.__qualname__),
                     id="ordered_model.W001",
+                )
+            )
+        owrt = getattr(cls, "order_with_respect_to")
+        if not (type(owrt) is tuple or type(owrt) is str or owrt is None):
+            errors.append(
+                checks.Error(
+                    "OrderedModelBase subclass order_with_respect_to value invalid. Expected tuple, str or None",
+                    obj=str(cls.__qualname__),
+                    id="ordered_model.E001",
                 )
             )
         return errors
