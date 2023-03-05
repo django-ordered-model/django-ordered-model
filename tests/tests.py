@@ -4,17 +4,21 @@ from io import StringIO
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core import checks
+from django.db.models.signals import post_delete
+from django.dispatch import Signal
 from django.utils.timezone import now
 from django.urls import reverse
 from django.test import TestCase, SimpleTestCase
 from django.test.utils import isolate_apps, override_system_checks
 from django import VERSION
 
+
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework import status
 from tests.drf import ItemViewSet, router
 
 from ordered_model.models import OrderedModel
+from ordered_model.signals import on_ordered_model_delete
 
 from tests.models import (
     Answer,
@@ -32,6 +36,8 @@ from tests.models import (
     ItemGroup,
     GroupedItem,
     TestUser,
+    CascadedParentModel,
+    CascadedOrderedModel,
 )
 
 
@@ -1143,7 +1149,11 @@ class ReorderModelTestCase(TestCase):
         OpenQuestion.objects.create(answer="4", order=3)
 
         # bypass our OrderedModel delete logic to leave a hole in ordering
+        self.assertTrue(post_delete.disconnect(dispatch_uid="on_ordered_model_delete"))
         OpenQuestion.objects.filter(answer="3").delete()
+        post_delete.connect(
+            on_ordered_model_delete, dispatch_uid="on_ordered_model_delete"
+        )
 
         self.assertEqual([0, 1, 3], [i.order for i in OpenQuestion.objects.all()])
         self.assertEqual(
@@ -1280,3 +1290,34 @@ class ChecksTest(SimpleTestCase):
                 verbose_name = "unordered"
 
         self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
+
+
+class TestCascadedDelete(TestCase):
+    def test_that_model_when_deleted_by_cascade_still_maintains_ordering(self):
+        parent_for_order_0_child = CascadedParentModel.objects.create()
+        child_with_order_0 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_0_child
+        )
+
+        parent__for_order_1_child = CascadedParentModel.objects.create()
+        child_with_order_1 = CascadedOrderedModel.objects.create(
+            parent=parent__for_order_1_child
+        )
+
+        parent_for_order_2_child = CascadedParentModel.objects.create()
+        child_with_order_2 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_2_child
+        )
+
+        # Delete positition 1 parent, now there's a hole, which child_with_order_2 should take
+        parent__for_order_1_child.delete()
+
+        # Refresh children from db
+        child_with_order_0.refresh_from_db()
+        child_with_order_2.refresh_from_db()
+
+        print(repr(CascadedOrderedModel.objects.all()))
+
+        # Assert the hole has been filled
+        self.assertEqual(child_with_order_0.order, 0)
+        self.assertEqual(child_with_order_2.order, 1)
