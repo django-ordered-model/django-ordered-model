@@ -126,3 +126,11 @@ class ItemGroup(models.Model):
 class GroupedItem(OrderedModel):
     group = models.ForeignKey(ItemGroup, on_delete=models.CASCADE, related_name="items")
     order_with_respect_to = "group__user"
+
+
+class CascadedParentModel(models.Model):
+    pass
+
+
+class CascadedOrderedModel(OrderedModel):
+    parent = models.ForeignKey(to=CascadedParentModel, on_delete=models.CASCADE)

@@ -194,6 +194,10 @@ class OrderedModelBase(models.Model):
         self._original_wrt_map = self._wrt_map()
 
     def delete(self, *args, extra_update=None, **kwargs):
+        # Flag re-ordering performed so that post_delete signal
+        # does not duplicate the re-ordering. See signals.py
+        self._was_deleted_via_delete_method = True
+
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
         qs.above_instance(self).decrease_order(**extra_update)

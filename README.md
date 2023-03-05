@@ -405,6 +405,7 @@ Test suite
 To run the tests against your current environment, use:
 
 ```bash
+$ pip install djangorestframework
 $ django-admin test --pythonpath=. --settings=tests.settings
 ```
 

@@ -4,6 +4,8 @@ Change log
 Unreleased
 ----------
 
+- Cascaded deletes of `OrderedModel` instances now handled using signals (#182)
+
 3.7 - 2023-03-03
 ----------
 
