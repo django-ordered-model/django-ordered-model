@@ -696,7 +696,9 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         self.p2_t2.save()
         self.p2_t3 = PizzaToppingsThroughModel(pizza=self.p2, topping=self.t4)
         self.p2_t3.save()
-        self.p2_t4 = PizzaToppingsThroughModel(pizza=self.p2, topping=self.t5)
+        self.p2_t4 = PizzaToppingsThroughModel()
+        self.p2_t4.pizza = self.p2
+        self.p2_t4.topping = self.t5
         self.p2_t4.save()
 
     def test_saved_order(self):
@@ -1315,8 +1317,6 @@ class TestCascadedDelete(TestCase):
         # Refresh children from db
         child_with_order_0.refresh_from_db()
         child_with_order_2.refresh_from_db()
-
-        print(repr(CascadedOrderedModel.objects.all()))
 
         # Assert the hole has been filled
         self.assertEqual(child_with_order_0.order, 0)
