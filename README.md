@@ -232,6 +232,32 @@ class OpenQuestion(BaseQuestion):
     answer = models.TextField(max_length=100)
 ```
 
+Ordering of ManyToMany Relationship query results
+-----------------
+
+Django ManyToMany relationships created by `ManyToManyField` [do not respect `Meta.ordering` on the intermediate model](https://code.djangoproject.com/ticket/30460) in results fetched from the 'members' queryset. For example with our usual `Pizza` example, getting the `Toppings` for a `hawaiian_pizza` instance using `PizzaToppingsThroughModel.objects.filter(pizza=hawaiian_pizza).all()` is correctly ordered (by the ThroughModel `Meta.ordering`). However `hawaiian_pizza.toppings.all()` is not, and returns the objects following the 'to' model ordering.
+
+To work around this, explicitly add an ordering clause, e.g. with `hawaiian_pizza.toppings.all().order_by('pizzatoppingsthroughmodel__order')` or use our `OrderedManyToManyField` which does this by default:
+
+```python
+from ordered_model.fields import OrderedManyToManyField
+
+class Pizza(models.Model):
+    name = models.CharField(max_length=100)
+    toppings = OrderedManyToManyField(Topping, through="PizzaToppingsThroughModel")
+
+
+class PizzaToppingsThroughModel(OrderedModel):
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
+    order_with_respect_to = "pizza"
+
+    class Meta:
+        ordering = ("pizza", "order")
+```
+
+With this definition `hawaiian_pizza.toppings.all()` returns toppings in order.
+
 Custom Manager and QuerySet
 -----------------
 When your model extends `OrderedModel`, it inherits a custom `ModelManager` instance which in turn provides additional operations on the resulting `QuerySet`. For example if `Item` is an `OrderedModel` subclass, the  queryset `Item.objects.all()` has functions:
