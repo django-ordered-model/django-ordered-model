@@ -1,6 +1,7 @@
 from django.db import models
 
 from ordered_model.models import OrderedModel, OrderedModelBase
+from ordered_model.fields import OrderedManyToManyField
 import uuid
 
 
@@ -146,3 +147,18 @@ class StateMachine(OrderedModel):
     name = models.CharField(max_length=32)
     flow = models.ForeignKey(Flow, on_delete=models.PROTECT, null=True, blank=True)
     order_with_respect_to = "flow"
+
+
+# Duplicate Pizza models using OrderedManyToManyField
+class PizzaOM2M(models.Model):
+    name = models.CharField(max_length=100)
+    toppings = OrderedManyToManyField(Topping, through="PizzaOM2MToppingsThroughModel")
+
+
+class PizzaOM2MToppingsThroughModel(OrderedModel):
+    pizza = models.ForeignKey(PizzaOM2M, on_delete=models.CASCADE)
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
+    order_with_respect_to = "pizza"
+
+    class Meta:
+        ordering = ("pizza", "order")

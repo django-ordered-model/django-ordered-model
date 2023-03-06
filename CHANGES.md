@@ -6,7 +6,7 @@ Unreleased
 - Fix `post_delete` signal triggered upshuffles to do a potentially expensive full reordering of the owrt group (#307)
 - Support passing custom `--batch_size` to `reorder_model` management command (#303)
 - Add tox builder for python 3.11, Django 4.1 and above
-
+- Add `ordered_model.fields.OrderedManyToManyField` which respects `Meta.ordering` when following ManyToMany related fields. (#277)
 
 3.7.4 - 2023-03-17
 ----------

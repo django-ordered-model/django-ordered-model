@@ -31,8 +31,10 @@ from tests.models import (
     CustomPKGroupItem,
     CustomPKGroup,
     Pizza,
+    PizzaOM2M,
     Topping,
     PizzaToppingsThroughModel,
+    PizzaOM2MToppingsThroughModel,
     BaseQuestion,
     OpenQuestion,
     MultipleChoiceQuestion,
@@ -733,6 +735,30 @@ class OrderWithRespectToTestsManyToMany(TestCase):
             ],
         )
 
+    def test_members_order_issue277(self):
+        # make order differ from pk order
+        self.p1_t3.top()  # anchovy, tomatoe, mozarella,
+
+        # ManyToMany relationship iterates by 'to' model order, ie. PK of topping
+        l1 = self.p1.toppings.all().values_list("name", flat=True)
+        self.assertEqual(list(l1), ["tomatoe", "mozarella", "anchovy"])  # pk order
+
+        # Through model ordering is ordered correctly
+        l2 = (
+            PizzaToppingsThroughModel.objects.filter(pizza=self.p1)
+            .all()
+            .values_list("topping__name", flat=True)
+        )
+        self.assertEqual(list(l2), ["anchovy", "tomatoe", "mozarella"])  # ordered
+
+        # explicit ordering works
+        l3 = (
+            self.p1.toppings.all()
+            .order_by("pizzatoppingsthroughmodel__order")
+            .values_list("name", flat=True)
+        )
+        self.assertEqual(list(l3), ["anchovy", "tomatoe", "mozarella"])  # ordered
+
     def test_swap(self):
         with self.assertRaises(ValueError):
             self.p1_t1.swap(self.p2_t1)
@@ -881,6 +907,32 @@ class ConstructorTest(TestCase):
                 (self.f1.pk, 2, "c"),
             ],
         )
+
+
+class OrderWithRespectToTestsOrderedManyToManyField(TestCase):
+    def setUp(self):
+        self.t1 = Topping.objects.create(name="tomatoe")
+        self.t2 = Topping.objects.create(name="mozarella")
+        self.t3 = Topping.objects.create(name="anchovy")
+        self.p1 = PizzaOM2M.objects.create(name="Napoli")
+        # tomatoe, mozarella, anchovy
+        self.p1_t1 = PizzaOM2MToppingsThroughModel.objects.create(
+            pizza=self.p1, topping=self.t1
+        )
+        self.p1_t2 = PizzaOM2MToppingsThroughModel.objects.create(
+            pizza=self.p1, topping=self.t2
+        )
+        self.p1_t3 = PizzaOM2MToppingsThroughModel.objects.create(
+            pizza=self.p1, topping=self.t3
+        )
+
+    def test_members_order_issue277(self):
+        # make order differ from pk order
+        self.p1_t3.top()  # anchovy, tomatoe, mozarella,
+
+        # OrderedManyToMany relationship iterates by ordered model order
+        l1 = self.p1.toppings.all().values_list("name", flat=True)
+        self.assertEqual(list(l1), ["anchovy", "tomatoe", "mozarella"])
 
 
 class MultiOrderWithRespectToTests(TestCase):
