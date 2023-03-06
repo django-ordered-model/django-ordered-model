@@ -4,6 +4,7 @@ Change log
 Unreleased
 ----------
 
+- Fix for `model.save()` falsely detecting WRT change from admin create since 3.7
 - Cascaded deletes of `OrderedModel` instances now handled using signals (#182)
 
 3.7 - 2023-03-03
