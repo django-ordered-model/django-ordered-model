@@ -127,8 +127,11 @@ class OrderedModelBase(models.Model):
 
     def _wrt_map(self):
         d = {}
-        for a in self.get_order_with_respect_to():
-            d[a] = get_lookup_value(self, a)
+        for order_field_name in self.get_order_with_respect_to():
+            if not order_field_name.endswith("_id"):
+                order_field_name = order_field_name + "_id"
+            d[order_field_name] = get_lookup_value(self, order_field_name)
+
         return d
 
     @classmethod
