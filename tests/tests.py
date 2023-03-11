@@ -16,6 +16,7 @@ from django import VERSION
 from rest_framework.test import APIRequestFactory, APITestCase
 from rest_framework import status
 from tests.drf import ItemViewSet, router
+from tests.utils import assertNumQueries
 
 from ordered_model.models import OrderedModel
 from ordered_model.signals import on_ordered_model_delete
@@ -164,6 +165,9 @@ class OrderWithRespectToTests(TestCase):
         self.q1_a2 = q1.answers.create(user=u0)
         self.q2_a2 = q2.answers.create(user=u0)
 
+        with assertNumQueries(self, 1):
+            Answer.objects.get(id=self.q1_a1.id)
+
     def test_saved_order(self):
         self.assertSequenceEqual(
             Answer.objects.values_list("pk", "order"),
@@ -303,9 +307,14 @@ class OrderWithRespectToReorderTests(TestCase):
         self.u1_a2 = q1.answers.create(user=self.u1)
         self.u1_a3 = q1.answers.create(user=self.u1)
 
+        with assertNumQueries(self, 1):
+            Answer.objects.get(id=self.u0_a1.id)
+
     def test_reorder_when_field_value_changed(self):
         self.u0_a2.user = self.u1
-        self.u0_a2.save()
+        with assertNumQueries(self, 3):
+            self.u0_a2.save()
+
         self.assertSequenceEqual(
             Answer.objects.values_list("pk", "order"),
             [
@@ -685,7 +694,9 @@ class OrderWithRespectToTestsManyToMany(TestCase):
         )  # tomatoe, mozarella, mushrooms, ham
         # Now put the toppings on the pizza
         self.p1_t1 = PizzaToppingsThroughModel(pizza=self.p1, topping=self.t1)
-        self.p1_t1.save()
+        with assertNumQueries(self, 2):
+            self.p1_t1.save()
+
         self.p1_t2 = PizzaToppingsThroughModel(pizza=self.p1, topping=self.t2)
         self.p1_t2.save()
         self.p1_t3 = PizzaToppingsThroughModel(pizza=self.p1, topping=self.t3)
