@@ -4,6 +4,8 @@ Change log
 Unreleased
 ----------
 
+- Fix `reorder_model` management command re-ordering with multiple `order_with_respect_to` values
+
 3.7.2 - 2023-03-14
 ----------
 - Fix a performance regression (unnecessary queries) in the WRT change detection (#286)
