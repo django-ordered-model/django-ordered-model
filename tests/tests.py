@@ -1305,7 +1305,7 @@ class ChecksTest(SimpleTestCase):
 
         self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
 
-    def test_bad_ort(self):
+    def test_bad_owrt(self):
         class TestModel(OrderedModel):
             order_with_respect_to = 7
 
@@ -1314,7 +1314,7 @@ class ChecksTest(SimpleTestCase):
             [
                 checks.Error(
                     msg="OrderedModelBase subclass order_with_respect_to value invalid. Expected tuple, str or None.",
-                    obj="ChecksTest.test_bad_ort.<locals>.TestModel",
+                    obj="ChecksTest.test_bad_owrt.<locals>.TestModel",
                     id="ordered_model.E002",
                 )
             ],
@@ -1323,6 +1323,7 @@ class ChecksTest(SimpleTestCase):
     def test_bad_manager(self):
         class BadModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
             pass
+
         class TestModel(OrderedModel):
             objects = BadModelManager()
 
@@ -1339,8 +1340,11 @@ class ChecksTest(SimpleTestCase):
 
     def test_bad_queryset(self):
         # I've swapped the inheritance order here so that the models.QuerySet is returned
-        class BadQSModelManager(models.Manager.from_queryset(models.QuerySet), OrderedModelManager):
+        class BadQSModelManager(
+            models.Manager.from_queryset(models.QuerySet), OrderedModelManager
+        ):
             pass
+
         class TestModel(OrderedModel):
             objects = BadQSModelManager()
 
@@ -1351,6 +1355,41 @@ class ChecksTest(SimpleTestCase):
                     msg="OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",
                     obj="ChecksTest.test_bad_queryset.<locals>.TestModel",
                     id="ordered_model.E004",
+                )
+            ],
+        )
+
+    def test_owrt_not_foreign_key(self):
+        class TestModel(OrderedModel):
+            name = models.CharField(max_length=100)
+            order_with_respect_to = "name"
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'name') which is not a ForeignKey. This is unsupported.",
+                    obj="ChecksTest.test_owrt_not_foreign_key.<locals>.TestModel",
+                    id="ordered_model.E005",
+                )
+            ],
+        )
+
+    def test_owrt_not_immediate_foreign_key(self):
+        class TestTargetModel(OrderedModel):
+            name = models.CharField(max_length=100)
+
+        class TestModel(OrderedModel):
+            target = models.ForeignKey(to=TestTargetModel, on_delete=models.CASCADE)
+            order_with_respect_to = "target__name"
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'target__name') which is not a ForeignKey. This is unsupported.",
+                    obj="ChecksTest.test_owrt_not_immediate_foreign_key.<locals>.TestModel",
+                    id="ordered_model.E005",
                 )
             ],
         )
