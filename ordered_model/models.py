@@ -1,9 +1,10 @@
 from functools import partial, reduce
 
 from django.core import checks
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, FieldDoesNotExist
 from django.db import models
 from django.db.models import Max, Min, F
+from django.db.models.fields.related import ForeignKey
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
@@ -143,7 +144,7 @@ class OrderedModelBase(models.Model):
         elif cls.order_with_respect_to is None:
             return tuple()
         else:
-            raise AssertionError("Invalid value for model.order_with_respect_to")
+            raise ValueError("Invalid value for model.order_with_respect_to")
 
     def _validate_ordering_reference(self, ref):
         if self._wrt_map() != ref._wrt_map():
@@ -347,6 +348,39 @@ class OrderedModelBase(models.Model):
                     id="ordered_model.E004",
                 )
             )
+
+        # each field may be an FK, or recursively an FK ref to an FK
+        try:
+            for wrt_field in cls.get_order_with_respect_to():
+                mc = cls
+                for p in wrt_field.split(LOOKUP_SEP):
+                    try:
+                        f = mc._meta.get_field(p)
+                        if not isinstance(f, ForeignKey):
+                            errors.append(
+                                checks.Error(
+                                    "OrderedModel order_with_respect_to specifies field '{0}' (within '{1}') which is not a ForeignKey. This is unsupported.".format(
+                                        p, wrt_field
+                                    ),
+                                    obj=str(cls.__qualname__),
+                                    id="ordered_model.E005",
+                                )
+                            )
+                            break
+                        mc = f.remote_field.model
+                    except FieldDoesNotExist:
+                        errors.append(
+                            checks.Error(
+                                "OrderedModel order_with_respect_to specifies field '{0}' (within '{1}') which does not exist.".format(
+                                    p, wrt_field
+                                ),
+                                obj=str(cls.__qualname__),
+                                id="ordered_model.E006",
+                            )
+                        )
+        except ValueError:
+            # already handled by type checks for E002
+            pass
         return errors
 
 
