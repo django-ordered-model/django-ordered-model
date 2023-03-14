@@ -1125,6 +1125,45 @@ class ReorderModelTestCase(TestCase):
             "changing order of tests.GroupedItem (3) from 1 to 2\n", out.getvalue()
         )
 
+    def test_reorder_with_respect_to_tuple(self):
+        u1 = TestUser.objects.create()
+        u2 = TestUser.objects.create()
+        q1 = Question.objects.create()
+        q2 = Question.objects.create()
+
+        for q in (q1, q2):
+            for u in (u1, u2):
+                Answer.objects.create(user=u, question=q, order=0)
+                Answer.objects.create(user=u, question=q, order=0)
+
+        self.assertSequenceEqual(
+            Answer.objects.filter(user=u2, question=q1).values_list("order", flat=True),
+            [0, 0],
+        )
+
+        out = StringIO()
+        call_command("reorder_model", "tests.Answer", verbosity=1, stdout=out)
+
+        self.assertSequenceEqual(
+            Answer.objects.filter(user=u2, question=q1).values_list("order", flat=True),
+            [0, 1],
+        )
+
+        self.assertEqual(
+            (
+                "changing order of tests.Answer (2) from 0 to 1\n"
+                + "changing order of tests.Answer (4) from 0 to 1\n"
+                + "changing order of tests.Answer (6) from 0 to 1\n"
+                + "changing order of tests.Answer (8) from 0 to 1\n"
+            ),
+            out.getvalue(),
+        )
+
+        out = StringIO()
+        call_command("reorder_model", "tests.Answer", verbosity=1, stdout=out)
+
+        self.assertEqual("", out.getvalue())
+
     def test_reorder_with_custom_order_field(self):
         """
         Test that 'reorder_model' changes the order of OpenQuestions
