@@ -4,6 +4,13 @@ Change log
 Unreleased
 ----------
 
+3.7.2 - 2023-03-14
+----------
+- Fix a performance regression (unnecessary queries) in the WRT change detection (#286)
+- Add a Check that `order_with_respect_to` specifies only ForeignKey fields
+- Add a Check that our subclasses of ModelManager and QuerySet are used (#286) 
+
+
 3.7.1 - 2023-03-06
 ----------
 
