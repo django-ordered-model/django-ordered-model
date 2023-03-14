@@ -4,6 +4,7 @@ from io import StringIO
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core import checks
+from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import Signal
 from django.utils.timezone import now
@@ -18,7 +19,7 @@ from rest_framework import status
 from tests.drf import ItemViewSet, router
 from tests.utils import assertNumQueries
 
-from ordered_model.models import OrderedModel
+from ordered_model.models import OrderedModel, OrderedModelManager, OrderedModelQuerySet
 from ordered_model.signals import on_ordered_model_delete
 
 from tests.models import (
@@ -1280,11 +1281,11 @@ class ChecksTest(SimpleTestCase):
         self.assertEqual(
             checks.run_checks(app_configs=self.apps.get_app_configs()),
             [
-                checks.Warning(
+                checks.Error(
                     msg="OrderedModelBase subclass needs Meta.ordering specified.",
                     hint="If you have overwritten Meta, try inheriting with Meta(OrderedModel.Meta).",
                     obj="ChecksTest.test_no_inherited_ordering.<locals>.TestModel",
-                    id="ordered_model.W001",
+                    id="ordered_model.E001",
                 )
             ],
         )
@@ -1303,6 +1304,56 @@ class ChecksTest(SimpleTestCase):
                 verbose_name = "unordered"
 
         self.assertEqual(checks.run_checks(app_configs=self.apps.get_app_configs()), [])
+
+    def test_bad_ort(self):
+        class TestModel(OrderedModel):
+            order_with_respect_to = 7
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModelBase subclass order_with_respect_to value invalid. Expected tuple, str or None.",
+                    obj="ChecksTest.test_bad_ort.<locals>.TestModel",
+                    id="ordered_model.E002",
+                )
+            ],
+        )
+
+    def test_bad_manager(self):
+        class BadModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
+            pass
+        class TestModel(OrderedModel):
+            objects = BadModelManager()
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
+                    obj="ChecksTest.test_bad_manager.<locals>.TestModel",
+                    id="ordered_model.E003",
+                )
+            ],
+        )
+
+    def test_bad_queryset(self):
+        # I've swapped the inheritance order here so that the models.QuerySet is returned
+        class BadQSModelManager(models.Manager.from_queryset(models.QuerySet), OrderedModelManager):
+            pass
+        class TestModel(OrderedModel):
+            objects = BadQSModelManager()
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",
+                    obj="ChecksTest.test_bad_queryset.<locals>.TestModel",
+                    id="ordered_model.E004",
+                )
+            ],
+        )
 
 
 class TestCascadedDelete(TestCase):
