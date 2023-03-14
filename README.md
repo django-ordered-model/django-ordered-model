@@ -211,6 +211,8 @@ class GroupedItem(OrderedModel):
 
 Here items are put into groups that have some general information used by its items, but the ordering of the items is independent of the group the item is in.
 
+In all cases `order_with_respect_to` must specify a `ForeignKey` field on the model, or a Django Check `E002`, `E005` or `E006` error will be raised with further help.  
+
 When you want ordering on the baseclass instead of subclasses in an ordered list of objects of various classes, specify the full module path of the base class:
 
 ```python
@@ -242,9 +244,9 @@ When your model your extends `OrderedModel`, it inherits a custom `ModelManager`
 * `above(index)`,
 * `below(index)`
 
-If your `Model` uses a custom `ModelManager` (such as `ItemManager` below) please have it extend `OrderedModelManager`.
+If your `Model` uses a custom `ModelManager` (such as `ItemManager` below) please have it extend `OrderedModelManager`, or else Django Check `E003` will be raised.
 
-If your `ModelManager` returns a custom `QuerySet` (such as `ItemQuerySet` below) please have it extend `OrderedModelQuerySet`.
+If your `ModelManager` returns a custom `QuerySet` (such as `ItemQuerySet` below) please have it extend `OrderedModelQuerySet`, or Django Check `E004` will be raised.
 
 ```python
 from ordered_model.models import OrderedModel, OrderedModelManager, OrderedModelQuerySet
