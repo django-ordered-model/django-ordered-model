@@ -209,17 +209,13 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
 
         # Find the fields which refer to the parent model of this inline, and
         # use one of them if they aren't None.
-        order_with_respect_to = obj._wrt_map() or []
-        fields = [
-            str(value.pk)
-            for value in order_with_respect_to.values()
-            if (
-                type(value) == self.parent_model
-                or issubclass(self.parent_model, type(value))
-            )
-            and value is not None
-            and value.pk is not None
-        ]
+        fields = []
+        for value in obj._get_related_objects():
+            # Note 'a class is considered a subclass of itself' pydocs
+            if issubclass(self.parent_model, type(value)):
+                if value is not None and value.pk is not None:
+                    fields.append(str(value.pk))
+
         order_obj_name = fields[0] if len(fields) > 0 else None
 
         model_info = self._get_model_info()
