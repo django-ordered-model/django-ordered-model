@@ -315,20 +315,36 @@ class OrderedModelBase(models.Model):
         ordering = getattr(cls._meta, "ordering", None)
         if ordering is None or len(ordering) < 1:
             errors.append(
-                checks.Warning(
+                checks.Error(
                     "OrderedModelBase subclass needs Meta.ordering specified.",
                     hint="If you have overwritten Meta, try inheriting with Meta(OrderedModel.Meta).",
                     obj=str(cls.__qualname__),
-                    id="ordered_model.W001",
+                    id="ordered_model.E001",
                 )
             )
         owrt = getattr(cls, "order_with_respect_to")
         if not (type(owrt) is tuple or type(owrt) is str or owrt is None):
             errors.append(
                 checks.Error(
-                    "OrderedModelBase subclass order_with_respect_to value invalid. Expected tuple, str or None",
+                    "OrderedModelBase subclass order_with_respect_to value invalid. Expected tuple, str or None.",
                     obj=str(cls.__qualname__),
-                    id="ordered_model.E001",
+                    id="ordered_model.E002",
+                )
+            )
+        if not issubclass(cls.objects.__class__, OrderedModelManager):
+            errors.append(
+                checks.Error(
+                    "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
+                    obj=str(cls.__qualname__),
+                    id="ordered_model.E003",
+                )
+            )
+        if not issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
+            errors.append(
+                checks.Error(
+                    "OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",
+                    obj=str(cls.__qualname__),
+                    id="ordered_model.E004",
                 )
             )
         return errors
