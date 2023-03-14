@@ -128,12 +128,18 @@ class OrderedModelBase(models.Model):
 
     def _wrt_map(self):
         d = {}
-        for order_field_name in self.get_order_with_respect_to():
-            if not order_field_name.endswith("_id"):
-                order_field_name = order_field_name + "_id"
-            d[order_field_name] = get_lookup_value(self, order_field_name)
-
+        for order_wrt_name in self.get_order_with_respect_to():
+            # we know order_wrt_name is a ForeignKey, so use a cheaper _id lookup
+            field_path = order_wrt_name + "_id"
+            d[order_wrt_name] = get_lookup_value(self, field_path)
         return d
+
+    def _get_related_objects(self):
+        # slow path, for use in the admin which requires the objects
+        # expected to generate extra queries
+        return [
+            get_lookup_value(self, name) for name in self.get_order_with_respect_to()
+        ]
 
     @classmethod
     def get_order_with_respect_to(cls):
