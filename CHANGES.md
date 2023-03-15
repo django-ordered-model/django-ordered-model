@@ -4,6 +4,9 @@ Change log
 Unreleased
 ----------
 
+3.7.3 - 2023-03-15
+----------
+- Restrict signal handler 'senders' to subclasses of `OrderedModelBase` to avoid query count regression due to `Collector.can_fast_delete` logic in `models/deletion.py` (#288)
 - Fix `reorder_model` management command re-ordering with multiple `order_with_respect_to` values
 
 3.7.2 - 2023-03-14
