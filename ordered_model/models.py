@@ -142,6 +142,25 @@ class OrderedModelBase(models.Model):
         ]
 
     @classmethod
+    def _on_ordered_model_delete(cls, sender=None, instance=None, **kwargs):
+        """
+        This signal handler makes sure that when an OrderedModelBase is deleted via
+        cascade database deletes, or queryset delete that the models keep order.
+        """
+
+        if getattr(instance, "_was_deleted_via_delete_method", False):
+            return
+
+        extra_update = kwargs.get("extra_update", None)
+
+        # Copy of upshuffle logic from OrderedModelBase.delete
+        qs = instance.get_ordering_queryset()
+        extra_update = {} if extra_update is None else extra_update
+        qs.above_instance(instance).decrease_order(**extra_update)
+
+        setattr(instance, "_was_deleted_via_delete_method", True)
+
+    @classmethod
     def get_order_with_respect_to(cls):
         if type(cls.order_with_respect_to) is tuple:
             return cls.order_with_respect_to

@@ -20,7 +20,7 @@ from tests.drf import ItemViewSet, router
 from tests.utils import assertNumQueries
 
 from ordered_model.models import OrderedModel, OrderedModelManager, OrderedModelQuerySet
-from ordered_model.signals import on_ordered_model_delete
+
 
 from tests.models import (
     Answer,
@@ -33,6 +33,7 @@ from tests.models import (
     Pizza,
     Topping,
     PizzaToppingsThroughModel,
+    BaseQuestion,
     OpenQuestion,
     MultipleChoiceQuestion,
     ItemGroup,
@@ -1202,10 +1203,25 @@ class ReorderModelTestCase(TestCase):
         OpenQuestion.objects.create(answer="4", order=3)
 
         # bypass our OrderedModel delete logic to leave a hole in ordering
-        self.assertTrue(post_delete.disconnect(dispatch_uid="on_ordered_model_delete"))
+        # remove signal handlers
+        # print(post_delete.receivers)
+        self.assertTrue(
+            post_delete.disconnect(
+                sender=OpenQuestion, dispatch_uid=OpenQuestion.__name__
+            )
+        )
+        self.assertTrue(
+            post_delete.disconnect(
+                sender=BaseQuestion, dispatch_uid=BaseQuestion.__name__
+            )
+        )
+
+        # delete on the  queryset fires post_delete, but does not call model.delete()
         OpenQuestion.objects.filter(answer="3").delete()
         post_delete.connect(
-            on_ordered_model_delete, dispatch_uid="on_ordered_model_delete"
+            OpenQuestion._on_ordered_model_delete,
+            sender=OpenQuestion,
+            dispatch_uid=OpenQuestion.__name__,
         )
 
         self.assertEqual([0, 1, 3], [i.order for i in OpenQuestion.objects.all()])

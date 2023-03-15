@@ -1,4 +1,5 @@
-from django.apps import AppConfig
+from django.apps import AppConfig, apps
+from django.db.models.signals import post_delete
 
 
 class OrderedModelConfig(AppConfig):
@@ -6,6 +7,10 @@ class OrderedModelConfig(AppConfig):
     label = "ordered_model"
 
     def ready(self):
-        # This import has side effects
-        # noinspection PyUnresolvedReferences
-        from .signals import on_ordered_model_delete
+        from .models import OrderedModelBase
+
+        for cls in apps.get_models():
+            if issubclass(cls, OrderedModelBase):
+                post_delete.connect(
+                    cls._on_ordered_model_delete, sender=cls, dispatch_uid=cls.__name__
+                )
