@@ -358,14 +358,25 @@ class OrderedModelBase(models.Model):
                 )
             )
         if not issubclass(cls.objects.__class__, OrderedModelManager):
-            errors.append(
-                checks.Error(
-                    "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
-                    obj=str(cls.__qualname__),
-                    id="ordered_model.E003",
+            # Not using our Manager. This is an Error if the queryset is also wrong, or
+            # a Warning if our own QuerySet is returned.
+            if issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
+                errors.append(
+                    checks.Warning(
+                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager. This is not ideal but will work.",
+                        obj=str(cls.__qualname__),
+                        id="ordered_model.W003",
+                    )
                 )
-            )
-        if not issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
+            else:
+                errors.append(
+                    checks.Error(
+                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
+                        obj=str(cls.__qualname__),
+                        id="ordered_model.E003",
+                    )
+                )
+        elif not issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
             errors.append(
                 checks.Error(
                     "OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",

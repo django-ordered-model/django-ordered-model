@@ -1376,7 +1376,7 @@ class ChecksTest(SimpleTestCase):
         )
 
     def test_bad_manager(self):
-        class BadModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
+        class BadModelManager(models.Manager.from_queryset(models.QuerySet)):
             pass
 
         class TestModel(OrderedModel):
@@ -1389,6 +1389,21 @@ class ChecksTest(SimpleTestCase):
                     msg="OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
                     obj="ChecksTest.test_bad_manager.<locals>.TestModel",
                     id="ordered_model.E003",
+                )
+            ],
+        )
+
+    def test_builtin_manager_to_queryset(self):
+        class TestModel(OrderedModel):
+            objects = OrderedModelQuerySet.as_manager()
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Warning(
+                    msg="OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager. This is not ideal but will work.",
+                    obj="ChecksTest.test_builtin_manager_to_queryset.<locals>.TestModel",
+                    id="ordered_model.W003",
                 )
             ],
         )
