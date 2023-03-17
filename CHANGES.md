@@ -4,6 +4,11 @@ Change log
 Unreleased
 ----------
 
+3.7.4 - 2023-03-17
+----------
+- Relax Check for `OrderedModelManager` to a `Warning`, if the manager returns the correct queryset (#290)
+
+
 3.7.3 - 2023-03-15
 ----------
 - Restrict signal handler 'senders' to subclasses of `OrderedModelBase` to avoid query count regression due to `Collector.can_fast_delete` logic in `models/deletion.py` (#288)
