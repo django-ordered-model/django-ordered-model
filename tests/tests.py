@@ -1029,6 +1029,7 @@ class OrderedModelAdminWithCustomPKInlineTest(TestCase):
     def setUp(self):
         User.objects.create_superuser("admin", "a@example.com", "admin")
         self.assertTrue(self.client.login(username="admin", password="admin"))
+
         group = CustomPKGroup.objects.create(name="g1")
         CustomPKGroupItem.objects.create(name="g1 i1", group=group)
         CustomPKGroupItem.objects.create(name="g1 i2", group=group)
@@ -1103,7 +1104,12 @@ class ReorderModelTestCase(TestCase):
 
         GroupedItem.objects.create(group=group2)
         GroupedItem.objects.create(group=group2)
-        GroupedItem.objects.create(group=group2)
+        gi2 = GroupedItem.objects.create(group=group2)
+
+        self.assertEqual(GroupedItem.get_order_with_respect_to(), ("group__user",))
+
+        with assertNumQueries(self, 1):
+            GroupedItem.objects.get(id=gi2.id)
 
         out = StringIO()
         call_command("reorder_model", "tests.GroupedItem", verbosity=1, stdout=out)
