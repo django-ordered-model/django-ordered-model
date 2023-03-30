@@ -209,13 +209,18 @@ class OrderedModelBase(models.Model):
         order_field_name = self.order_field_name
         wrt_changed = False
         if self.order_with_respect_to and self.pk:
-            original_wrt_map = self.__class__.objects.get(pk=self.pk)._wrt_map()
-            wrt_changed = self._wrt_map() != original_wrt_map
+            try:
+                original_wrt_map = self.__class__.objects.get(pk=self.pk)._wrt_map()
+            except self.__class__.DoesNotExist:
+                # the object is new, so we don't need to check for wrt changes
+                pass
+            else:
+                wrt_changed = self._wrt_map() != original_wrt_map
 
-            if wrt_changed and getattr(self, order_field_name) is not None:
-                # do delete-like upshuffle using original_wrt values!
-                qs = self.get_ordering_queryset(wrt=original_wrt_map)
-                qs.above_instance(self).decrease_order()
+                if wrt_changed and getattr(self, order_field_name) is not None:
+                    # do delete-like upshuffle using original_wrt values!
+                    qs = self.get_ordering_queryset(wrt=original_wrt_map)
+                    qs.above_instance(self).decrease_order()
 
         if getattr(self, order_field_name) is None or wrt_changed:
             order = self.get_ordering_queryset().get_next_order()

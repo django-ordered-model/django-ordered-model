@@ -904,8 +904,13 @@ class OrderWithRespectToRelatedModelFieldTests(TestCase):
 
     def test_query_count_on_create_model(self):
         with self.assertNumQueries(2):
-            # 1 for calculating the order, 1 for saving the model
+            # 1 for calculating the order, 1 for inserting the model
             self.u1_g1.items.create()
+
+    def test_query_count_on_save(self):
+        with self.assertNumQueries(3):
+            # 2 to check for wrt field changes, 1 to update the model.
+            self.u1_g1_i1.save()
 
     def test_query_count_on_qs(self):
         with self.assertNumQueries(1):
