@@ -738,10 +738,10 @@ class OrderWithRespectToTestsManyToMany(TestCase):
     def test_previous_first(self):
         self.assertEqual(self.p2_t1.previous(), None)
 
-    def test_down(self):
+    def test_next(self):
         self.assertEqual(self.p2_t1.next(), self.p2_t2)
 
-    def test_down_last(self):
+    def test_next_last(self):
         self.assertEqual(self.p1_t3.next(), None)
 
     def test_up(self):
