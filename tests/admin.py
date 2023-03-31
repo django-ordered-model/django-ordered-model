@@ -15,6 +15,7 @@ from .models import (
     Topping,
     CustomPKGroupItem,
     CustomPKGroup,
+    CustomItem,
 )
 
 

@@ -4,12 +4,14 @@ from io import StringIO
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core import checks
+from django.contrib import admin
+from django.contrib.admin import AdminSite
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import Signal
 from django.utils.timezone import now
 from django.urls import reverse
-from django.test import TestCase, SimpleTestCase
+from django.test import TestCase, SimpleTestCase, override_settings
 from django.test.utils import isolate_apps, override_system_checks
 from django import VERSION
 
@@ -20,7 +22,7 @@ from tests.drf import ItemViewSet, router
 from tests.utils import assertNumQueries
 
 from ordered_model.models import OrderedModel, OrderedModelManager, OrderedModelQuerySet
-
+from ordered_model.admin import OrderedModelAdmin
 
 from tests.models import (
     Answer,
@@ -1463,6 +1465,51 @@ class ChecksTest(SimpleTestCase):
                 )
             ],
         )
+
+@isolate_apps("tests", attr_name="apps")
+@override_settings(
+    SILENCED_SYSTEM_CHECKS=["fields.W342"],  # ForeignKey(unique=True)
+    INSTALLED_APPS=[
+        "django.contrib.admin",
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+        "django.contrib.messages",
+        "ordered_model",
+    ],
+)
+class AdminChecksTest(SimpleTestCase):
+
+    #def test_ordered_admin_on_unordered_model(self):
+    #    class UserAdminBroken(OrderedModelAdmin):
+    #        list_display = ("name", "move_up_down_links")
+
+        #self.assertEqual(
+        #    ItemAdminBroken(User, AdminSite()).check(),
+        #    [
+        #        checks.Error(
+        #            msg="Model User is not ordered",
+        #            obj=User,
+        #            id="ordered_model.E010",
+        #        )
+        #    ],
+        #)
+
+    def test_ordered_admin_ordering_column_missing(self):
+        class ItemAdminBroken(OrderedModelAdmin):
+            list_display = ("name",)  # oops, no move_up_down_links
+
+        self.assertEqual(
+            ItemAdminBroken(CustomItem, AdminSite()).check(),
+            [
+                checks.Warning(
+                    msg="move_up_down_links is not included in 'ItemAdminBroken.list_display'",
+                    obj=ItemAdminBroken,
+                    id="ordered_model.W011",
+                )
+            ],
+        )
+
+
 
 
 class TestCascadedDelete(TestCase):

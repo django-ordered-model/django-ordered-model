@@ -1,5 +1,6 @@
 from functools import update_wrapper
 
+from django.core import checks
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -12,6 +13,7 @@ from django.contrib.admin.options import csrf_protect_m
 from django.contrib.admin.views.main import ChangeList
 from django import VERSION
 
+from .models import OrderedModelBase
 
 class BaseOrderedModelAdmin:
     """
@@ -58,6 +60,31 @@ class BaseOrderedModelAdmin:
 
 
 class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
+    def check(self, **kwargs):
+        errors = super().check(**kwargs)
+
+        #if not isinstance(self.model, OrderedModelBase):
+        #    errors.append(
+        #        checks.Error(
+        #            "OrderedModelAdmin used for non-ordered model. Model {} must inherit from OrderedModelBase"
+        #            "".format(self.model.__class__),
+        #            obj=self.__class__,
+        #            id="ordered_model.W011",
+        #        )
+        #    )
+
+        if not "move_up_down_links" in self.list_display:
+            errors.append(
+                checks.Warning(
+                    "move_up_down_links is not included in '{}.list_display'"
+                    "".format(self.__class__.__name__),
+                    obj=self.__class__,
+                    id="ordered_model.W011",
+                )
+            )
+
+        return errors
+
     def get_urls(self):
         from django.urls import path
 
