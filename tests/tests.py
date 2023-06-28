@@ -151,7 +151,10 @@ class ModelTestCase(TestCase):
         self.assertNames(["1", "2", "3", "4"])
 
     def test_delete(self):
-        Item.objects.get(pk=2).delete()
+        deleted = Item.objects.get(pk=2).delete()
+        # the default return value of delete is (num_deleted, deleted_count_per_model)
+        # https://github.com/django/django/blob/main/django/db/models/deletion.py#L522
+        self.assertEqual(deleted, (1, {"tests.Item": 1}))
         self.assertNames(["1", "3", "4"])
         Item.objects.get(pk=3).up()
         self.assertNames(["3", "1", "4"])
