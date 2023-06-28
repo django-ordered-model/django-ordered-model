@@ -1245,6 +1245,42 @@ class ReorderModelTestCase(TestCase):
             "changing order of tests.OpenQuestion (4) from 3 to 2\n", out.getvalue()
         )
 
+    def test_reorder_with_custom_batch_size(self):
+        """
+        Test that 'reorder_model' can be called with a valid `batch_size` argument.
+        """
+        OpenQuestion.objects.create(order=0)
+        OpenQuestion.objects.create(order=0)
+        out = StringIO()
+        call_command(
+            "reorder_model", "tests.OpenQuestion", verbosity=1, stdout=out, batch_size=2
+        )
+
+        self.assertSequenceEqual(
+            OpenQuestion.objects.values_list("order", flat=True).order_by("order"),
+            [0, 1],
+        )
+        self.assertIn(
+            "changing order of tests.OpenQuestion (2) from 0 to 1", out.getvalue()
+        )
+
+    def test_reorder_with_invalid_custom_batch_size(self):
+        """
+        Test that 'reorder_model' raises a TypeError if a non-int value is passed
+        as the `batch_size` argument.
+        """
+        OpenQuestion.objects.create(order=0)
+        OpenQuestion.objects.create(order=0)
+
+        with self.assertRaises(TypeError):
+            call_command(
+                "reorder_model",
+                "tests.OpenQuestion",
+                verbosity=1,
+                stdout=StringIO(),
+                batch_size="2",
+            )
+
 
 class DRFTestCase(APITestCase):
     fixtures = ["test_items.json"]

@@ -10,6 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("model_name", type=str, nargs="*")
+        parser.add_argument("--batch_size", type=int, nargs=1, default=1000)
 
     def handle(self, *args, **options):
         """
@@ -17,6 +18,8 @@ class Command(BaseCommand):
         try re-ordering to a working state.
         """
         self.verbosity = options["verbosity"]
+        self.batch_size = options["batch_size"]
+
         orderedmodels = [
             m._meta.label for m in apps.get_models() if issubclass(m, OrderedModelBase)
         ]
@@ -78,4 +81,7 @@ class Command(BaseCommand):
                     )
                 setattr(obj, order_field_name, order)
                 bulk_update_list.append(obj)
-        model.objects.bulk_update(bulk_update_list, [order_field_name])
+
+        model.objects.bulk_update(
+            bulk_update_list, [order_field_name], batch_size=self.batch_size
+        )
