@@ -230,7 +230,7 @@ class OrderedModelBase(models.Model):
         qs = self.get_ordering_queryset()
         extra_update = {} if extra_update is None else extra_update
         qs.above_instance(self).decrease_order(**extra_update)
-        super().delete(*args, **kwargs)
+        return super().delete(*args, **kwargs)
 
     def swap(self, replacement):
         """
