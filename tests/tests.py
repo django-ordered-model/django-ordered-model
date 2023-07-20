@@ -1495,3 +1495,35 @@ class TestCascadedDelete(TestCase):
         # Assert the hole has been filled
         self.assertEqual(child_with_order_0.order, 0)
         self.assertEqual(child_with_order_2.order, 1)
+
+    def test_that_model_when_multiple_unordered_deleted_by_cascade_still_maintain_ordering(
+        self,
+    ):
+        parent_for_order_1_and_0_child = CascadedParentModel.objects.create()
+        # reverse the order on the first two children
+        child_with_order_1 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_1_and_0_child,
+            order=1,
+        )
+        child_with_order_0 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_1_and_0_child,
+            order=0,
+        )
+        parent_for_order_2_and_3_child = CascadedParentModel.objects.create()
+        child_with_order_2 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_2_and_3_child
+        )
+        child_with_order_3 = CascadedOrderedModel.objects.create(
+            parent=parent_for_order_2_and_3_child
+        )
+
+        # Delete positition 0 and 1 parent, now there's a hole of two, which child_with_order_2 and 3 should take
+        parent_for_order_1_and_0_child.delete()
+
+        # Refresh children from db
+        child_with_order_2.refresh_from_db()
+        child_with_order_3.refresh_from_db()
+
+        # Assert the hole has been filled
+        self.assertEqual(child_with_order_2.order, 0)
+        self.assertEqual(child_with_order_3.order, 1)

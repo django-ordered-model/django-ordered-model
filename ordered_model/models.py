@@ -151,12 +151,15 @@ class OrderedModelBase(models.Model):
         if getattr(instance, "_was_deleted_via_delete_method", False):
             return
 
-        extra_update = kwargs.get("extra_update", None)
-
-        # Copy of upshuffle logic from OrderedModelBase.delete
-        qs = instance.get_ordering_queryset()
-        extra_update = {} if extra_update is None else extra_update
-        qs.above_instance(instance).decrease_order(**extra_update)
+        # upshuffle logic from OrderedModelBase.delete can't be used here because signal
+        # handlers run per instance, but not necessarily in the right order
+        qs = instance.get_ordering_queryset().only("pk", instance.order_field_name)
+        to_update = set()
+        for i, item in enumerate(qs):
+            if getattr(item, instance.order_field_name) != i:
+                setattr(item, instance.order_field_name, i)
+                to_update.add(item)
+        qs.bulk_update(to_update, (instance.order_field_name,))
 
         setattr(instance, "_was_deleted_via_delete_method", True)
 
