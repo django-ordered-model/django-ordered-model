@@ -3,6 +3,8 @@ Change log
 
 Unreleased
 ----------
+- Fix `post_delete` signal triggered upshuffles to do a potentially expensive full reordering of the owrt group (#307)
+
 
 3.7.4 - 2023-03-17
 ----------
@@ -13,6 +15,7 @@ Unreleased
 ----------
 - Restrict signal handler 'senders' to subclasses of `OrderedModelBase` to avoid query count regression due to `Collector.can_fast_delete` logic in `models/deletion.py` (#288)
 - Fix `reorder_model` management command re-ordering with multiple `order_with_respect_to` values
+
 
 3.7.2 - 2023-03-14
 ----------
