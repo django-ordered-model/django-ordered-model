@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("model_name", type=str, nargs="*")
-        parser.add_argument("--batch_size", type=int, nargs=1, default=1000)
+        parser.add_argument("--batch_size", type=int, nargs=1, default=None)
 
     def handle(self, *args, **options):
         """
