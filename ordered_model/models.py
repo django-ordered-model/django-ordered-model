@@ -130,7 +130,11 @@ class OrderedModelBase(models.Model):
         d = {}
         for order_wrt_name in self.get_order_with_respect_to():
             # we know order_wrt_name is a ForeignKey, so use a cheaper _id lookup
-            field_path = order_wrt_name + "_id"
+            field_path = (
+                order_wrt_name + "_id"
+                if not order_wrt_name.endswith("_id")
+                else order_wrt_name
+            )
             d[order_wrt_name] = get_lookup_value(self, field_path)
         return d
 

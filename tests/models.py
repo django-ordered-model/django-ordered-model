@@ -22,7 +22,7 @@ class Answer(OrderedModel):
         Question, on_delete=models.CASCADE, related_name="answers"
     )
     user = models.ForeignKey(TestUser, on_delete=models.CASCADE, related_name="answers")
-    order_with_respect_to = ("question", "user")
+    order_with_respect_to = ("question", "user_id")
 
     class Meta:
         ordering = ("question", "user", "order")
