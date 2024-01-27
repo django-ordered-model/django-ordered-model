@@ -211,7 +211,8 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
-        wrt_changed = self._wrt_map() != self._original_wrt_map
+        adding = self.pk is None or self._state.adding
+        wrt_changed = not adding and self._wrt_map() != self._original_wrt_map
 
         if wrt_changed and getattr(self, order_field_name) is not None:
             # do delete-like upshuffle using original_wrt values!

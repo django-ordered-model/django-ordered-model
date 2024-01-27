@@ -173,6 +173,23 @@ class OrderWithRespectToTests(TestCase):
         with assertNumQueries(self, 1):
             Answer.objects.get(id=self.q1_a1.id)
 
+    def test_copy(self):
+        q3 = Question.objects.create()
+        old_q1_a1_pk = self.q1_a1.pk
+        self.q1_a1.pk = None
+        self.q1_a1.question = q3
+        self.q1_a1.save()
+        self.assertSequenceEqual(
+            Answer.objects.values_list("pk", "order"),
+            [
+                (old_q1_a1_pk, 0),
+                (self.q1_a2.pk, 1),
+                (self.q2_a1.pk, 0),
+                (self.q2_a2.pk, 1),
+                (self.q1_a1.pk, 0),
+            ],
+        )
+
     def test_saved_order(self):
         self.assertSequenceEqual(
             Answer.objects.values_list("pk", "order"),
@@ -296,6 +313,28 @@ class OrderWithRespectToTests(TestCase):
                 (self.q1_a2.pk, 1),
                 (self.q2_a2.pk, 0),
                 (self.q2_a1.pk, 1),
+            ],
+        )
+
+
+class OrderWithRespectToCustomPKTest(TestCase):
+    def setUp(self):
+        group = CustomPKGroup.objects.create(name="g1")
+        self.item = CustomPKGroupItem.objects.create(name="g1 i1", group=group)
+        CustomPKGroupItem.objects.create(name="g1 i2", group=group)
+
+    def test_copy(self):
+        group = CustomPKGroup.objects.create(name="g2")
+        self.item.name = "g2 i1"
+        self.item._state.adding = True
+        self.item.group = group
+        self.item.save()
+        self.assertSequenceEqual(
+            CustomPKGroupItem.objects.order_by("name").values_list("name", "order"),
+            [
+                ("g1 i1", 0),
+                ("g1 i2", 1),
+                ("g2 i1", 0),
             ],
         )
 
