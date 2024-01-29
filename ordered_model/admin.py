@@ -91,9 +91,11 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
         redir_path = "%s%s%s" % (
             mangled,
             "/" if not mangled.endswith("/") else "",
-            ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
-            if request.META.get("QUERY_STRING", "")
-            else "",
+            (
+                ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
+                if request.META.get("QUERY_STRING", "")
+                else ""
+            ),
         )
 
         return HttpResponseRedirect(redir_path)
@@ -196,9 +198,11 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
         redir_path = "%s%s%s" % (
             mangled,
             "/" if not mangled.endswith("/") else "",
-            ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
-            if request.META.get("QUERY_STRING", "")
-            else "",
+            (
+                ("?" + iri_to_uri(request.META.get("QUERY_STRING", "")))
+                if request.META.get("QUERY_STRING", "")
+                else ""
+            ),
         )
 
         return HttpResponseRedirect(redir_path)
