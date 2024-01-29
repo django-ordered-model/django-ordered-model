@@ -211,6 +211,8 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
+        # support model-instance copy protocol, by detaching from _original_wrt_map
+        # https://docs.djangoproject.com/en/4.2/topics/db/queries/#copying-model-instances
         adding = self.pk is None or self._state.adding
         wrt_changed = not adding and self._wrt_map() != self._original_wrt_map
 

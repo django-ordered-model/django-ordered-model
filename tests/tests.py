@@ -176,9 +176,11 @@ class OrderWithRespectToTests(TestCase):
     def test_copy(self):
         q3 = Question.objects.create()
         old_q1_a1_pk = self.q1_a1.pk
+        # make a copy by clearing pk
         self.q1_a1.pk = None
         self.q1_a1.question = q3
         self.q1_a1.save()
+        self.assertNotEqual(old_q1_a1_pk, self.q1_a1.pk)
         self.assertSequenceEqual(
             Answer.objects.values_list("pk", "order"),
             [
@@ -326,6 +328,7 @@ class OrderWithRespectToCustomPKTest(TestCase):
     def test_copy(self):
         group = CustomPKGroup.objects.create(name="g2")
         self.item.name = "g2 i1"
+        # make a copy by setting adding flag
         self.item._state.adding = True
         self.item.group = group
         self.item.save()
