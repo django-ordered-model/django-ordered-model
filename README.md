@@ -1,9 +1,8 @@
 django-ordered-model
 ====================
 
-[![Build Status](https://secure.travis-ci.org/bfirsh/django-ordered-model.png?branch=master)](https://travis-ci.org/bfirsh/django-ordered-model)
+[![Build Status](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml/badge.svg)](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/django-ordered-model.svg)](https://badge.fury.io/py/django-ordered-model)
-[![codecov](https://codecov.io/gh/bfirsh/django-ordered-model/branch/master/graph/badge.svg)](https://codecov.io/gh/bfirsh/django-ordered-model)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
 django-ordered-model allows models to be ordered and provides a simple admin
