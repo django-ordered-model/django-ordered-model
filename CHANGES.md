@@ -5,6 +5,7 @@ Unreleased
 ----------
 - Fix `post_delete` signal triggered upshuffles to do a potentially expensive full reordering of the owrt group (#307)
 - Support passing custom `--batch_size` to `reorder_model` management command (#303)
+- Support Django model instance copy protocol (ie. clearing pk and saving) (#313)
 
 
 3.7.4 - 2023-03-17
