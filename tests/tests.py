@@ -41,6 +41,8 @@ from tests.models import (
     TestUser,
     CascadedParentModel,
     CascadedOrderedModel,
+    Flow,
+    StateMachine,
 )
 
 
@@ -853,6 +855,30 @@ class OrderWithRespectToTestsManyToMany(TestCase):
                 (self.p2_t3.topping.pk, 1),
                 (self.p2_t4.topping.pk, 2),
                 (self.p2_t1.topping.pk, 3),
+            ],
+        )
+
+
+class ConstructorTest(TestCase):
+    def test_constructors_issue196(self):
+        self.f1 = Flow.objects.create()
+
+        self.sm1 = StateMachine(name="a", flow_id=self.f1.id)
+        self.sm1.save()
+
+        self.sm2 = StateMachine()
+        self.sm2.name = "b"
+        self.sm2.flow = self.f1
+        self.sm2.save()
+
+        self.sm3 = StateMachine.objects.create(name="c", flow=self.f1)
+
+        self.assertSequenceEqual(
+            StateMachine.objects.values_list("flow__pk", "order", "name"),
+            [
+                (self.f1.pk, 0, "a"),
+                (self.f1.pk, 1, "b"),
+                (self.f1.pk, 2, "c"),
             ],
         )
 
