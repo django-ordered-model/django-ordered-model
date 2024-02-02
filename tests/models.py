@@ -1,6 +1,7 @@
 from django.db import models
 
 from ordered_model.models import OrderedModel, OrderedModelBase
+import uuid
 
 
 # test simple automatic ordering
@@ -134,3 +135,14 @@ class CascadedParentModel(models.Model):
 
 class CascadedOrderedModel(OrderedModel):
     parent = models.ForeignKey(to=CascadedParentModel, on_delete=models.CASCADE)
+
+
+class Flow(models.Model):
+    pass
+
+
+class StateMachine(OrderedModel):
+    id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    name = models.CharField(max_length=32)
+    flow = models.ForeignKey(Flow, on_delete=models.PROTECT, null=True, blank=True)
+    order_with_respect_to = "flow"
