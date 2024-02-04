@@ -97,7 +97,13 @@ class OrderedModelQuerySet(models.QuerySet):
 
 
 class OrderedModelManager(models.Manager.from_queryset(OrderedModelQuerySet)):
-    pass
+    def get_queryset(self, *args, **kwargs):
+        qs = super().get_queryset(*args, **kwargs)
+        for owrt in self.model.get_order_with_respect_to():
+            attribute_name = "omm_" + owrt.replace(LOOKUP_SEP, "_")
+            kwa = {attribute_name: F(owrt + "_id")}
+            qs = qs.annotate(**kwa)
+        return qs
 
 
 class OrderedModelBase(models.Model):
@@ -124,13 +130,15 @@ class OrderedModelBase(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(OrderedModelBase, self).__init__(*args, **kwargs)
-        self._original_wrt_map = self._wrt_map()
 
-    def _wrt_map(self):
+    def _wrt_map(self, from_attributes=False):
         d = {}
         for order_wrt_name in self.get_order_with_respect_to():
             # we know order_wrt_name is a ForeignKey, so use a cheaper _id lookup
-            field_path = order_wrt_name + "_id"
+            if from_attributes:
+                field_path = "omm_" + order_wrt_name.replace(LOOKUP_SEP, "_")
+            else:
+                field_path = order_wrt_name + "_id"
             d[order_wrt_name] = get_lookup_value(self, field_path)
         return d
 
@@ -211,19 +219,37 @@ class OrderedModelBase(models.Model):
 
     def save(self, *args, **kwargs):
         order_field_name = self.order_field_name
-        wrt_changed = self._wrt_map() != self._original_wrt_map
+        wrt_changed = False
+        wrt = self._wrt_map()  # read current values
 
-        if wrt_changed and getattr(self, order_field_name) is not None:
-            # do delete-like upshuffle using original_wrt values!
-            qs = self.get_ordering_queryset(wrt=self._original_wrt_map)
-            qs.above_instance(self).decrease_order()
+        # we only have our original attributes tagged on if we were fetched from DB!
+        # mostly this can be detected by checking for pk==None however PK can be
+        # set as an attribute on the model before save (particularly with custom pk field).
+        # therefore if we get a python attribute error fetching a QS attribute,
+        # assume we do not yet exist in DB and skip the owrt change logic
+        if self.pk is not None:
+            try:
+                original_wrt_map = self._wrt_map(from_attributes=True)
+                wrt_changed = wrt != original_wrt_map
+            except AttributeError:
+                pass
+
+            if wrt_changed:
+                # do delete-like upshuffle using original_wrt values!
+                qs = self.get_ordering_queryset(wrt=original_wrt_map)
+                qs.above_instance(self).decrease_order()
 
         if getattr(self, order_field_name) is None or wrt_changed:
             order = self.get_ordering_queryset().get_next_order()
             setattr(self, order_field_name, order)
         super().save(*args, **kwargs)
 
-        self._original_wrt_map = self._wrt_map()
+        # If we were created (rather than fetched from a qs) we
+        # wont have attributes storing our original ordering.
+        # Fix this now, so that future save() calls are correct
+        for order_wrt_name in self.get_order_with_respect_to():
+            field_path = "omm_" + order_wrt_name.replace(LOOKUP_SEP, "_")
+            setattr(self, field_path, wrt[order_wrt_name])
 
     def delete(self, *args, extra_update=None, **kwargs):
         # Flag re-ordering performed so that post_delete signal
@@ -360,33 +386,6 @@ class OrderedModelBase(models.Model):
                     id="ordered_model.E002",
                 )
             )
-        if not issubclass(cls.objects.__class__, OrderedModelManager):
-            # Not using our Manager. This is an Error if the queryset is also wrong, or
-            # a Warning if our own QuerySet is returned.
-            if issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
-                errors.append(
-                    checks.Warning(
-                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager. This is not ideal but will work.",
-                        obj=str(cls.__qualname__),
-                        id="ordered_model.W003",
-                    )
-                )
-            else:
-                errors.append(
-                    checks.Error(
-                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
-                        obj=str(cls.__qualname__),
-                        id="ordered_model.E003",
-                    )
-                )
-        elif not issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
-            errors.append(
-                checks.Error(
-                    "OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",
-                    obj=str(cls.__qualname__),
-                    id="ordered_model.E004",
-                )
-            )
 
         # each field may be an FK, or recursively an FK ref to an FK
         try:
@@ -420,6 +419,41 @@ class OrderedModelBase(models.Model):
         except ValueError:
             # already handled by type checks for E002
             pass
+
+        # trying to construct the queryset can fail if order_with_respect_to has invalid values
+        # (since we cannot add annotations), don't try until the user has corrected the problem above
+        if errors:
+            return errors
+
+        if not issubclass(cls.objects.__class__, OrderedModelManager):
+            # Not using our Manager. This is an Error if the queryset is also wrong, or
+            # a Warning if our own QuerySet is returned.
+
+            if issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
+                errors.append(
+                    checks.Warning(
+                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager. This is not ideal but will work.",
+                        obj=str(cls.__qualname__),
+                        id="ordered_model.W003",
+                    )
+                )
+            else:
+                errors.append(
+                    checks.Error(
+                        "OrderedModelBase subclass has a ModelManager that does not inherit from OrderedModelManager.",
+                        obj=str(cls.__qualname__),
+                        id="ordered_model.E003",
+                    )
+                )
+        elif not issubclass(cls.objects.none().__class__, OrderedModelQuerySet):
+            errors.append(
+                checks.Error(
+                    "OrderedModelBase subclass ModelManager did not return a QuerySet inheriting from OrderedModelQuerySet.",
+                    obj=str(cls.__qualname__),
+                    id="ordered_model.E004",
+                )
+            )
+
         return errors
 
 
