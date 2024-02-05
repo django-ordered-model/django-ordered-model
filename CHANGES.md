@@ -7,6 +7,8 @@ Unreleased
 - Support passing custom `--batch_size` to `reorder_model` management command (#303)
 - Add tox builder for python 3.11, Django 4.1 and above
 - Add `ordered_model.fields.OrderedManyToManyField` which respects `Meta.ordering` when following ManyToMany related fields. (#277)
+- Relax check that `order_with_respect_to` entries final element must be a `ForeignKey` - it can be any `Field` instance (#298)
+
 
 3.7.4 - 2023-03-17
 ----------
