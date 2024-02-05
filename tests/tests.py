@@ -45,6 +45,8 @@ from tests.models import (
     CascadedOrderedModel,
     Flow,
     StateMachine,
+    Training,
+    TrainingExercise,
 )
 
 
@@ -1020,6 +1022,47 @@ class OrderWithRespectToRelatedModelFieldTests(TestCase):
         )
 
 
+class TestOrderWithRespectToNonFKFieldsTest(TestCase):
+    def setUp(self):
+        self.t1 = Training.objects.create()
+        self.t2 = Training.objects.create()
+        tc = TrainingExercise
+        self.tc = tc
+        self.te1_wu_0 = TrainingExercise.objects.create(
+            training=self.t1, stage=tc.WARMUP
+        )
+        self.te1_wu_1 = TrainingExercise.objects.create(
+            training=self.t1, stage=tc.WARMUP
+        )
+        self.te2_wu_0 = TrainingExercise.objects.create(
+            training=self.t2, stage=tc.WARMUP
+        )
+        self.te2_mp_0 = TrainingExercise.objects.create(
+            training=self.t2, stage=tc.MAINPART
+        )
+        self.te2_mp_1 = TrainingExercise.objects.create(
+            training=self.t2, stage=tc.MAINPART
+        )
+
+    def test_move_between_groups(self):
+        tc = self.tc
+        self.te2_mp_1.stage = TrainingExercise.WARMUP
+        self.te2_mp_1.save()
+
+        self.assertSequenceEqual(
+            TrainingExercise.objects.all().values_list(
+                "pk", "training", "stage", "order"
+            ),
+            [
+                (1, self.t1.pk, tc.WARMUP, 0),
+                (2, self.t1.pk, tc.WARMUP, 1),
+                (3, self.t2.pk, tc.WARMUP, 0),
+                (5, self.t2.pk, tc.WARMUP, 1),
+                (4, self.t2.pk, tc.MAINPART, 0),
+            ],
+        )
+
+
 class PolymorphicOrderGenerationTests(TestCase):
     def test_order_of_baselist(self):
         o1 = OpenQuestion.objects.create()
@@ -1553,18 +1596,27 @@ class ChecksTest(SimpleTestCase):
 
         self.assertEqual(
             checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [],
+        )
+
+    def test_owrt_not_exist(self):
+        class TestModel(OrderedModel):
+            order_with_respect_to = "name"
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
             [
                 checks.Error(
-                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'name') which is not a ForeignKey. This is unsupported.",
-                    obj="ChecksTest.test_owrt_not_foreign_key.<locals>.TestModel",
-                    id="ordered_model.E005",
+                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'name') which does not exist.",
+                    obj="ChecksTest.test_owrt_not_exist.<locals>.TestModel",
+                    id="ordered_model.E006",
                 )
             ],
         )
 
-    def test_owrt_not_immediate_foreign_key(self):
+    def test_owrt_leaf_not_exist(self):
         class TestTargetModel(OrderedModel):
-            name = models.CharField(max_length=100)
+            pass
 
         class TestModel(OrderedModel):
             target = models.ForeignKey(to=TestTargetModel, on_delete=models.CASCADE)
@@ -1574,11 +1626,43 @@ class ChecksTest(SimpleTestCase):
             checks.run_checks(app_configs=self.apps.get_app_configs()),
             [
                 checks.Error(
-                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'target__name') which is not a ForeignKey. This is unsupported.",
-                    obj="ChecksTest.test_owrt_not_immediate_foreign_key.<locals>.TestModel",
+                    msg="OrderedModel order_with_respect_to specifies field 'name' (within 'target__name') which does not exist.",
+                    obj="ChecksTest.test_owrt_leaf_not_exist.<locals>.TestModel",
+                    id="ordered_model.E006",
+                )
+            ],
+        )
+
+    def test_owrt_intermediate_not_fk(self):
+        class TestModel(OrderedModel):
+            target = models.CharField(max_length=100)
+            order_with_respect_to = "target__name"
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [
+                checks.Error(
+                    msg="OrderedModel order_with_respect_to specifies intermediate field 'target' (within 'target__name') which is not a ForeignKey. This is unsupported.",
+                    obj="ChecksTest.test_owrt_intermediate_not_fk.<locals>.TestModel",
                     id="ordered_model.E005",
                 )
             ],
+        )
+
+    def test_owrt_deep(self):
+        class TestTargetModel(OrderedModel):
+            name = models.CharField(max_length=100)
+
+        class TestMiddleModel(OrderedModel):
+            target = models.ForeignKey(to=TestTargetModel, on_delete=models.CASCADE)
+
+        class TestModel(OrderedModel):
+            middle = models.ForeignKey(to=TestMiddleModel, on_delete=models.CASCADE)
+            order_with_respect_to = "middle__target__name"
+
+        self.assertEqual(
+            checks.run_checks(app_configs=self.apps.get_app_configs()),
+            [],
         )
 
 

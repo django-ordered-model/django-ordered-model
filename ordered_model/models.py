@@ -10,9 +10,24 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 
-def get_lookup_value(obj, field):
+def get_lookup_value(obj, wrt_field, use_fkid=True):
+    # starting with obj, traverse the wrt_field path and return the value of the
+    # final field. if field_path *ends* at a ForeignKey, and use_fkid=True, return the pk
+    # of the fk rather than build the object itself.
     try:
-        return reduce(lambda i, f: getattr(i, f), field.split(LOOKUP_SEP), obj)
+        mc = type(obj)
+        path = wrt_field.split(LOOKUP_SEP)
+        leafindex = len(path) - 1
+        for depth, p in enumerate(path):
+            f = mc._meta.get_field(p)
+            if depth == leafindex and use_fkid and isinstance(f, ForeignKey):
+                return getattr(obj, p + "_id")
+            elif depth == leafindex:
+                return getattr(obj, p)
+            else:
+                mc = f.remote_field.model
+                obj = getattr(obj, p)
+
     except ObjectDoesNotExist:
         return None
 
@@ -129,16 +144,15 @@ class OrderedModelBase(models.Model):
     def _wrt_map(self):
         d = {}
         for order_wrt_name in self.get_order_with_respect_to():
-            # we know order_wrt_name is a ForeignKey, so use a cheaper _id lookup
-            field_path = order_wrt_name + "_id"
-            d[order_wrt_name] = get_lookup_value(self, field_path)
+            d[order_wrt_name] = get_lookup_value(self, order_wrt_name, use_fkid=True)
         return d
 
     def _get_related_objects(self):
         # slow path, for use in the admin which requires the objects
         # expected to generate extra queries
         return [
-            get_lookup_value(self, name) for name in self.get_order_with_respect_to()
+            get_lookup_value(self, name, use_fkid=False)
+            for name in self.get_order_with_respect_to()
         ]
 
     @classmethod
@@ -388,17 +402,19 @@ class OrderedModelBase(models.Model):
                 )
             )
 
-        # each field may be an FK, or recursively an FK ref to an FK
+        # each field may be an FK ref, until the leaf which may be an FK ref or another type of field
         try:
             for wrt_field in cls.get_order_with_respect_to():
                 mc = cls
-                for p in wrt_field.split(LOOKUP_SEP):
+                path = wrt_field.split(LOOKUP_SEP)
+                leafindex = len(path) - 1
+                for depth, p in enumerate(path):
                     try:
                         f = mc._meta.get_field(p)
-                        if not isinstance(f, ForeignKey):
+                        if depth < leafindex and not isinstance(f, ForeignKey):
                             errors.append(
                                 checks.Error(
-                                    "OrderedModel order_with_respect_to specifies field '{0}' (within '{1}') which is not a ForeignKey. This is unsupported.".format(
+                                    "OrderedModel order_with_respect_to specifies intermediate field '{0}' (within '{1}') which is not a ForeignKey. This is unsupported.".format(
                                         p, wrt_field
                                     ),
                                     obj=str(cls.__qualname__),
@@ -406,7 +422,10 @@ class OrderedModelBase(models.Model):
                                 )
                             )
                             break
-                        mc = f.remote_field.model
+
+                        if isinstance(f, ForeignKey):
+                            mc = f.remote_field.model
+
                     except FieldDoesNotExist:
                         errors.append(
                             checks.Error(

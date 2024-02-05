@@ -162,3 +162,25 @@ class PizzaOM2MToppingsThroughModel(OrderedModel):
 
     class Meta:
         ordering = ("pizza", "order")
+
+
+# issue 298
+class Training(models.Model):
+    pass
+
+
+class TrainingExercise(OrderedModel, models.Model):
+    WARMUP = 1
+    MAINPART = 2
+    ENDPART = 3
+    TrainingChoices = [
+        (WARMUP, "WarmUp"),
+        (MAINPART, "MainPart"),
+        (ENDPART, "EndPart"),
+    ]
+    training = models.ForeignKey(Training, on_delete=models.CASCADE)
+    stage = models.PositiveSmallIntegerField(choices=TrainingChoices)
+    order_with_respect_to = ("training", "stage")
+
+    class Meta:
+        ordering = ("training", "stage")
