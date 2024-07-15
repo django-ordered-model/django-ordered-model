@@ -144,7 +144,7 @@ class OrderedModelAdmin(BaseOrderedModelAdmin, admin.ModelAdmin):
 
 class OrderedInlineModelAdminMixin:
     """
-    ModelAdminMixin for classes that contain OrderedInilines
+    ModelAdminMixin for classes that contain OrderedInlines.
     """
 
     def get_urls(self):
