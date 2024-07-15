@@ -47,6 +47,9 @@ from tests.models import (
     StateMachine,
     Training,
     TrainingExercise,
+    Foobar,
+    ChildModel,
+    ParentModel,
 )
 
 
@@ -1725,3 +1728,34 @@ class TestCascadedDelete(TestCase):
         # Assert the hole has been filled
         self.assertEqual(child_with_order_2.order, 0)
         self.assertEqual(child_with_order_3.order, 1)
+
+
+## @pytest.mark.django_db
+class ParentChildModelTests(TestCase):
+    def test_parent_child_order(self):
+        foobar = Foobar.objects.create(name="foobar")
+        child1 = ChildModel.objects.create(name="child1", foobar=foobar, age=1)
+        child2 = ChildModel.objects.create(name="child2", foobar=foobar, age=2)
+        child3 = ChildModel.objects.create(name="child3", foobar=foobar, age=3)
+        child4 = ChildModel.objects.create(name="child4", foobar=foobar, age=4)
+
+        # This is the order of the children at the start
+        assert child1.order == 0
+        assert child2.order == 1
+        assert child3.order == 2
+        assert child4.order == 3
+
+        # Delete the first child
+        # This causes the parent to be deleted as well
+        child1.delete()
+
+        # Refresh the db
+        child2.refresh_from_db()
+        child3.refresh_from_db()
+        child4.refresh_from_db()
+
+        # The order of the children should be updated
+        # The expected order
+        assert child2.order == 0
+        assert child3.order == 1
+        assert child4.order == 2
