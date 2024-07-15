@@ -184,3 +184,18 @@ class TrainingExercise(OrderedModel, models.Model):
 
     class Meta:
         ordering = ("training", "stage")
+
+
+# issue 320 parent/child models
+class Foobar(models.Model):
+    name = models.CharField(max_length=100)
+
+
+class ParentModel(OrderedModel):
+    name = models.CharField(max_length=100)
+    foobar = models.ForeignKey(Foobar, on_delete=models.CASCADE)
+    order_with_respect_to = "foobar"
+
+
+class ChildModel(ParentModel):
+    age = models.IntegerField()
