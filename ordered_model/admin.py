@@ -183,7 +183,7 @@ class OrderedInlineMixin(BaseOrderedModelAdmin):
                     **model_info
                 ),
             )
-        ]
+        ] + super().get_urls()
 
     def move_view(self, request, admin_id, object_id, direction):
         obj = get_object_or_404(self.model, pk=unquote(object_id))
