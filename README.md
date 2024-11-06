@@ -1,7 +1,7 @@
 django-ordered-model
 ====================
 
-[![Build Status](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml/badge.svg)](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml)
+![Python versions](https://img.shields.io/pypi/pyversions/django-ordered-model.svg) [![Build Status](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml/badge.svg)](https://github.com/django-ordered-model/django-ordered-model/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/django-ordered-model.svg)](https://badge.fury.io/py/django-ordered-model)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
