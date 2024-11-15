@@ -450,6 +450,8 @@ Compatibility with Django and Python
 
 |django-ordered-model version | Django version      | Python version    | DRF (optional)
 |-----------------------------|---------------------|-------------------|----------------
+| **3.8.x**                   | **3.x**, **4.x**, **5.x** | **3.10** to **3.12** | 3.15 and above
+| **3.7.x**                   | **3.x**, **4.x**    | **3.5** and above | 3.12 and above
 | **3.6.x**                   | **3.x**, **4.x**    | **3.5** and above | 3.12 and above
 | **3.5.x**                   | **3.x**, **4.x**    | **3.5** and above | -
 | **3.4.x**                   | **2.x**, **3.x**    | **3.5** and above | -
